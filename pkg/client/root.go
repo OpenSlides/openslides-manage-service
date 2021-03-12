@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const rootHelp = `manage is an admin tool to perform manager actions at a OpenSlides instace.`
+const rootHelp = `manage is an admin tool to perform manager actions at a OpenSlides instance.`
 
 type config struct {
 	address string
