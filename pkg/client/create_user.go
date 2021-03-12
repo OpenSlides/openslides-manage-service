@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/OpenSlides/openslides-manage-service/proto"
+	"github.com/OpenSlides/openslides-manage-service/management"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ func cmdCreateUser(cfg *config) *cobra.Command {
 
 			service := connect(ctx, cfg.address)
 
-			req := &proto.CreateUserRequest{
+			req := &management.CreateUserRequest{
 				Username:                    username,
 				Password:                    password,
 				OrganisationManagementLevel: orgaLvl,
