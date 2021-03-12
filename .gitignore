@@ -1,0 +1,5 @@
+# Patterns of intentionally untracked files that Git should ignore
+
+# Binaries
+server/server
+client/client
