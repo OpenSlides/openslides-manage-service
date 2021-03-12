@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "github.com/OpenSlides/openslides-manage-service/management";
+
+service Manage {
+    rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
+}
+
+message CreateUserRequest {
+    string username = 1;
+    string password = 2;
+    string organisation_management_level = 3;
+}
+
+message CreateUserResponse {
+    int64 userID = 1;
+}
