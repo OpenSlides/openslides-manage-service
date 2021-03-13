@@ -25,4 +25,4 @@ The client can be build with
 
 To compile changed `.proto` files, run `protoc`:
 
-    $ make gen-proto
+    $ make proto
