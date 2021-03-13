@@ -22,6 +22,8 @@ func cmdResetPassword(cfg *config) *cobra.Command {
 		Short: "Resets a user password.",
 		Long:  resetPasswordHelp,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceErrors = true
+
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 			defer cancel()
 

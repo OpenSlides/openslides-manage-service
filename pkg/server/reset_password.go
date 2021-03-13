@@ -13,6 +13,8 @@ const (
 	writePath = "/internal/datastore/writer/write"
 )
 
+// hashPassword returns the hashed form of password as a json-value.
+// json-value means, that the string already contains the necessary "".
 func hashPassword(ctx context.Context, cfg *Config, password string) (string, error) {
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)
 	req, err := http.NewRequestWithContext(ctx, "POST", cfg.AuthAddr()+hashPath, strings.NewReader(reqBody))
@@ -26,7 +28,7 @@ func hashPassword(ctx context.Context, cfg *Config, password string) (string, er
 		return "", fmt.Errorf("sending request: %w", err)
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			body = []byte("[can not read body]")
@@ -42,7 +44,7 @@ func hashPassword(ctx context.Context, cfg *Config, password string) (string, er
 }
 
 func setPassword(ctx context.Context, cfg *Config, userID int, hash string) error {
-	reqBody := fmt.Sprintf(`{"user_id":1,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
+	reqBody := fmt.Sprintf(`{"user_id":1,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":%s}}]}`, userID, hash)
 	req, err := http.NewRequestWithContext(ctx, "POST", cfg.DSWriterAddr()+writePath, strings.NewReader(reqBody))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
@@ -54,7 +56,7 @@ func setPassword(ctx context.Context, cfg *Config, userID int, hash string) erro
 		return fmt.Errorf("sending request: %w", err)
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			body = []byte("[can not read body]")
