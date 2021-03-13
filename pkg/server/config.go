@@ -1,17 +1,17 @@
 package server
 
 import (
-	"fmt"
+	"net/url"
 	"reflect"
 	"strings"
 )
 
-// Config holds config data fot the server.
+// Config holds config data for the server.
 type Config struct {
-	// The structag `env` is used to polulate the values from environment
-	// varialbes. The first value is the name of the environment variable. After
-	// a `,` the default value can be given. If no default value is given, then
-	// "" is used. The type of a env-field has to be string.
+	// The struct tag `env` is used to populate the values from environment
+	// variables. The first value is the name of the environment variable. After
+	// a comma the default value can be given. If no default value is given, then
+	// an empty string is used. The type of a env field has to be string.
 	Host string `env:"MANAGE_HOST"`
 	Port string `env:"MANAGE_PORT,8001"`
 
@@ -19,12 +19,12 @@ type Config struct {
 	AuthHost     string `env:"AUTH_HOST,auth"`
 	AuthPort     string `env:"AUTH_PORT,9004"`
 
-	DSWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
-	DSWriterHost     string `env:"DATASTORE_WRITER_HOST,datastore-writer"`
-	DSWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`
+	DatastoreWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
+	DatastoreWriterHost     string `env:"DATASTORE_WRITER_HOST,datastore-writer"`
+	DatastoreWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`
 }
 
-// ConfigFromEnv creates a Config-object where the values are polulated from the
+// ConfigFromEnv creates a Config object where the values are populated from the
 // environment.
 //
 // Example:
@@ -53,14 +53,25 @@ func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
 	return &c
 }
 
+// Addr return the address of the manage service.
 func (c *Config) Addr() string {
 	return c.Host + ":" + c.Port
 }
 
-func (c *Config) AuthAddr() string {
-	return fmt.Sprintf("%s://%s:%s", c.AuthProtocol, c.AuthHost, c.AuthPort)
+// AuthURL returns an URL object to the auth service with empty path.
+func (c *Config) AuthURL() url.URL {
+	u := url.URL{
+		Scheme: c.AuthProtocol,
+		Host:   c.AuthHost + ":" + c.AuthPort,
+	}
+	return u
 }
 
-func (c *Config) DSWriterAddr() string {
-	return fmt.Sprintf("%s://%s:%s", c.DSWriterProtocol, c.DSWriterHost, c.DSWriterPort)
+// DatastoreWriterURL returns an URL object to the datastore writer service with empty path.
+func (c *Config) DatastoreWriterURL() url.URL {
+	u := url.URL{
+		Scheme: c.DatastoreWriterProtocol,
+		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
+	}
+	return u
 }

@@ -10,14 +10,16 @@ import (
 )
 
 const (
-	hashPath  = "/internal/auth/hash"
-	writePath = "/internal/datastore/writer/write"
+	authHashPath      = "/internal/auth/hash"
+	datastorWritePath = "/internal/datastore/writer/write"
 )
 
-// hashPassword returns the hashed form of password as a json-value.
+// hashPassword returns the hashed form of password as a JSON.
 func hashPassword(ctx context.Context, cfg *Config, password string) (string, error) {
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)
-	req, err := http.NewRequestWithContext(ctx, "POST", cfg.AuthAddr()+hashPath, strings.NewReader(reqBody))
+	reqURL := cfg.AuthURL()
+	reqURL.Path = authHashPath
+	req, err := http.NewRequestWithContext(ctx, "POST", reqURL.String(), strings.NewReader(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("creating request to auth service: %w", err)
 	}
@@ -46,8 +48,10 @@ func hashPassword(ctx context.Context, cfg *Config, password string) (string, er
 }
 
 func setPassword(ctx context.Context, cfg *Config, userID int, hash string) error {
-	reqBody := fmt.Sprintf(`{"user_id":1,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
-	req, err := http.NewRequestWithContext(ctx, "POST", cfg.DSWriterAddr()+writePath, strings.NewReader(reqBody))
+	reqBody := fmt.Sprintf(`{"user_id":0,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
+	reqURL := cfg.DatastoreWriterURL()
+	reqURL.Path = datastorWritePath
+	req, err := http.NewRequestWithContext(ctx, "POST", reqURL.String(), strings.NewReader(reqBody))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
@@ -63,7 +67,7 @@ func setPassword(ctx context.Context, cfg *Config, userID int, hash string) erro
 		if err != nil {
 			body = []byte("[can not read body]")
 		}
-		return fmt.Errorf("datastore service returned %s: %s", resp.Status, body)
+		return fmt.Errorf("datastore writer service returned %s: %s", resp.Status, body)
 	}
 
 	return nil
