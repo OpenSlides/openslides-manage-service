@@ -16,7 +16,7 @@ func Run(cfg *Config) error {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterManageServer(s, &manageServer{})
+	pb.RegisterManageServer(s, &manageServer{cfg: cfg})
 
 	if err := s.Serve(lis); err != nil {
 		return fmt.Errorf("running service: %w", err)

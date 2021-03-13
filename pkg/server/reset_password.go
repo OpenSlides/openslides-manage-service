@@ -9,15 +9,13 @@ import (
 )
 
 const (
-	authURL            = "http://auth:9004"
-	hashPath           = "/internal/auth/hash"
-	datastoreWriterURL = "http://datastore-writer:9011"
-	writePath          = "/internal/datastore/writer/write"
+	hashPath  = "/internal/auth/hash"
+	writePath = "/internal/datastore/writer/write"
 )
 
-func hashPassword(ctx context.Context, password string) (string, error) {
+func hashPassword(ctx context.Context, cfg *Config, password string) (string, error) {
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)
-	req, err := http.NewRequestWithContext(ctx, "POST", authURL+hashPath, strings.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", cfg.AuthAddr()+hashPath, strings.NewReader(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("creating request to auth service: %w", err)
 	}
@@ -43,9 +41,9 @@ func hashPassword(ctx context.Context, password string) (string, error) {
 	return string(hash), nil
 }
 
-func setPassword(ctx context.Context, userID int, hash string) error {
+func setPassword(ctx context.Context, cfg *Config, userID int, hash string) error {
 	reqBody := fmt.Sprintf(`{"user_id":1,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
-	req, err := http.NewRequestWithContext(ctx, "POST", datastoreWriterURL+writePath, strings.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", cfg.DSWriterAddr()+writePath, strings.NewReader(reqBody))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}

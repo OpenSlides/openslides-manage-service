@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -13,6 +14,14 @@ type Config struct {
 	// "" is used. The type of a env-field has to be string.
 	Host string `env:"MANAGE_HOST"`
 	Port string `env:"MANAGE_PORT,8001"`
+
+	AuthProtocol string `env:"AUTH_PROTOCOL,http"`
+	AuthHost     string `env:"AUTH_HOST,auth"`
+	AuthPort     string `env:"AUTH_PORT,9004"`
+
+	DSWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
+	DSWriterHost     string `env:"DATASTORE_WRITER_HOST,auth"`
+	DSWriterPort     string `env:"DATASTORE_WRITER_PORT,9004"`
 }
 
 // ConfigFromEnv creates a Config-object where the values are polulated from the
@@ -46,4 +55,12 @@ func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
 
 func (c *Config) Addr() string {
 	return c.Host + ":" + c.Port
+}
+
+func (c *Config) AuthAddr() string {
+	return fmt.Sprintf("%s://%s:%s", c.AuthProtocol, c.AuthHost, c.AuthPort)
+}
+
+func (c *Config) DSWriterAddr() string {
+	return fmt.Sprintf("%s://%s:%s", c.DSWriterProtocol, c.DSWriterHost, c.AuthPort)
 }

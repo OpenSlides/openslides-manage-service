@@ -10,15 +10,16 @@ import (
 
 type manageServer struct {
 	pb.UnimplementedManageServer
+	cfg *Config
 }
 
 func (m *manageServer) ResetPassword(ctx context.Context, in *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
-	hash, err := hashPassword(ctx, in.Password)
+	hash, err := hashPassword(ctx, m.cfg, in.Password)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	if err := setPassword(ctx, int(in.UserID), hash); err != nil {
+	if err := setPassword(ctx, m.cfg, int(in.UserID), hash); err != nil {
 		return nil, fmt.Errorf("set password: %w", err)
 	}
 	return new(pb.ResetPasswordResponse), nil
