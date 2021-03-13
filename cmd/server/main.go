@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	// TODO: Read env
-	if err := server.Run(":8001"); err != nil {
+	cfg := server.ConfigFromEnv(os.LookupEnv)
+	if err := server.Run(cfg); err != nil {
 		log.Printf("Error: %v", err)
 		os.Exit(1)
 	}

@@ -9,10 +9,10 @@ import (
 )
 
 // Run starts the manage server.
-func Run(addr string) error {
-	lis, err := net.Listen("tcp", addr)
+func Run(cfg *Config) error {
+	lis, err := net.Listen("tcp", cfg.Addr())
 	if err != nil {
-		return fmt.Errorf("listen on addr %s: %w", addr, err)
+		return fmt.Errorf("listen on addr %s: %w", cfg.Addr(), err)
 	}
 
 	s := grpc.NewServer()

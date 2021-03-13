@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,8 +9,10 @@ import (
 )
 
 const (
-	authURL  = "http://auth:9004"
-	hashPath = "/internal/auth/hash"
+	authURL            = "http://auth:9004"
+	hashPath           = "/internal/auth/hash"
+	datastoreWriterURL = "http://datastore-writer:9011"
+	writePath          = "/internal/datastore/writer/write"
 )
 
 func hashPassword(ctx context.Context, password string) (string, error) {
@@ -43,5 +44,25 @@ func hashPassword(ctx context.Context, password string) (string, error) {
 }
 
 func setPassword(ctx context.Context, userID int, hash string) error {
-	return errors.New("TODO")
+	reqBody := fmt.Sprintf(`{"user_id":1,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
+	req, err := http.NewRequestWithContext(ctx, "POST", datastoreWriterURL+writePath, strings.NewReader(reqBody))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+
+	if resp.StatusCode != 200 {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("[can not read body]")
+		}
+		return fmt.Errorf("datastore service returned %s: %s", resp.Status, body)
+	}
+
+	return nil
 }
