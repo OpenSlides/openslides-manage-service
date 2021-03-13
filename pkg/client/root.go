@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const rootHelp = `manage is an admin tool to perform manager actions at a OpenSlides instance.`
+const rootHelp = `manage is an admin tool to perform manager actions on an OpenSlides instance.`
 
 type config struct {
 	address string
@@ -24,8 +24,8 @@ func cmdRoot(cfg *config) *cobra.Command {
 		Long:  rootHelp,
 	}
 
-	cmd.PersistentFlags().StringVarP(&cfg.address, "address", "a", "localhost:8001", "Host of the OpenSlides service.")
-	cmd.PersistentFlags().DurationVarP(&cfg.timeout, "timeout", "t", time.Second, "Time to wait for the command.")
+	cmd.PersistentFlags().StringVarP(&cfg.address, "address", "a", "localhost:8001", "Address of the OpenSlides manage service.")
+	cmd.PersistentFlags().DurationVarP(&cfg.timeout, "timeout", "t", time.Second, "Time to wait for the command's response.")
 
 	return cmd
 }
@@ -36,8 +36,7 @@ func Execute() error {
 	cmd := cmdRoot(cfg)
 	cmd.AddCommand(
 		cmdCreateUser(cfg),
-		cmdResetPassword(cfg),
+		cmdSetPassword(cfg),
 	)
-
 	return cmd.Execute()
 }

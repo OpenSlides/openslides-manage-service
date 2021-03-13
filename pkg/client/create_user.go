@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/OpenSlides/openslides-manage-service/management"
+	pb "github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
 
-const createUsersHelp = `Creats a user account
+const createUsersHelp = `Creates a user account
 
-This command creates a user account on ther server.
+This command creates a user account on the server.
 `
 
 func cmdCreateUser(cfg *config) *cobra.Command {
@@ -19,7 +19,7 @@ func cmdCreateUser(cfg *config) *cobra.Command {
 	var orgaLvl string
 
 	cmd := &cobra.Command{
-		Use:   "create_user",
+		Use:   "create-user",
 		Short: "Creates a user account.",
 		Long:  createUsersHelp,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -28,7 +28,7 @@ func cmdCreateUser(cfg *config) *cobra.Command {
 
 			service := connect(ctx, cfg.address)
 
-			req := &management.CreateUserRequest{
+			req := &pb.CreateUserRequest{
 				Username:                    username,
 				Password:                    password,
 				OrganisationManagementLevel: orgaLvl,
@@ -43,7 +43,7 @@ func cmdCreateUser(cfg *config) *cobra.Command {
 
 	cmd.Flags().StringVarP(&username, "username", "u", "admin", "Name of the user account")
 	cmd.Flags().StringVarP(&password, "password", "p", "admin", "Password for the user")
-	cmd.Flags().StringVarP(&orgaLvl, "management_level", "m", "superadmin", "Set organisation management level")
+	cmd.Flags().StringVarP(&orgaLvl, "organisation_management_level", "m", "superadmin", "Set organisation management level")
 
 	return cmd
 }

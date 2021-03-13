@@ -4,23 +4,23 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/OpenSlides/openslides-manage-service/management"
+	pb "github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
 
-const resetPasswordHelp = `Resets the Password of an user
+const setPasswordHelp = `Sets the password of an user
 
-This command resets the password of a user by a given user id.
+This command sets the password of a user by a given user id.
 `
 
-func cmdResetPassword(cfg *config) *cobra.Command {
+func cmdSetPassword(cfg *config) *cobra.Command {
 	var userID int64
 	var password string
 
 	cmd := &cobra.Command{
-		Use:   "reset_password",
-		Short: "Resets a user password.",
-		Long:  resetPasswordHelp,
+		Use:   "set-password",
+		Short: "Sets an user password.",
+		Long:  setPasswordHelp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceErrors = true
 
@@ -29,12 +29,12 @@ func cmdResetPassword(cfg *config) *cobra.Command {
 
 			service := connect(ctx, cfg.address)
 
-			req := &management.ResetPasswordRequest{
+			req := &pb.SetPasswordRequest{
 				UserID:   userID,
 				Password: password,
 			}
 
-			if _, err := service.ResetPassword(ctx, req); err != nil {
+			if _, err := service.SetPassword(ctx, req); err != nil {
 				return fmt.Errorf("reset password: %w", err)
 			}
 			return nil
