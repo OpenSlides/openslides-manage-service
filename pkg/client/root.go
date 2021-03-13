@@ -36,6 +36,7 @@ func Execute() error {
 	cmd := cmdRoot(cfg)
 	cmd.AddCommand(
 		cmdCreateUser(cfg),
+		cmdResetPassword(cfg),
 	)
 
 	return cmd.Execute()

@@ -8,7 +8,8 @@ import (
 )
 
 func main() {
-	if err := server.Run(os.Args); err != nil {
+	cfg := server.ConfigFromEnv(os.LookupEnv)
+	if err := server.Run(cfg); err != nil {
 		log.Printf("Error: %v", err)
 		os.Exit(1)
 	}

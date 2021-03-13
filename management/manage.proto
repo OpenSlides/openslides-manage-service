@@ -4,6 +4,7 @@ option go_package = "github.com/OpenSlides/openslides-manage-service/management"
 
 service Manage {
     rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
+    rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
 }
 
 message CreateUserRequest {
@@ -15,3 +16,10 @@ message CreateUserRequest {
 message CreateUserResponse {
     int64 userID = 1;
 }
+
+message ResetPasswordRequest {
+    int64 userID = 1;
+    string password = 3;
+}
+
+message ResetPasswordResponse {};

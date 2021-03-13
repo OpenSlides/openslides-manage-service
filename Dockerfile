@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY cmd cmd
 COPY pkg pkg
-COPY proto proto
+COPY management management
 
 
 # Build service in seperate stage.
