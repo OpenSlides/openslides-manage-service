@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +15,6 @@ const (
 )
 
 // hashPassword returns the hashed form of password as a json-value.
-// json-value means, that the string already contains the necessary "".
 func hashPassword(ctx context.Context, cfg *Config, password string) (string, error) {
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)
 	req, err := http.NewRequestWithContext(ctx, "POST", cfg.AuthAddr()+hashPath, strings.NewReader(reqBody))
@@ -36,15 +36,17 @@ func hashPassword(ctx context.Context, cfg *Config, password string) (string, er
 		return "", fmt.Errorf("auth service returned %s: %s", resp.Status, body)
 	}
 
-	hash, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("reading body: %w", err)
+	var respBody struct {
+		Hash string `json:"hash"`
 	}
-	return string(hash), nil
+	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		return "", fmt.Errorf("decoding response: %w", err)
+	}
+	return respBody.Hash, nil
 }
 
 func setPassword(ctx context.Context, cfg *Config, userID int, hash string) error {
-	reqBody := fmt.Sprintf(`{"user_id":1,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":%s}}]}`, userID, hash)
+	reqBody := fmt.Sprintf(`{"user_id":1,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
 	req, err := http.NewRequestWithContext(ctx, "POST", cfg.DSWriterAddr()+writePath, strings.NewReader(reqBody))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
