@@ -20,8 +20,8 @@ type Config struct {
 	AuthPort     string `env:"AUTH_PORT,9004"`
 
 	DSWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
-	DSWriterHost     string `env:"DATASTORE_WRITER_HOST,auth"`
-	DSWriterPort     string `env:"DATASTORE_WRITER_PORT,9004"`
+	DSWriterHost     string `env:"DATASTORE_WRITER_HOST,datastore-writer"`
+	DSWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`
 }
 
 // ConfigFromEnv creates a Config-object where the values are polulated from the
@@ -62,5 +62,5 @@ func (c *Config) AuthAddr() string {
 }
 
 func (c *Config) DSWriterAddr() string {
-	return fmt.Sprintf("%s://%s:%s", c.DSWriterProtocol, c.DSWriterHost, c.AuthPort)
+	return fmt.Sprintf("%s://%s:%s", c.DSWriterProtocol, c.DSWriterHost, c.DSWriterPort)
 }
