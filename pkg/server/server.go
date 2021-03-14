@@ -3,28 +3,22 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/server/serverutil"
+	"github.com/OpenSlides/openslides-manage-service/pkg/set_password"
 	pb "github.com/OpenSlides/openslides-manage-service/proto"
 )
 
-type manageServer struct {
-	pb.UnimplementedManageServer
-	cfg *Config
+type Server struct {
+	set_password.SetPassworder
 }
 
-func (m *manageServer) SetPassword(ctx context.Context, in *pb.SetPasswordRequest) (*pb.SetPasswordResponse, error) {
-	hash, err := hashPassword(ctx, m.cfg, in.Password)
-	if err != nil {
-		return nil, fmt.Errorf("hash password: %w", err)
+func newServer(cfg *serverutil.Config) Server {
+	return Server{
+		SetPassworder: set_password.SetPassworder{Config: cfg},
 	}
-
-	if err := setPassword(ctx, m.cfg, int(in.UserID), hash); err != nil {
-		return nil, fmt.Errorf("set password: %w", err)
-	}
-	return new(pb.SetPasswordResponse), nil
 }
 
-func (m *manageServer) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+func (s Server) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
 	return nil, errors.New("TODO")
 }
