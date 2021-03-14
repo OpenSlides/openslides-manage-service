@@ -1,4 +1,4 @@
-package client
+package create_user
 
 import (
 	"context"
@@ -14,7 +14,7 @@ const createUsersHelp = `Creates a user account
 This command creates a user account on the server.
 `
 
-func cmdCreateUser(cfg *clientutil.Config) *cobra.Command {
+func Command(cfg *clientutil.Config) *cobra.Command {
 	var username string
 	var password string
 	var orgaLvl string

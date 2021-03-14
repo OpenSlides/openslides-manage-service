@@ -4,15 +4,12 @@ import (
 	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/client/clientutil"
+	"github.com/OpenSlides/openslides-manage-service/pkg/create_user"
 	"github.com/OpenSlides/openslides-manage-service/pkg/set_password"
 	"github.com/spf13/cobra"
 )
 
 const rootHelp = `manage is an admin tool to perform manager actions on an OpenSlides instance.`
-
-// func (c config) timeout() (time.Duration, error) {
-// 	return time.ParseDuration(c.rawTimeout)
-// }
 
 func cmdRoot(cfg *clientutil.Config) *cobra.Command {
 	cmd := &cobra.Command{
@@ -32,7 +29,7 @@ func Execute() error {
 	cfg := new(clientutil.Config)
 	cmd := cmdRoot(cfg)
 	cmd.AddCommand(
-		cmdCreateUser(cfg),
+		create_user.Command(cfg),
 		set_password.Command(cfg),
 	)
 	return cmd.Execute()
