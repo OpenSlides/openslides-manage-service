@@ -1,9 +1,9 @@
-package server_test
+package serverutil_test
 
 import (
 	"testing"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/server"
+	"github.com/OpenSlides/openslides-manage-service/pkg/server/serverutil"
 )
 
 func TestConfigFromEnv(t *testing.T) {
@@ -14,7 +14,7 @@ func TestConfigFromEnv(t *testing.T) {
 		v, ok := defaults[key]
 		return v, ok
 	}
-	cfg := server.ConfigFromEnv(lookup)
+	cfg := serverutil.ConfigFromEnv(lookup)
 	if cfg.Host != "test-host" {
 		t.Errorf("config.Host == `%s`, expected `test-host`", cfg.Host)
 	}

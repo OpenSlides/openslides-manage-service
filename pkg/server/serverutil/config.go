@@ -1,4 +1,4 @@
-package server
+package serverutil
 
 import (
 	"net/url"

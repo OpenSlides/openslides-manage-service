@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/client/clientutil"
 	pb "github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +14,7 @@ const createUsersHelp = `Creates a user account
 This command creates a user account on the server.
 `
 
-func cmdCreateUser(cfg *config) *cobra.Command {
+func cmdCreateUser(cfg *clientutil.Config) *cobra.Command {
 	var username string
 	var password string
 	var orgaLvl string
@@ -23,10 +24,10 @@ func cmdCreateUser(cfg *config) *cobra.Command {
 		Short: "Creates a user account.",
 		Long:  createUsersHelp,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
+			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 			defer cancel()
 
-			service := connect(ctx, cfg.address)
+			service := clientutil.Connect(ctx, cfg.Address)
 
 			req := &pb.CreateUserRequest{
 				Username:                    username,

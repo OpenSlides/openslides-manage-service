@@ -1,4 +1,4 @@
-package server
+package set_password
 
 import (
 	"context"
@@ -7,7 +7,26 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/OpenSlides/openslides-manage-service/pkg/server/serverutil"
+	pb "github.com/OpenSlides/openslides-manage-service/proto"
 )
+
+type SetPassworder struct {
+	Config *serverutil.Config
+}
+
+func (s SetPassworder) SetPassword(ctx context.Context, in *pb.SetPasswordRequest) (*pb.SetPasswordResponse, error) {
+	hash, err := hashPassword(ctx, s.Config, in.Password)
+	if err != nil {
+		return nil, fmt.Errorf("hash password: %w", err)
+	}
+
+	if err := setPassword(ctx, s.Config, int(in.UserID), hash); err != nil {
+		return nil, fmt.Errorf("set password: %w", err)
+	}
+	return new(pb.SetPasswordResponse), nil
+}
 
 const (
 	authHashPath      = "/internal/auth/hash"
@@ -15,7 +34,7 @@ const (
 )
 
 // hashPassword returns the hashed form of password as a JSON.
-func hashPassword(ctx context.Context, cfg *Config, password string) (string, error) {
+func hashPassword(ctx context.Context, cfg *serverutil.Config, password string) (string, error) {
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)
 	reqURL := cfg.AuthURL()
 	reqURL.Path = authHashPath
@@ -47,7 +66,7 @@ func hashPassword(ctx context.Context, cfg *Config, password string) (string, er
 	return respBody.Hash, nil
 }
 
-func setPassword(ctx context.Context, cfg *Config, userID int, hash string) error {
+func setPassword(ctx context.Context, cfg *serverutil.Config, userID int, hash string) error {
 	reqBody := fmt.Sprintf(`{"user_id":0,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
 	reqURL := cfg.DatastoreWriterURL()
 	reqURL.Path = datastorWritePath

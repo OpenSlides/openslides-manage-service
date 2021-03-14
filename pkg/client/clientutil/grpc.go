@@ -1,4 +1,4 @@
-package client
+package clientutil
 
 import (
 	"context"
@@ -8,7 +8,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func connect(ctx context.Context, address string) pb.ManageClient {
+// Connect creates a grpc connection to the server.
+func Connect(ctx context.Context, address string) pb.ManageClient {
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
