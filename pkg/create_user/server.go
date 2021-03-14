@@ -7,9 +7,9 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/proto"
 )
 
-type CreateUserer struct {
+type CreateUserServer struct {
 }
 
-func (s CreateUserer) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
+func (s CreateUserServer) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
 	return nil, errors.New("TODO")
 }

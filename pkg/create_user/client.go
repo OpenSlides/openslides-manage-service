@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/client/clientutil"
-	pb "github.com/OpenSlides/openslides-manage-service/proto"
+	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +29,7 @@ func Command(cfg *clientutil.Config) *cobra.Command {
 
 			service := clientutil.Connect(ctx, cfg.Address)
 
-			req := &pb.CreateUserRequest{
+			req := &proto.CreateUserRequest{
 				Username:                    username,
 				Password:                    password,
 				OrganisationManagementLevel: orgaLvl,

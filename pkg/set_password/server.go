@@ -9,14 +9,14 @@ import (
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/server/serverutil"
-	pb "github.com/OpenSlides/openslides-manage-service/proto"
+	"github.com/OpenSlides/openslides-manage-service/proto"
 )
 
-type SetPassworder struct {
+type SetPasswordServer struct {
 	Config *serverutil.Config
 }
 
-func (s SetPassworder) SetPassword(ctx context.Context, in *pb.SetPasswordRequest) (*pb.SetPasswordResponse, error) {
+func (s SetPasswordServer) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
 	hash, err := hashPassword(ctx, s.Config, in.Password)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
@@ -25,7 +25,7 @@ func (s SetPassworder) SetPassword(ctx context.Context, in *pb.SetPasswordReques
 	if err := setPassword(ctx, s.Config, int(in.UserID), hash); err != nil {
 		return nil, fmt.Errorf("set password: %w", err)
 	}
-	return new(pb.SetPasswordResponse), nil
+	return new(proto.SetPasswordResponse), nil
 }
 
 const (
