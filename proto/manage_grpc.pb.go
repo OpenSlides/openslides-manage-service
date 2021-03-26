@@ -18,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ManageClient interface {
+	CheckServer(ctx context.Context, in *CheckServerRequest, opts ...grpc.CallOption) (*CheckServerResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
 }
@@ -28,6 +29,15 @@ type manageClient struct {
 
 func NewManageClient(cc grpc.ClientConnInterface) ManageClient {
 	return &manageClient{cc}
+}
+
+func (c *manageClient) CheckServer(ctx context.Context, in *CheckServerRequest, opts ...grpc.CallOption) (*CheckServerResponse, error) {
+	out := new(CheckServerResponse)
+	err := c.cc.Invoke(ctx, "/Manage/CheckServer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *manageClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error) {
@@ -52,6 +62,7 @@ func (c *manageClient) SetPassword(ctx context.Context, in *SetPasswordRequest, 
 // All implementations should embed UnimplementedManageServer
 // for forward compatibility
 type ManageServer interface {
+	CheckServer(context.Context, *CheckServerRequest) (*CheckServerResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
 }
@@ -60,6 +71,9 @@ type ManageServer interface {
 type UnimplementedManageServer struct {
 }
 
+func (UnimplementedManageServer) CheckServer(context.Context, *CheckServerRequest) (*CheckServerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckServer not implemented")
+}
 func (UnimplementedManageServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
@@ -76,6 +90,24 @@ type UnsafeManageServer interface {
 
 func RegisterManageServer(s grpc.ServiceRegistrar, srv ManageServer) {
 	s.RegisterService(&Manage_ServiceDesc, srv)
+}
+
+func _Manage_CheckServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManageServer).CheckServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/CheckServer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).CheckServer(ctx, req.(*CheckServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Manage_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -121,6 +153,10 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "Manage",
 	HandlerType: (*ManageServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CheckServer",
+			Handler:    _Manage_CheckServer_Handler,
+		},
 		{
 			MethodName: "CreateUser",
 			Handler:    _Manage_CreateUser_Handler,

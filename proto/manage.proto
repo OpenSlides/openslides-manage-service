@@ -3,8 +3,18 @@ syntax = "proto3";
 option go_package = "github.com/OpenSlides/openslides-manage-service/proto";
 
 service Manage {
+    rpc CheckServer(CheckServerRequest) returns (CheckServerResponse);
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
+}
+
+message CheckServerRequest {
+    bool skipClient = 1;
+}
+
+message CheckServerResponse {
+    int64 statusCode = 1;
+    string statusMessage = 2;
 }
 
 message CreateUserRequest {

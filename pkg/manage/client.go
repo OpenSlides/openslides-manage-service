@@ -2,7 +2,7 @@ package manage
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -19,8 +19,8 @@ func cmdRoot(cfg *ClientConfig) *cobra.Command {
 		Long:  rootHelp,
 	}
 
-	cmd.PersistentFlags().StringVarP(&cfg.Address, "address", "a", "localhost:8001", "Address of the OpenSlides manage service.")
-	cmd.PersistentFlags().DurationVarP(&cfg.Timeout, "timeout", "t", time.Second, "Time to wait for the command's response.")
+	cmd.PersistentFlags().StringVarP(&cfg.Address, "address", "a", "localhost:9008", "Address of the OpenSlides manage service.")
+	cmd.PersistentFlags().DurationVarP(&cfg.Timeout, "timeout", "t", 5*time.Second, "Time to wait for the command's response.")
 
 	return cmd
 }
@@ -32,6 +32,7 @@ func RunClient() error {
 	cmd.AddCommand(
 		CmdCreateUser(cfg),
 		CmdSetPassword(cfg),
+		CmdCheckServer(cfg),
 	)
 	return cmd.Execute()
 }
@@ -43,11 +44,10 @@ type ClientConfig struct {
 }
 
 // Dial creates a grpc connection to the server.
-func Dial(ctx context.Context, address string) proto.ManageClient {
+func Dial(ctx context.Context, address string) (proto.ManageClient, func() error, error) {
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		return nil, nil, fmt.Errorf("creating gRPC client connection with grpc.DialContect(): %w", err)
 	}
-	//TODO: Close conn?
-	return proto.NewManageClient(conn)
+	return proto.NewManageClient(conn), conn.Close, nil
 }

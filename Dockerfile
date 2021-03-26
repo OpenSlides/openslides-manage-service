@@ -15,7 +15,6 @@ COPY proto proto
 # Build service in seperate stage.
 FROM base as builder
 RUN go build ./cmd/server
-RUN go build ./cmd/manage
 
 
 # Test build.
@@ -37,14 +36,9 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 
 # Productive build.
 FROM alpine:3.13.2
-WORKDIR /root/
-RUN apk add bash
 
-COPY --from=builder /root/server .
-COPY --from=builder /root/manage .
-COPY entrypoint .
-COPY entrypoint-setup .
+COPY --from=builder /root/server /root/server
+
 EXPOSE 9008
 
-ENTRYPOINT ["/root/entrypoint"]
 CMD ["/root/server"]

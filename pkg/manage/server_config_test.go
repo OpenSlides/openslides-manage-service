@@ -9,17 +9,17 @@ import (
 func TestConfigFromEnv(t *testing.T) {
 	lookup := func(key string) (string, bool) {
 		defaults := map[string]string{
-			"MANAGE_HOST": "test-host",
+			"AUTH_HOST": "test-auth",
 		}
 		v, ok := defaults[key]
 		return v, ok
 	}
 	cfg := manage.ServerConfigFromEnv(lookup)
-	if cfg.Host != "test-host" {
-		t.Errorf("config.Host == `%s`, expected `test-host`", cfg.Host)
+	if cfg.AuthHost != "test-auth" {
+		t.Errorf("config.AuthHost == `%s`, expected `test-auth`", cfg.AuthHost)
 	}
-	if cfg.Port != "8001" {
-		t.Errorf("config.Port == `%s`, expected `8001`", cfg.Host)
+	if cfg.Port != "9008" {
+		t.Errorf("config.Port == `%s`, expected `9008`", cfg.Port)
 	}
 }
 
