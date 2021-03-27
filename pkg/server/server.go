@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/create_user"
-	"github.com/OpenSlides/openslides-manage-service/pkg/server/serverutil"
-	"github.com/OpenSlides/openslides-manage-service/pkg/set_password"
+	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
+	"github.com/OpenSlides/openslides-manage-service/pkg/util"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 )
 
 // Run starts the manage server.
-func Run(cfg *serverutil.Config) error {
+func Run(cfg *util.ServerConfig) error {
 	addr := cfg.Addr()
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -30,13 +30,14 @@ func Run(cfg *serverutil.Config) error {
 	return nil
 }
 
+// Server implements the manage methods on server side.
 type Server struct {
-	set_password.SetPasswordServer
-	create_user.CreateUserServer
+	setpassword.ServiceSetPassword
+	createuser.ServerCreateUser
 }
 
-func newServer(cfg *serverutil.Config) Server {
+func newServer(cfg *util.ServerConfig) Server {
 	return Server{
-		SetPasswordServer: set_password.SetPasswordServer{Config: cfg},
+		ServiceSetPassword: setpassword.ServiceSetPassword{Config: cfg},
 	}
 }

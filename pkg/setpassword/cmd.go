@@ -1,10 +1,10 @@
-package set_password
+package setpassword
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/client/clientutil"
+	"github.com/OpenSlides/openslides-manage-service/pkg/util"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +14,8 @@ const setPasswordHelp = `Sets the password of an user
 This command sets the password of a user by a given user id.
 `
 
-func Command(cfg *clientutil.Config) *cobra.Command {
+// Command initializes the set-password command.
+func Command(cfg *util.ClientConfig) *cobra.Command {
 	var userID int64
 	var password string
 
@@ -26,7 +27,7 @@ func Command(cfg *clientutil.Config) *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 			defer cancel()
 
-			service := clientutil.Connect(ctx, cfg.Address)
+			service := util.Connect(ctx, cfg.Address)
 
 			req := &proto.SetPasswordRequest{
 				UserID:   userID,

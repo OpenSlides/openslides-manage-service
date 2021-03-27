@@ -1,4 +1,4 @@
-package clientutil
+package util
 
 import (
 	"context"
