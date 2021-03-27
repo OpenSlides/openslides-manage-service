@@ -1,10 +1,10 @@
-package createuser
+package manage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/util"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
@@ -14,8 +14,8 @@ const createUsersHelp = `Creates a user account
 This command creates a user account on the server.
 `
 
-// Command initializes the create-user command.
-func Command(cfg *util.ClientConfig) *cobra.Command {
+// CmdCreateUser initializes the create-user command.
+func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 	var username string
 	var password string
 	var orgaLvl string
@@ -28,7 +28,7 @@ func Command(cfg *util.ClientConfig) *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 			defer cancel()
 
-			service := util.Connect(ctx, cfg.Address)
+			service := Dial(ctx, cfg.Address)
 
 			req := &proto.CreateUserRequest{
 				Username:                    username,
@@ -48,4 +48,9 @@ func Command(cfg *util.ClientConfig) *cobra.Command {
 	cmd.Flags().StringVarP(&orgaLvl, "organisation_management_level", "m", "superadmin", "Set organisation management level")
 
 	return cmd
+}
+
+// CreateUser TODO
+func (s *Server) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
+	return nil, errors.New("TODO")
 }

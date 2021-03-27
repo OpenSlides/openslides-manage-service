@@ -1,16 +1,44 @@
-package util
+package manage
 
 import (
+	"fmt"
+	"net"
 	"net/url"
 	"reflect"
 	"strings"
-	"time"
+
+	"github.com/OpenSlides/openslides-manage-service/proto"
+	"google.golang.org/grpc"
 )
 
-// ClientConfig holds the top level arguments.
-type ClientConfig struct {
-	Address string
-	Timeout time.Duration
+// RunServer starts the manage server.
+func RunServer(cfg *ServerConfig) error {
+	addr := cfg.Addr()
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("listen on addr %s: %w", addr, err)
+	}
+
+	s := grpc.NewServer()
+	proto.RegisterManageServer(s, newServer(cfg))
+
+	fmt.Printf("Running manage service on %s", addr)
+
+	if err := s.Serve(lis); err != nil {
+		return fmt.Errorf("running service: %w", err)
+	}
+	return nil
+}
+
+// Server implements the manage methods on server side.
+type Server struct {
+	config *ServerConfig
+}
+
+func newServer(cfg *ServerConfig) *Server {
+	return &Server{
+		config: cfg,
+	}
 }
 
 // ServerConfig holds config data for the server.

@@ -4,13 +4,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/server"
-	"github.com/OpenSlides/openslides-manage-service/pkg/util"
+	"github.com/OpenSlides/openslides-manage-service/pkg/manage"
 )
 
 func main() {
-	cfg := util.ServerConfigFromEnv(os.LookupEnv)
-	if err := server.Run(cfg); err != nil {
+	cfg := manage.ServerConfigFromEnv(os.LookupEnv)
+	if err := manage.RunServer(cfg); err != nil {
 		log.Printf("Error: %v", err)
 		os.Exit(1)
 	}
