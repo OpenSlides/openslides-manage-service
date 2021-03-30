@@ -49,15 +49,14 @@ func (c *manageClient) SetPassword(ctx context.Context, in *SetPasswordRequest, 
 }
 
 // ManageServer is the server API for Manage service.
-// All implementations must embed UnimplementedManageServer
+// All implementations should embed UnimplementedManageServer
 // for forward compatibility
 type ManageServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
-	mustEmbedUnimplementedManageServer()
 }
 
-// UnimplementedManageServer must be embedded to have forward compatible implementations.
+// UnimplementedManageServer should be embedded to have forward compatible implementations.
 type UnimplementedManageServer struct {
 }
 
@@ -67,7 +66,6 @@ func (UnimplementedManageServer) CreateUser(context.Context, *CreateUserRequest)
 func (UnimplementedManageServer) SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPassword not implemented")
 }
-func (UnimplementedManageServer) mustEmbedUnimplementedManageServer() {}
 
 // UnsafeManageServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ManageServer will

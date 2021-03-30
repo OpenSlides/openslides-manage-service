@@ -1,13 +1,48 @@
-package server
+package manage
 
 import (
+	"fmt"
+	"net"
 	"net/url"
 	"reflect"
 	"strings"
+
+	"github.com/OpenSlides/openslides-manage-service/proto"
+	"google.golang.org/grpc"
 )
 
-// Config holds config data for the server.
-type Config struct {
+// RunServer starts the manage server.
+func RunServer(cfg *ServerConfig) error {
+	addr := cfg.Addr()
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("listen on addr %s: %w", addr, err)
+	}
+
+	s := grpc.NewServer()
+	proto.RegisterManageServer(s, newServer(cfg))
+
+	fmt.Printf("Running manage service on %s", addr)
+
+	if err := s.Serve(lis); err != nil {
+		return fmt.Errorf("running service: %w", err)
+	}
+	return nil
+}
+
+// Server implements the manage methods on server side.
+type Server struct {
+	config *ServerConfig
+}
+
+func newServer(cfg *ServerConfig) *Server {
+	return &Server{
+		config: cfg,
+	}
+}
+
+// ServerConfig holds config data for the server.
+type ServerConfig struct {
 	// The struct tag `env` is used to populate the values from environment
 	// variables. The first value is the name of the environment variable. After
 	// a comma the default value can be given. If no default value is given, then
@@ -24,13 +59,13 @@ type Config struct {
 	DatastoreWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`
 }
 
-// ConfigFromEnv creates a Config object where the values are populated from the
+// ServerConfigFromEnv creates a Config object where the values are populated from the
 // environment.
 //
 // Example:
-// cfg := ConfigFromEnv(os.LookupEnv)
-func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
-	c := Config{}
+// cfg := ServerConfigFromEnv(os.LookupEnv)
+func ServerConfigFromEnv(loockup func(string) (string, bool)) *ServerConfig {
+	c := ServerConfig{}
 	v := reflect.ValueOf(&c).Elem()
 	t := reflect.TypeOf(c)
 	for i := 0; i < v.NumField(); i++ {
@@ -54,12 +89,12 @@ func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
 }
 
 // Addr return the address of the manage service.
-func (c *Config) Addr() string {
+func (c *ServerConfig) Addr() string {
 	return c.Host + ":" + c.Port
 }
 
 // AuthURL returns an URL object to the auth service with empty path.
-func (c *Config) AuthURL() url.URL {
+func (c *ServerConfig) AuthURL() url.URL {
 	u := url.URL{
 		Scheme: c.AuthProtocol,
 		Host:   c.AuthHost + ":" + c.AuthPort,
@@ -68,7 +103,7 @@ func (c *Config) AuthURL() url.URL {
 }
 
 // DatastoreWriterURL returns an URL object to the datastore writer service with empty path.
-func (c *Config) DatastoreWriterURL() url.URL {
+func (c *ServerConfig) DatastoreWriterURL() url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreWriterProtocol,
 		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
