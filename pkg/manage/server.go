@@ -13,7 +13,7 @@ import (
 
 // RunServer starts the manage server.
 func RunServer(cfg *ServerConfig) error {
-	addr := cfg.Addr()
+	addr := ":" + cfg.Port
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("listen on addr %s: %w", addr, err)
@@ -47,8 +47,7 @@ type ServerConfig struct {
 	// variables. The first value is the name of the environment variable. After
 	// a comma the default value can be given. If no default value is given, then
 	// an empty string is used. The type of a env field has to be string.
-	Host string `env:"MANAGE_HOST"`
-	Port string `env:"MANAGE_PORT,8001"`
+	Port string `env:"MANAGE_PORT,9008"`
 
 	AuthProtocol string `env:"AUTH_PROTOCOL,http"`
 	AuthHost     string `env:"AUTH_HOST,auth"`
@@ -86,11 +85,6 @@ func ServerConfigFromEnv(loockup func(string) (string, bool)) *ServerConfig {
 		v.Field(i).SetString(envValue)
 	}
 	return &c
-}
-
-// Addr return the address of the manage service.
-func (c *ServerConfig) Addr() string {
-	return ":" + c.Port
 }
 
 // AuthURL returns an URL object to the auth service with empty path.

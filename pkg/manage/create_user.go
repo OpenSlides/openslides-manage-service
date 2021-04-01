@@ -28,7 +28,11 @@ func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 			defer cancel()
 
-			service := Dial(ctx, cfg.Address)
+			service, close, err := Dial(ctx, cfg.Address)
+			if err != nil {
+				return fmt.Errorf("connecting to gRPC server: %w", err)
+			}
+			defer close()
 
 			req := &proto.CreateUserRequest{
 				Username:                    username,

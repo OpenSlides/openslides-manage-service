@@ -35,7 +35,11 @@ func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 			defer cancel()
 
-			service := Dial(ctx, cfg.Address)
+			service, close, err := Dial(ctx, cfg.Address)
+			if err != nil {
+				return fmt.Errorf("connecting to gRPC server: %w", err)
+			}
+			defer close()
 
 			req := &proto.SetPasswordRequest{
 				UserID:   userID,
@@ -57,6 +61,9 @@ func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 
 // SetPassword sets hashes and sets the password
 func (s *Server) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
+	waitForService(ctx, s.config.AuthHost, s.config.AuthPort)
+	waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
+
 	hash, err := hashPassword(ctx, s.config, in.Password)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
