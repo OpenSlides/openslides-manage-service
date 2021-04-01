@@ -22,7 +22,7 @@ func RunServer(cfg *ServerConfig) error {
 	s := grpc.NewServer()
 	proto.RegisterManageServer(s, newServer(cfg))
 
-	fmt.Printf("Running manage service on %s", addr)
+	fmt.Printf("Running manage service on %s\n", addr)
 
 	if err := s.Serve(lis); err != nil {
 		return fmt.Errorf("running service: %w", err)
@@ -90,7 +90,7 @@ func ServerConfigFromEnv(loockup func(string) (string, bool)) *ServerConfig {
 
 // Addr return the address of the manage service.
 func (c *ServerConfig) Addr() string {
-	return c.Host + ":" + c.Port
+	return ":" + c.Port
 }
 
 // AuthURL returns an URL object to the auth service with empty path.

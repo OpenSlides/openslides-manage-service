@@ -2,7 +2,7 @@
 
 Manage service for OpenSlides which provides some management commands. The
 service listens on the port given by environment variable `MANAGE_SERVICE_PORT`
-(default 8001) and uses [gRPC](https://grpc.io/).
+(default 9008) and uses [gRPC](https://grpc.io/).
 
 The client used as follows:
 

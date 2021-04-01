@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+while ! nc -z "$DATASTORE_WRITER_HOST" "$DATASTORE_WRITER_PORT" 2> /dev/null; do
+    echo "waiting for $DATASTORE_WRITER_HOST:$DATASTORE_WRITER_PORT"
+    sleep 1
+done
+echo "$DATASTORE_WRITER_HOST:$DATASTORE_WRITER_PORT is available"
+
+while ! nc -z "$AUTH_HOST" "$AUTH_PORT" 2> /dev/null; do
+    echo "waiting for $AUTH_HOST:$AUTH_PORT"
+    sleep 1
+done
+echo "$AUTH_HOST:$AUTH_PORT is available"
+
+exec "$@"
