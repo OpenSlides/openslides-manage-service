@@ -15,6 +15,7 @@ COPY proto proto
 # Build service in seperate stage.
 FROM base as builder
 RUN go build ./cmd/server
+RUN go build ./cmd/manage
 
 
 # Test build.
@@ -29,7 +30,7 @@ CMD go vet ./... && go test ./...
 FROM base as development
 
 RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
-EXPOSE 8001
+EXPOSE 9008
 
 CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
 
@@ -37,8 +38,13 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 # Productive build.
 FROM alpine:3.13.2
 WORKDIR /root/
+RUN apk add bash
 
 COPY --from=builder /root/server .
-EXPOSE 8001
+COPY --from=builder /root/manage .
+COPY entrypoint .
+COPY entrypoint-setup .
+EXPOSE 9008
 
-CMD ./server
+ENTRYPOINT ["/root/entrypoint"]
+CMD ["/root/server"]

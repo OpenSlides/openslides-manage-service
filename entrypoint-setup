@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+
+warn_insecure_admin() {
+  cat <<-EOF
+                 ==============================================
+                                    WARNING
+                 ==============================================
+                 WARNING: INSECURE ADMIN ACCOUNT CONFIGURATION!
+EOF
+  sleep 10
+}
+
+MANAGE_HOST="${MANAGE_HOST:-manage}"
+MANAGE_PORT="${MANAGE_PORT:-9008}"
+
+while ! nc -z "$MANAGE_HOST" "$MANAGE_PORT" 2> /dev/null; do
+    echo "waiting for $MANAGE_HOST:$MANAGE_PORT"
+    sleep 1
+done
+echo "$MANAGE_HOST:$MANAGE_PORT is available"
+
+source /run/secrets/admin || true
+[[ -n "$OPENSLIDES_ADMIN_PASSWORD" ]] || {
+  warn_insecure_admin
+  OPENSLIDES_ADMIN_PASSWORD="admin"
+}
+
+./manage --address "$MANAGE_HOST:$MANAGE_PORT" set-password --user_id 1 --password "$OPENSLIDES_ADMIN_PASSWORD"
+
+exit 0
