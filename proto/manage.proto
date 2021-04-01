@@ -12,10 +12,7 @@ message CheckServerRequest {
     bool skipClient = 1;
 }
 
-message CheckServerResponse {
-    int64 statusCode = 1;
-    string statusMessage = 2;
-}
+message CheckServerResponse {}
 
 message CreateUserRequest {
     string username = 1;
@@ -29,7 +26,7 @@ message CreateUserResponse {
 
 message SetPasswordRequest {
     int64 userID = 1;
-    string password = 3;
+    string password = 2;
 }
 
 message SetPasswordResponse {};

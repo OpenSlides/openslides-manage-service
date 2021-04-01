@@ -3,6 +3,8 @@ package manage
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
@@ -36,12 +38,10 @@ func CmdCheckServer(cfg *ClientConfig) *cobra.Command {
 				SkipClient: skipClient,
 			}
 
-			resp, err := service.CheckServer(ctx, req)
-			if err != nil {
+			if _, err := service.CheckServer(ctx, req); err != nil {
 				return fmt.Errorf("check server: %w", err)
 			}
 
-			fmt.Printf("%s (code %d)\n", resp.StatusMessage, resp.StatusCode)
 			return nil
 		},
 	}
@@ -53,10 +53,25 @@ func CmdCheckServer(cfg *ClientConfig) *cobra.Command {
 
 // CheckServer sets hashes and sets the password
 func (s *Server) CheckServer(ctx context.Context, in *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
+	// TODO: Check in parallel and use grpc streaming to inform the client.
+	// TODO: Let the client define the services that should be checked.
 
-	resp := new(proto.CheckServerResponse)
-	resp.StatusCode = 1
-	resp.StatusMessage = fmt.Sprintf("Something went wrong: %v", in.SkipClient)
+	waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
+	waitForService(ctx, s.config.AuthHost, s.config.AuthPort)
 
-	return resp, nil
+	return new(proto.CheckServerResponse), ctx.Err()
+}
+
+// waitForService checks if the service at host:port is available.
+//
+// Blocks until the connection is established or the context is canceled or
+// expired.
+func waitForService(ctx context.Context, host, port string) {
+	addr := net.JoinHostPort(host, port)
+	d := net.Dialer{}
+	_, err := d.DialContext(ctx, "tcp", addr)
+	for err != nil && ctx.Err() == nil {
+		time.Sleep(500 * time.Millisecond)
+		_, err := d.DialContext(ctx, "tcp", addr)
+	}
 }
