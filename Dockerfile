@@ -14,7 +14,7 @@ COPY proto proto
 
 # Build service in seperate stage.
 FROM base as builder
-RUN RUN CGO_ENABLED=0 go build ./cmd/autoupdate
+RUN RUN CGO_ENABLED=0 go build ./cmd/server
 
 
 # Test build.
@@ -36,6 +36,6 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 
 # Productive build.
 FROM scratch
-COPY --from=builder /root/autoupdate .
+COPY --from=builder /root/server .
 EXPOSE 9008
-ENTRYPOINT ["/autoupdate"]
+ENTRYPOINT ["/server"]
