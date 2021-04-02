@@ -1,4 +1,4 @@
-FROM golang:1.16.2-alpine3.12 as base
+FROM golang:1.16.3-alpine3.13 as base
 LABEL maintainer="OpenSlides Team <info@openslides.com>"
 WORKDIR /root/
 
@@ -14,7 +14,7 @@ COPY proto proto
 
 # Build service in seperate stage.
 FROM base as builder
-RUN go build ./cmd/server
+RUN RUN CGO_ENABLED=0 go build ./cmd/autoupdate
 
 
 # Test build.
@@ -35,10 +35,7 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 
 
 # Productive build.
-FROM alpine:3.13.2
-
-COPY --from=builder /root/server /root/server
-
+FROM scratch
+COPY --from=builder /root/autoupdate .
 EXPOSE 9008
-
-CMD ["/root/server"]
+ENTRYPOINT ["/autoupdate"]

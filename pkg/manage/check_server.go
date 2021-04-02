@@ -72,6 +72,6 @@ func waitForService(ctx context.Context, host, port string) {
 	_, err := d.DialContext(ctx, "tcp", addr)
 	for err != nil && ctx.Err() == nil {
 		time.Sleep(500 * time.Millisecond)
-		_, err := d.DialContext(ctx, "tcp", addr)
+		_, err = d.DialContext(ctx, "tcp", addr)
 	}
 }
