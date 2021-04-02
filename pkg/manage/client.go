@@ -34,6 +34,7 @@ func RunClient() error {
 		CmdCreateUser(cfg),
 		CmdSetPassword(cfg),
 		CmdCheckServer(cfg),
+		CmdConfig(cfg),
 	)
 	return cmd.Execute()
 }

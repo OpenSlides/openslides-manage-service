@@ -6,6 +6,7 @@ service Manage {
     rpc CheckServer(CheckServerRequest) returns (CheckServerResponse);
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
+    rpc Config(ConfigRequest) returns (ConfigResponse);
 }
 
 message CheckServerRequest {
@@ -30,3 +31,15 @@ message SetPasswordRequest {
 }
 
 message SetPasswordResponse {};
+
+message ConfigRequest {
+    enum Field {
+        VOTING = 0;
+    }
+    Field field = 1;
+    string newValue = 2;
+}
+
+message ConfigResponse {
+    string value = 1;
+}
