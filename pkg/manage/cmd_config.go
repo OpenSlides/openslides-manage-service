@@ -60,12 +60,40 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(&cobra.Command{
-		Use:       "set",
-		Short:     "Set a value",
-		Args:      cobra.ExactValidArgs(1),
-		ValidArgs: values,
+		Use:   "set",
+		Short: "Set a value",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if err := cobra.ExactArgs(2)(cmd, args); err != nil {
+				return err
+			}
+			for _, a := range values {
+				if args[0] == a {
+					return nil
+				}
+			}
+			return fmt.Errorf("invalid argument %s", args[0])
+		},
+		//Args:      cobra.ExactValidArgs(2),
+		//ValidArgs: values,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("set: ", args)
+			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+			defer cancel()
+
+			service, close, err := Dial(ctx, cfg.Address)
+			if err != nil {
+				return fmt.Errorf("connecting to gRPC server: %w", err)
+			}
+			defer close()
+
+			req := &proto.ConfigRequest{
+				Field:    proto.ConfigRequest_Field(proto.ConfigRequest_Field_value[args[0]]),
+				NewValue: args[1],
+			}
+
+			if _, err := service.Config(ctx, req); err != nil {
+				return fmt.Errorf("set config value %s to %s: %w", args[0], args[1], err)
+			}
+
 			return nil
 		},
 	})
@@ -102,5 +130,22 @@ func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.Co
 	}
 
 	// Write value
-	return nil, fmt.Errorf("Write not implemented yes")
+	waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
+
+	var value []byte
+	switch in.NewValue {
+	case "enabled", "true", "1", "on":
+		value = []byte("true")
+	case "disabled", "false", "0", "off":
+		value = []byte("false")
+	default:
+		return nil, fmt.Errorf("invalid new value `%s`, expected `enabled` or `disabled` ", in.NewValue)
+	}
+
+	addr := fmt.Sprintf("%s://%s:%s", s.config.DatastoreWriterProtocol, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
+	if err := datastore.Set(ctx, addr, key, value); err != nil {
+		return nil, fmt.Errorf("writing key %s to %s: %w", key, addr, err)
+	}
+
+	return &proto.ConfigResponse{}, nil
 }
