@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
@@ -74,12 +75,32 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 
 // Config gets or sets an organisation config value.
 func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.ConfigResponse, error) {
+	var key string
 	switch in.Field {
 	case proto.ConfigRequest_VOTING:
+		key = "organisation/1/enable_electronic_voting"
+	default:
+		return nil, fmt.Errorf("Invalid request")
+	}
 
+	if in.NewValue == "" {
+		// Fetch value
+		waitForService(ctx, s.config.DatastoreReaderHost, s.config.DatastoreReaderPort)
+
+		addr := fmt.Sprintf("%s://%s:%s", s.config.DatastoreReaderProtocol, s.config.DatastoreReaderHost, s.config.DatastoreReaderPort)
+		var enabled bool
+		if err := datastore.Get(ctx, addr, key, &enabled); err != nil {
+			return nil, fmt.Errorf("getting key %s from %s: %w", key, addr, err)
+		}
+
+		value := "disabled"
+		if enabled {
+			value = "enabled"
+		}
+
+		return &proto.ConfigResponse{Value: value}, nil
 	}
-	resp := proto.ConfigResponse{
-		Value: in.Field.String(),
-	}
-	return &resp, nil
+
+	// Write value
+	return nil, fmt.Errorf("Write not implemented yes")
 }

@@ -71,7 +71,7 @@ func waitForService(ctx context.Context, host, port string) {
 	d := net.Dialer{}
 	_, err := d.DialContext(ctx, "tcp", addr)
 	for err != nil && ctx.Err() == nil {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		_, err = d.DialContext(ctx, "tcp", addr)
 	}
 }

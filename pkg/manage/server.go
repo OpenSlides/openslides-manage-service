@@ -56,6 +56,10 @@ type ServerConfig struct {
 	DatastoreWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
 	DatastoreWriterHost     string `env:"DATASTORE_WRITER_HOST,datastore-writer"`
 	DatastoreWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`
+
+	DatastoreReaderProtocol string `env:"DATASTORE_READER_PROTOCOL,http"`
+	DatastoreReaderHost     string `env:"DATASTORE_READER_HOST,datastore-reader"`
+	DatastoreReaderPort     string `env:"DATASTORE_READER_PORT,9010"`
 }
 
 // ServerConfigFromEnv creates a Config object where the values are populated from the
