@@ -47,6 +47,8 @@ func Get(ctx context.Context, addr string, key string, value interface{}) error 
 		return fmt.Errorf("decoding response body `%s`: %w", respBody, err)
 	}
 
+	// respData is a map with only one key. The for loop helps to fetch the one
+	// key out of the map.
 	for field := range respData {
 		if err := json.Unmarshal(respData[field], value); err != nil {
 			return fmt.Errorf("decoding response field: %w", err)

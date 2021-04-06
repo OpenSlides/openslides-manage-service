@@ -15,7 +15,7 @@ This command gets or sets the config values for an organisation.
 
 Example:
 
-$ manage config voting
+$ manage config get voting
 disabled
 $ manage config set voting enabled
 $ manage config voting
@@ -34,7 +34,13 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 		Long:      configHelp,
 		Args:      cobra.ExactValidArgs(1),
 		ValidArgs: values,
+	}
 
+	cmd.AddCommand(&cobra.Command{
+		Use:       "get",
+		Short:     "Get a value",
+		Args:      cobra.ExactValidArgs(1),
+		ValidArgs: values,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 			defer cancel()
@@ -57,7 +63,7 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 			fmt.Println(resp.Value)
 			return nil
 		},
-	}
+	})
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "set",
@@ -73,8 +79,6 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 			}
 			return fmt.Errorf("invalid argument %s", args[0])
 		},
-		//Args:      cobra.ExactValidArgs(2),
-		//ValidArgs: values,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 			defer cancel()

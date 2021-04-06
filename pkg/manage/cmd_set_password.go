@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 )
@@ -109,26 +110,11 @@ func hashPassword(ctx context.Context, cfg *ServerConfig, password string) (stri
 }
 
 func setPassword(ctx context.Context, cfg *ServerConfig, userID int, hash string) error {
-	reqBody := fmt.Sprintf(`{"user_id":0,"information":{},"locked_fields":{},"events":[{"type":"update","fqid":"user/%d","fields":{"password":"%s"}}]}`, userID, hash)
-	reqURL := cfg.DatastoreWriterURL()
-	reqURL.Path = datastorWritePath
-	req, err := http.NewRequestWithContext(ctx, "POST", reqURL.String(), strings.NewReader(reqBody))
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("sending request: %w", err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			body = []byte("[can not read body]")
-		}
-		return fmt.Errorf("datastore writer service returned %s: %s", resp.Status, body)
+	key := fmt.Sprintf("user/%d/password", userID)
+	value := []byte(`"` + hash + `"`)
+	addr := fmt.Sprintf("%s://%s:%s", cfg.DatastoreWriterProtocol, cfg.DatastoreWriterHost, cfg.DatastoreWriterPort)
+	if err := datastore.Set(ctx, addr, key, value); err != nil {
+		return fmt.Errorf("writing key %s to %s: %w", key, addr, err)
 	}
 
 	return nil
