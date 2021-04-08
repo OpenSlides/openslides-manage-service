@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
+	"os/signal"
 	"reflect"
 	"strings"
+	"syscall"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
@@ -19,14 +22,19 @@ func RunServer(cfg *ServerConfig) error {
 		return fmt.Errorf("listen on addr %s: %w", addr, err)
 	}
 
-	s := grpc.NewServer()
-	proto.RegisterManageServer(s, newServer(cfg))
+	srv := grpc.NewServer()
+	proto.RegisterManageServer(srv, newServer(cfg))
+
+	go func() {
+		waitForShutdown()
+		srv.GracefulStop()
+	}()
 
 	fmt.Printf("Running manage service on %s\n", addr)
-
-	if err := s.Serve(lis); err != nil {
+	if err := srv.Serve(lis); err != nil {
 		return fmt.Errorf("running service: %w", err)
 	}
+
 	return nil
 }
 
@@ -107,4 +115,21 @@ func (c *ServerConfig) DatastoreWriterURL() url.URL {
 		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
 	}
 	return u
+}
+
+// waitForShutdown blocks until the service exists.
+//
+// It listens on SIGINT and SIGTERM. If the signal is received for a second
+// time, the process is killed with statuscode 1.
+func waitForShutdown() {
+	sigint := make(chan os.Signal, 1)
+	// syscall.SIGTERM is not pressent on all plattforms. Since the autoupdate
+	// service is only run on linux, this is ok. If other plattforms should be
+	// supported, os.Interrupt should be used instead.
+	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
+	<-sigint
+	go func() {
+		<-sigint
+		os.Exit(1)
+	}()
 }

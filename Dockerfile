@@ -14,7 +14,7 @@ COPY proto proto
 
 # Build service in seperate stage.
 FROM base as builder
-RUN RUN CGO_ENABLED=0 go build ./cmd/server
+RUN CGO_ENABLED=0 go build ./cmd/server
 
 
 # Test build.
