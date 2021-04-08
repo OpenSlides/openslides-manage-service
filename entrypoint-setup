@@ -1,0 +1,66 @@
+#!/bin/bash
+
+set -e
+
+warn_insecure_admin() {
+  cat <<-EOF
+                 ==============================================
+                                    WARNING
+                 ==============================================
+                 WARNING: INSECURE ADMIN ACCOUNT CONFIGURATION!
+EOF
+  sleep 10
+}
+
+MANAGE_HOST="${MANAGE_HOST:-manage}"
+MANAGE_PORT="${MANAGE_PORT:-9008}"
+
+# Wait for manage service
+while ! nc -z "$MANAGE_HOST" "$MANAGE_PORT" 2> /dev/null; do
+    echo "waiting for $MANAGE_HOST:$MANAGE_PORT"
+    sleep 1
+done
+echo "$MANAGE_HOST:$MANAGE_PORT is available"
+
+# Wait for management dependent services
+# This does not work
+#while ! ./manage --address "$MANAGE_HOST:$MANAGE_PORT" --timeout 1s check-server 2> /dev/null; do
+#    echo "waiting for dependent services"
+#done
+#echo "Dependent services are online"
+
+while ! nc -z "$DATASTORE_WRITER_HOST" "$DATASTORE_WRITER_PORT" 2> /dev/null; do
+    echo "waiting for $DATASTORE_WRITER_HOST:$DATASTORE_WRITER_PORT"
+    sleep 1
+done
+echo "$DATASTORE_WRITER_HOST:$DATASTORE_WRITER_PORT is available"
+
+while ! nc -z "$DATASTORE_READER_HOST" "$DATASTORE_READER_PORT" 2> /dev/null; do
+    echo "waiting for $DATASTORE_READER_HOST:$DATASTORE_READER_PORT"
+    sleep 1
+done
+echo "$DATASTORE_READER_HOST:$DATASTORE_READER_PORT is available"
+
+while ! nc -z "$AUTH_HOST" "$AUTH_PORT"; do
+    echo "waiting for $AUTH_HOST:$AUTH_PORT"
+    sleep 1
+done
+echo "$AUTH_HOST:$AUTH_PORT is available"
+
+# Set admin password
+source /run/secrets/admin || true
+[[ -n "$OPENSLIDES_ADMIN_PASSWORD" ]] || {
+    warn_insecure_admin
+    OPENSLIDES_ADMIN_PASSWORD="admin"
+}
+./manage --address "$MANAGE_HOST:$MANAGE_PORT" set-password --user_id 1 --password "$OPENSLIDES_ADMIN_PASSWORD"
+
+# Enable/Disable electronic voting
+argument="disabled"
+if [[ -n $ENABLE_ELECTRONIC_VOTING ]]; then
+    argument="enabled"
+fi
+./manage --address "$MANAGE_HOST:$MANAGE_PORT" config set voting $argument
+echo "$argument electronic voting"
+
+exit 0

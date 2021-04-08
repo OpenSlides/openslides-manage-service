@@ -62,8 +62,8 @@ func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 
 // SetPassword sets hashes and sets the password
 func (s *Server) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	waitForService(ctx, s.config.AuthHost, s.config.AuthPort)
-	waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
+	// waitForService(ctx, s.config.AuthHost, s.config.AuthPort)
+	// waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
 
 	hash, err := hashPassword(ctx, s.config, in.Password)
 	if err != nil {
