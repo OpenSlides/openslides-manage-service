@@ -69,9 +69,10 @@ func (s *Server) CheckServer(ctx context.Context, in *proto.CheckServerRequest) 
 func waitForService(ctx context.Context, host, port string) {
 	addr := net.JoinHostPort(host, port)
 	d := net.Dialer{}
-	_, err := d.DialContext(ctx, "tcp", addr)
+	con, err := d.DialContext(ctx, "tcp", addr)
 	for err != nil && ctx.Err() == nil {
 		time.Sleep(100 * time.Millisecond)
-		_, err = d.DialContext(ctx, "tcp", addr)
+		con, err = d.DialContext(ctx, "tcp", addr)
 	}
+	con.Close()
 }
