@@ -1,0 +1,46 @@
+name: Check Commands in README.md
+on: [pull_request]
+jobs:
+  readme:
+    name: Readme
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Go 1.16
+      uses: actions/setup-go@v2.1.3
+      with:
+        go-version: 1.16
+      id: go
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Build and start server with golang
+      run: |
+        go build ./cmd/server
+        timeout --preserve-status 2s ./server
+
+    - name: Build and start manage with golang
+      run: |
+        go build ./cmd/manage
+        ./manage
+
+    - name: Build and start server With Docker
+      run: |
+        go build ./cmd/manage
+        docker build . --tag openslides-manage
+        timeout --preserve-status 2s docker run openslides-manage
+      env:
+        DOCKER_BUILDKIT: 1
+
+    - name: Start server with Auto Restart
+      run: |
+        make build-dev
+        timeout --preserve-status 2s docker run openslides-manage-dev
+      env:
+        DOCKER_BUILDKIT: 1
+
+    - name: Test With With Make
+      run: make run-tests
+      env:
+        DOCKER_BUILDKIT: 1
