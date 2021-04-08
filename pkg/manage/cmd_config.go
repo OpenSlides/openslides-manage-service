@@ -15,17 +15,17 @@ This command gets or sets the config values for an organisation.
 
 Example:
 
-$ manage config get voting
+$ manage config get electronic_voting
 disabled
-$ manage config set voting enabled
-$ manage config voting
+$ manage config set electronic_voting enabled
+$ manage config electronic_voting
 enabled
 `
 
 // CmdConfig initializes the config command.
 func CmdConfig(cfg *ClientConfig) *cobra.Command {
 	values := []string{
-		"voting",
+		"electronic_voting",
 	}
 
 	cmd := &cobra.Command{
@@ -109,7 +109,7 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.ConfigResponse, error) {
 	var key string
 	switch in.Field {
-	case proto.ConfigRequest_VOTING:
+	case proto.ConfigRequest_ELECTRONIC_VOTING:
 		key = "organisation/1/enable_electronic_voting"
 	default:
 		return nil, fmt.Errorf("Invalid request")

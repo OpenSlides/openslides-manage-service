@@ -34,7 +34,7 @@ message SetPasswordResponse {};
 
 message ConfigRequest {
     enum Field {
-        VOTING = 0;
+        ELECTRONIC_VOTING = 0;
     }
     Field field = 1;
     string newValue = 2;
