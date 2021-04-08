@@ -11,10 +11,18 @@ import (
 
 // Get gets a fqField from the datastore.
 func Get(ctx context.Context, addr string, key string, value interface{}) error {
-	reqBody, err := getRequestBody(key)
-	if err != nil {
-		return fmt.Errorf("building request body: %w", err)
+	keyParts := strings.Split(key, "/")
+	if len(keyParts) != 3 {
+		return fmt.Errorf("invalid key %s, expected two `/`", key)
 	}
+
+	reqBody := fmt.Sprintf(
+		`{
+			"fqid": "%s/%s",
+			"mapped_fields": ["%s"]
+		}`,
+		keyParts[0], keyParts[1], keyParts[2],
+	)
 
 	req, err := http.NewRequestWithContext(ctx, "POST", addr+"/internal/datastore/reader/get", strings.NewReader(reqBody))
 	if err != nil {
@@ -47,15 +55,11 @@ func Get(ctx context.Context, addr string, key string, value interface{}) error 
 		return fmt.Errorf("decoding response body `%s`: %w", respBody, err)
 	}
 
-	// respData is a map with only one key. The for loop helps to fetch the one
-	// key out of the map.
-	for field := range respData {
-		if err := json.Unmarshal(respData[field], value); err != nil {
-			return fmt.Errorf("decoding response field: %w", err)
-		}
-		return nil
+	if err := json.Unmarshal(respData[keyParts[2]], value); err != nil {
+		return fmt.Errorf("decoding response field: %w", err)
 	}
-	return fmt.Errorf("datastore returned no data")
+
+	return nil
 }
 
 // Set sets a fqField at the datastore. Value has to be json.
@@ -97,18 +101,4 @@ func Set(ctx context.Context, addr, key string, value json.RawMessage) error {
 	}
 
 	return nil
-}
-
-func getRequestBody(key string) (string, error) {
-	parts := strings.Split(key, "/")
-	if len(parts) != 3 {
-		return "", fmt.Errorf("invalid key %s, expected two `/`", key)
-	}
-	return fmt.Sprintf(
-		`{
-			"fqid": "%s/%s",
-			"mapped_fields": ["%s"]
-		}`,
-		parts[0], parts[1], parts[2],
-	), nil
 }
