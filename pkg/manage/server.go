@@ -53,6 +53,10 @@ type ServerConfig struct {
 	AuthHost     string `env:"AUTH_HOST,auth"`
 	AuthPort     string `env:"AUTH_PORT,9004"`
 
+	DatastoreReaderProtocol string `env:"DATASTORE_READER_PROTOCOL,http"`
+	DatastoreReaderHost     string `env:"DATASTORE_READER_HOST,datastore-reader"`
+	DatastoreReaderPort     string `env:"DATASTORE_READER_PORT,9010"`
+
 	DatastoreWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
 	DatastoreWriterHost     string `env:"DATASTORE_WRITER_HOST,datastore-writer"`
 	DatastoreWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`

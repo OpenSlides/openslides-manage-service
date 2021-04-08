@@ -21,6 +21,7 @@ type ManageClient interface {
 	CheckServer(ctx context.Context, in *CheckServerRequest, opts ...grpc.CallOption) (*CheckServerResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
+	Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error)
 }
 
 type manageClient struct {
@@ -58,6 +59,15 @@ func (c *manageClient) SetPassword(ctx context.Context, in *SetPasswordRequest, 
 	return out, nil
 }
 
+func (c *manageClient) Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error) {
+	out := new(ConfigResponse)
+	err := c.cc.Invoke(ctx, "/Manage/Config", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ManageServer is the server API for Manage service.
 // All implementations should embed UnimplementedManageServer
 // for forward compatibility
@@ -65,6 +75,7 @@ type ManageServer interface {
 	CheckServer(context.Context, *CheckServerRequest) (*CheckServerResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
+	Config(context.Context, *ConfigRequest) (*ConfigResponse, error)
 }
 
 // UnimplementedManageServer should be embedded to have forward compatible implementations.
@@ -79,6 +90,9 @@ func (UnimplementedManageServer) CreateUser(context.Context, *CreateUserRequest)
 }
 func (UnimplementedManageServer) SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPassword not implemented")
+}
+func (UnimplementedManageServer) Config(context.Context, *ConfigRequest) (*ConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Config not implemented")
 }
 
 // UnsafeManageServer may be embedded to opt out of forward compatibility for this service.
@@ -146,6 +160,24 @@ func _Manage_SetPassword_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Manage_Config_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManageServer).Config(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/Config",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).Config(ctx, req.(*ConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Manage_ServiceDesc is the grpc.ServiceDesc for Manage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -164,6 +196,10 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetPassword",
 			Handler:    _Manage_SetPassword_Handler,
+		},
+		{
+			MethodName: "Config",
+			Handler:    _Manage_Config_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
