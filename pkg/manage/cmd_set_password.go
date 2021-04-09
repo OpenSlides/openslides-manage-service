@@ -58,7 +58,7 @@ func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 		}
 
 		if *onlyUpdate {
-			msg := "Password did already exist."
+			msg := "User does already have an existing password. Password was not changed."
 			if resp.PasswordSet {
 				msg = "Password was set."
 			}
