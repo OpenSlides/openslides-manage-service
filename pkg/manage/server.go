@@ -143,10 +143,10 @@ func waitForShutdown() {
 	}()
 }
 
-// waitForService checks if the service at host:port is available.
+// waitForService checks that all services at the given addresses are available.
 //
-// Blocks until the connection is established or the context is canceled or
-// expired.
+// Blocks until a connection to any of the services can be established or the
+// context is canceled.
 func waitForService(ctx context.Context, addrs ...string) {
 	d := net.Dialer{}
 
