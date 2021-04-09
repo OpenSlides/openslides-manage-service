@@ -102,30 +102,30 @@ func ServerConfigFromEnv(loockup func(string) (string, bool)) *ServerConfig {
 }
 
 // AuthURL returns an URL object to the auth service with empty path.
-func (c *ServerConfig) AuthURL() url.URL {
+func (c *ServerConfig) AuthURL() *url.URL {
 	u := url.URL{
 		Scheme: c.AuthProtocol,
 		Host:   c.AuthHost + ":" + c.AuthPort,
 	}
-	return u
+	return &u
 }
 
 // DatastoreReaderURL returns an URL object to the datastore reader service with empty path.
-func (c *ServerConfig) DatastoreReaderURL() url.URL {
+func (c *ServerConfig) DatastoreReaderURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreReaderProtocol,
 		Host:   c.DatastoreReaderHost + ":" + c.DatastoreReaderPort,
 	}
-	return u
+	return &u
 }
 
 // DatastoreWriterURL returns an URL object to the datastore writer service with empty path.
-func (c *ServerConfig) DatastoreWriterURL() url.URL {
+func (c *ServerConfig) DatastoreWriterURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreWriterProtocol,
 		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
 	}
-	return u
+	return &u
 }
 
 // waitForShutdown blocks until the service exists.
