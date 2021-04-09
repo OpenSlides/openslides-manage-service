@@ -79,7 +79,7 @@ func (s *Server) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) 
 		waitForService(ctx, s.config.DatastoreReaderURL().Host)
 		key := fmt.Sprintf("user/%d/password", in.UserID)
 		var oldPassword string
-		if err := datastore.Get(ctx, s.config.DatastoreReaderURL().String(), key, oldPassword); err != nil {
+		if err := datastore.Get(ctx, s.config.DatastoreReaderURL().String(), key, &oldPassword); err != nil {
 			return nil, fmt.Errorf("fetching old password: %w", err)
 		}
 
