@@ -117,7 +117,7 @@ func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.Co
 
 	if in.NewValue == "" {
 		// Fetch value
-		waitForService(ctx, s.config.DatastoreReaderHost, s.config.DatastoreReaderPort)
+		waitForService(ctx, s.config.DatastoreReaderURL().Host)
 
 		addr := fmt.Sprintf("%s://%s:%s", s.config.DatastoreReaderProtocol, s.config.DatastoreReaderHost, s.config.DatastoreReaderPort)
 		var enabled bool
@@ -134,7 +134,7 @@ func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.Co
 	}
 
 	// Write value
-	waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
+	waitForService(ctx, s.config.DatastoreReaderURL().Host)
 
 	var value []byte
 	switch in.NewValue {
