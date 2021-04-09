@@ -58,11 +58,11 @@ func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 		}
 
 		if *onlyUpdate {
+			msg := "Password did already exist."
 			if resp.PasswordSet {
-				fmt.Printf("Password was set.")
-			} else {
-				fmt.Printf("Password did already exist.")
+				msg = "Password was set."
 			}
+			fmt.Println(msg)
 		}
 		return nil
 	}
