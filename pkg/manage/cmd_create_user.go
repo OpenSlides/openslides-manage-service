@@ -9,16 +9,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const createUsersHelp = `Creates a user account
+const createUsersHelp = `Creates an user account
 
-This command creates a user account on the server.
+This command creates an user account on the server.
 `
 
 // CmdCreateUser initializes the create-user command.
 func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-user",
-		Short: "Creates a user account.",
+		Short: "Creates an user account.",
 		Long:  createUsersHelp,
 	}
 
