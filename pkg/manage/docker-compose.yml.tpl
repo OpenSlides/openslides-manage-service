@@ -110,7 +110,7 @@ services:
       - frontend
       - datastore-reader
       - message-bus
-      - auth
+      - cache
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -118,7 +118,7 @@ services:
   cache:
     image: redis:latest
     networks:
-      - auth
+      - cache
 
   message-bus:
     image: redis:latest
@@ -141,8 +141,9 @@ services:
     build:
       context: https://github.com/OpenSlides/openslides-manage-service.git#{{ .CommitID.manage }}
     depends_on:
-    - auth
+    - datastore-reader
     - datastore-writer
+    - auth
     env_file: services.env
     ports:
     - "127.0.0.1:{ .ExternalManagePort }:9008"
@@ -150,8 +151,8 @@ services:
     - uplink
     - frontend
     - backend
-    - auth
 
+# TODO: Remove this service so the networks won't matter any more.
   permission:
     build:
       context: https://github.com/OpenSlides/openslides-permission-service.git#{{ .CommitID.permission }}
@@ -159,8 +160,8 @@ services:
     - datastore-reader
     env_file: services.env
     networks:
+    - frontend
     - backend
-    - auth
 
 # Setup: host <-uplink-> proxy <-frontend-> services that are reachable from the client <-backend-> services that are internal-only
 # There are special networks for some services only, e.g. postgres only for the postgresql, datastore reader and datastore writer
@@ -176,7 +177,7 @@ networks:
     internal: true
   message-bus:
     internal: true
-  auth:
+  cache:
     internal: true
 
 secrets:

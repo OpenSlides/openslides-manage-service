@@ -63,6 +63,7 @@ var defaultDockerCompose string
 func writeDockerComposeYML(w io.Writer) error {
 	// TODO:
 	// * Fetch commit hashes for submodules.
+	// * Use services.env https://github.com/OpenSlides/OpenSlides/blob/openslides4-dev/docker/services.env
 
 	composeTPL, err := template.New("compose").Parse(defaultDockerCompose)
 	if err != nil {
