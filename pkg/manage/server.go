@@ -125,7 +125,7 @@ func (c *ServerConfig) DatastoreWriterURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreWriterProtocol,
 		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
-		Path:   "internal/datastore/writer",
+		Path:   "/internal/datastore/writer",
 	}
 	return &u
 }

@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	datastoreReaderGetSubpath   = "/get"
-	datastoreWriterWriteSubpath = "/write"
+	getSubpath   = "/get"
+	writeSubpath = "/write"
 )
 
 // Get fetches a FQField from the datastore.
@@ -29,7 +29,7 @@ func Get(ctx context.Context, readerURL *url.URL, key string, value interface{})
 		}`,
 		keyParts[0], keyParts[1], keyParts[2],
 	)
-	addr := readerURL.String() + datastoreReaderGetSubpath
+	addr := readerURL.String() + getSubpath
 
 	req, err := http.NewRequestWithContext(ctx, "POST", addr, strings.NewReader(reqBody))
 	if err != nil {
@@ -69,7 +69,7 @@ func Get(ctx context.Context, readerURL *url.URL, key string, value interface{})
 	return nil
 }
 
-// Set sets a fqField at the datastore. Value has to be json.
+// Set sets a FQField at the datastore. Value has to be json.
 func Set(ctx context.Context, writerURL *url.URL, key string, value json.RawMessage) error {
 	parts := strings.Split(key, "/")
 	if len(parts) != 3 {
@@ -86,7 +86,7 @@ func Set(ctx context.Context, writerURL *url.URL, key string, value json.RawMess
 		}`,
 		parts[0], parts[1], parts[2], value,
 	)
-	addr := writerURL.String() + datastoreWriterWriteSubpath
+	addr := writerURL.String() + writeSubpath
 
 	req, err := http.NewRequestWithContext(ctx, "POST", addr, strings.NewReader(reqBody))
 	if err != nil {
