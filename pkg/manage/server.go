@@ -115,6 +115,7 @@ func (c *ServerConfig) DatastoreReaderURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreReaderProtocol,
 		Host:   c.DatastoreReaderHost + ":" + c.DatastoreReaderPort,
+		Path:   "/internal/datastore/reader",
 	}
 	return &u
 }
@@ -124,6 +125,7 @@ func (c *ServerConfig) DatastoreWriterURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreWriterProtocol,
 		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
+		Path:   "/internal/datastore/writer",
 	}
 	return &u
 }

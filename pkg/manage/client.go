@@ -31,6 +31,7 @@ func RunClient() error {
 	cfg := new(ClientConfig)
 	cmd := cmdRoot(cfg)
 	cmd.AddCommand(
+		CmdStart(cfg),
 		CmdCreateUser(cfg),
 		CmdSetPassword(cfg),
 		CmdCheckServer(cfg),

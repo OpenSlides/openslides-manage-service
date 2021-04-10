@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const configHelp = `Get or set config values
+const configHelp = `Gets or sets config values
 
 This command gets or sets the config values for an organisation.
 
@@ -17,8 +17,9 @@ Example:
 
 $ manage config get electronic_voting
 disabled
+
 $ manage config set electronic_voting enabled
-$ manage config electronic_voting
+$ manage config get electronic_voting
 enabled
 `
 
@@ -30,7 +31,7 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:       "config",
-		Short:     "Get or set config values.",
+		Short:     "Gets or sets config values.",
 		Long:      configHelp,
 		Args:      cobra.ExactValidArgs(1),
 		ValidArgs: values,
@@ -116,40 +117,51 @@ func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.Co
 	}
 
 	if in.NewValue == "" {
-		// Fetch value
-		waitForService(ctx, s.config.DatastoreReaderURL().Host)
-
-		addr := fmt.Sprintf("%s://%s:%s", s.config.DatastoreReaderProtocol, s.config.DatastoreReaderHost, s.config.DatastoreReaderPort)
-		var enabled bool
-		if err := datastore.Get(ctx, addr, key, &enabled); err != nil {
-			return nil, fmt.Errorf("getting key %s from %s: %w", key, addr, err)
+		v, err := getConfig(ctx, s.config, key)
+		if err != nil {
+			return nil, fmt.Errorf("getting config value: %w", err)
 		}
-
-		value := "disabled"
-		if enabled {
-			value = "enabled"
-		}
-
-		return &proto.ConfigResponse{Value: value}, nil
+		return &proto.ConfigResponse{Value: v}, nil
 	}
 
-	// Write value
-	waitForService(ctx, s.config.DatastoreReaderURL().Host)
+	if err := setConfig(ctx, s.config, key, in.NewValue); err != nil {
+		return nil, fmt.Errorf("setting config value: %w", err)
+	}
+	return &proto.ConfigResponse{}, nil
+}
+
+// getConfig fetches the organisation config value from datastore.
+func getConfig(ctx context.Context, cfg *ServerConfig, key string) (string, error) {
+	waitForService(ctx, cfg.DatastoreReaderURL().Host)
+
+	var enabled bool
+	if err := datastore.Get(ctx, cfg.DatastoreReaderURL(), key, &enabled); err != nil {
+		return "", fmt.Errorf("getting key %s from datastore: %w", key, err)
+	}
+
+	if enabled {
+		return "enabled", nil
+	}
+	return "disabled", nil
+
+}
+
+// setConfig sets the given organisation config value in datastore.
+func setConfig(ctx context.Context, cfg *ServerConfig, key string, newValue string) error {
+	waitForService(ctx, cfg.DatastoreReaderURL().Host)
 
 	var value []byte
-	switch in.NewValue {
+	switch newValue {
 	case "enabled", "true", "1", "on":
 		value = []byte("true")
 	case "disabled", "false", "0", "off":
 		value = []byte("false")
 	default:
-		return nil, fmt.Errorf("invalid new value `%s`, expected `enabled` or `disabled` ", in.NewValue)
+		return fmt.Errorf("invalid new value `%s`, expected `enabled` or `disabled` ", newValue)
 	}
 
-	addr := fmt.Sprintf("%s://%s:%s", s.config.DatastoreWriterProtocol, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
-	if err := datastore.Set(ctx, addr, key, value); err != nil {
-		return nil, fmt.Errorf("writing key %s to %s: %w", key, addr, err)
+	if err := datastore.Set(ctx, cfg.DatastoreWriterURL(), key, value); err != nil {
+		return fmt.Errorf("writing key %s to datastore: %w", key, err)
 	}
-
-	return &proto.ConfigResponse{}, nil
+	return nil
 }

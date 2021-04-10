@@ -16,35 +16,34 @@ listening on their respective ports.
 
 // CmdCheckServer checks if all OpenSlides services are running.
 func CmdCheckServer(cfg *ClientConfig) *cobra.Command {
-	var skipClient bool
-
 	cmd := &cobra.Command{
 		Use:   "check-server",
 		Short: "Checks if all services are running.",
 		Long:  checkServerHelp,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
-			defer cancel()
-
-			service, close, err := Dial(ctx, cfg.Address)
-			if err != nil {
-				return fmt.Errorf("connecting to gRPC server: %w", err)
-			}
-			defer close()
-
-			req := &proto.CheckServerRequest{
-				SkipClient: skipClient,
-			}
-
-			if _, err := service.CheckServer(ctx, req); err != nil {
-				return fmt.Errorf("check server: %w", err)
-			}
-
-			return nil
-		},
 	}
 
-	cmd.Flags().BoolVar(&skipClient, "skip-client", false, "Skip checking the client")
+	skipClient := cmd.Flags().Bool("skip-client", false, "Skip checking the client")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+		defer cancel()
+
+		service, close, err := Dial(ctx, cfg.Address)
+		if err != nil {
+			return fmt.Errorf("connecting to gRPC server: %w", err)
+		}
+		defer close()
+
+		req := &proto.CheckServerRequest{
+			SkipClient: *skipClient,
+		}
+
+		if _, err := service.CheckServer(ctx, req); err != nil {
+			return fmt.Errorf("check server: %w", err)
+		}
+
+		return nil
+	}
 
 	return cmd
 }
@@ -56,5 +55,5 @@ func (s *Server) CheckServer(ctx context.Context, in *proto.CheckServerRequest) 
 
 	waitForService(ctx, s.config.DatastoreWriterURL().Host, s.config.AuthURL().Host)
 
-	return new(proto.CheckServerResponse), ctx.Err()
+	return &proto.CheckServerResponse{}, ctx.Err()
 }
