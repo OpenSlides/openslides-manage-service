@@ -3,3 +3,6 @@
 # Binaries
 /server
 /manage
+
+# Generated file
+docker-compose.yml
