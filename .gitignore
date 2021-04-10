@@ -4,5 +4,6 @@
 /server
 /manage
 
-# Generated file
+# Generated files
 docker-compose.yml
+secrets/
