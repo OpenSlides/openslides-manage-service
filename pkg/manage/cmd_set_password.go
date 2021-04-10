@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
@@ -25,63 +26,84 @@ This command sets the password of a user by a given user id.
 
 // CmdSetPassword initializes the set-password command.
 func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
-	var userID int64
-	var password string
-
 	cmd := &cobra.Command{
 		Use:   "set-password",
 		Short: "Sets an user password.",
 		Long:  setPasswordHelp,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
-			defer cancel()
-
-			service, close, err := Dial(ctx, cfg.Address)
-			if err != nil {
-				return fmt.Errorf("connecting to gRPC server: %w", err)
-			}
-			defer close()
-
-			req := &proto.SetPasswordRequest{
-				UserID:   userID,
-				Password: password,
-			}
-
-			if _, err := service.SetPassword(ctx, req); err != nil {
-				return fmt.Errorf("reset password: %w", err)
-			}
-			return nil
-		},
 	}
 
-	cmd.Flags().Int64VarP(&userID, "user_id", "u", 1, "ID of the user account")
-	cmd.Flags().StringVarP(&password, "password", "p", "admin", "New password for the user")
+	userID := cmd.Flags().Int64P("user_id", "u", 1, "ID of the user account.")
+	password := cmd.Flags().StringP("password", "p", "admin", "New password for the user.")
+	onlyUpdate := cmd.Flags().Bool("update", false, "Do not overwrite an existing password.")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+		defer cancel()
+
+		service, close, err := Dial(ctx, cfg.Address)
+		if err != nil {
+			return fmt.Errorf("connecting to gRPC server: %w", err)
+		}
+		defer close()
+
+		req := &proto.SetPasswordRequest{
+			UserID:     *userID,
+			Password:   *password,
+			OnlyUpdate: *onlyUpdate,
+		}
+
+		resp, err := service.SetPassword(ctx, req)
+		if err != nil {
+			return fmt.Errorf("reset password: %w", err)
+		}
+
+		if *onlyUpdate {
+			msg := "User does already have an existing password. Password was not changed."
+			if resp.PasswordSet {
+				msg = "Password was set."
+			}
+			fmt.Println(msg)
+		}
+		return nil
+	}
 
 	return cmd
 }
 
-// SetPassword sets hashes and sets the password
+// SetPassword sets hashes and sets the password.
 func (s *Server) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	waitForService(ctx, s.config.AuthHost, s.config.AuthPort)
-	waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
+	waitForService(ctx, s.config.AuthURL().Host, s.config.DatastoreWriterURL().Host)
 
-	hash, err := hashPassword(ctx, s.config, in.Password)
+	if in.OnlyUpdate {
+		// Check if the current password exists.
+		waitForService(ctx, s.config.DatastoreReaderURL().Host)
+		key := fmt.Sprintf("user/%d/password", in.UserID)
+		var oldPassword string
+		if err := datastore.Get(ctx, s.config.DatastoreReaderURL().String(), key, &oldPassword); err != nil {
+			return nil, fmt.Errorf("fetching old password: %w", err)
+		}
+
+		if oldPassword != "" {
+			return &proto.SetPasswordResponse{PasswordSet: false}, nil
+		}
+	}
+
+	hash, err := hashPassword(ctx, s.config.AuthURL(), in.Password)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	if err := setPassword(ctx, s.config, int(in.UserID), hash); err != nil {
+	if err := setPassword(ctx, s.config.DatastoreWriterURL(), int(in.UserID), hash); err != nil {
 		return nil, fmt.Errorf("set password: %w", err)
 	}
-	return new(proto.SetPasswordResponse), nil
+	return &proto.SetPasswordResponse{PasswordSet: true}, nil
 }
 
 // hashPassword returns the hashed form of password as a JSON.
-func hashPassword(ctx context.Context, cfg *ServerConfig, password string) (string, error) {
+func hashPassword(ctx context.Context, authAddr *url.URL, password string) (string, error) {
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)
-	reqURL := cfg.AuthURL()
-	reqURL.Path = authHashPath
-	req, err := http.NewRequestWithContext(ctx, "POST", reqURL.String(), strings.NewReader(reqBody))
+	authAddr.Path = authHashPath
+	req, err := http.NewRequestWithContext(ctx, "POST", authAddr.String(), strings.NewReader(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("creating request to auth service: %w", err)
 	}
@@ -109,12 +131,11 @@ func hashPassword(ctx context.Context, cfg *ServerConfig, password string) (stri
 	return respBody.Hash, nil
 }
 
-func setPassword(ctx context.Context, cfg *ServerConfig, userID int, hash string) error {
+func setPassword(ctx context.Context, writerURL *url.URL, userID int, hash string) error {
 	key := fmt.Sprintf("user/%d/password", userID)
 	value := []byte(`"` + hash + `"`)
-	addr := fmt.Sprintf("%s://%s:%s", cfg.DatastoreWriterProtocol, cfg.DatastoreWriterHost, cfg.DatastoreWriterPort)
-	if err := datastore.Set(ctx, addr, key, value); err != nil {
-		return fmt.Errorf("writing key %s to %s: %w", key, addr, err)
+	if err := datastore.Set(ctx, writerURL.String(), key, value); err != nil {
+		return fmt.Errorf("writing key %s to %s: %w", key, writerURL.String(), err)
 	}
 
 	return nil

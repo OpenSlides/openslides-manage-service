@@ -18,7 +18,7 @@ jobs:
     - name: Build and start server with golang
       run: |
         go build ./cmd/server
-        timeout --preserve-status 2s ./server
+        timeout --preserve-status --signal SIGINT 2s ./server
 
     - name: Build and start manage with golang
       run: |
@@ -29,14 +29,14 @@ jobs:
       run: |
         go build ./cmd/manage
         docker build . --tag openslides-manage
-        timeout --preserve-status 2s docker run openslides-manage
+        timeout --preserve-status --signal SIGINT 2s docker run openslides-manage
       env:
         DOCKER_BUILDKIT: 1
 
     - name: Start server with Auto Restart
       run: |
         make build-dev
-        timeout --preserve-status 2s docker run openslides-manage-dev
+        timeout --preserve-status --signal SIGINT 2s docker run openslides-manage-dev
       env:
         DOCKER_BUILDKIT: 1
 

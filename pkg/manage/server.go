@@ -1,6 +1,7 @@
 package manage
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
@@ -8,7 +9,8 @@ import (
 	"os/signal"
 	"reflect"
 	"strings"
-	"syscall"
+	"sync"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
@@ -100,21 +102,30 @@ func ServerConfigFromEnv(loockup func(string) (string, bool)) *ServerConfig {
 }
 
 // AuthURL returns an URL object to the auth service with empty path.
-func (c *ServerConfig) AuthURL() url.URL {
+func (c *ServerConfig) AuthURL() *url.URL {
 	u := url.URL{
 		Scheme: c.AuthProtocol,
 		Host:   c.AuthHost + ":" + c.AuthPort,
 	}
-	return u
+	return &u
+}
+
+// DatastoreReaderURL returns an URL object to the datastore reader service with empty path.
+func (c *ServerConfig) DatastoreReaderURL() *url.URL {
+	u := url.URL{
+		Scheme: c.DatastoreReaderProtocol,
+		Host:   c.DatastoreReaderHost + ":" + c.DatastoreReaderPort,
+	}
+	return &u
 }
 
 // DatastoreWriterURL returns an URL object to the datastore writer service with empty path.
-func (c *ServerConfig) DatastoreWriterURL() url.URL {
+func (c *ServerConfig) DatastoreWriterURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreWriterProtocol,
 		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
 	}
-	return u
+	return &u
 }
 
 // waitForShutdown blocks until the service exists.
@@ -123,13 +134,41 @@ func (c *ServerConfig) DatastoreWriterURL() url.URL {
 // time, the process is killed with statuscode 1.
 func waitForShutdown() {
 	sigint := make(chan os.Signal, 1)
-	// syscall.SIGTERM is not pressent on all plattforms. Since the autoupdate
-	// service is only run on linux, this is ok. If other plattforms should be
-	// supported, os.Interrupt should be used instead.
-	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
+
+	signal.Notify(sigint, os.Interrupt)
 	<-sigint
 	go func() {
 		<-sigint
 		os.Exit(1)
 	}()
+}
+
+// waitForService checks that all services at the given addresses are available.
+//
+// Blocks until a connection to any of the services can be established or the
+// context is canceled.
+func waitForService(ctx context.Context, addrs ...string) {
+	d := net.Dialer{}
+
+	var wg sync.WaitGroup
+	for _, addr := range addrs {
+		wg.Add(1)
+		go func(addr string) {
+			defer wg.Done()
+
+			con, err := d.DialContext(ctx, "tcp", addr)
+			for err != nil {
+				if ctx.Err() != nil {
+					// Time is up, dont try again.
+					return
+				}
+
+				time.Sleep(100 * time.Millisecond)
+				con, err = d.DialContext(ctx, "tcp", addr)
+			}
+			con.Close()
+
+		}(addr)
+	}
+	wg.Wait()
 }

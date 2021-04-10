@@ -3,8 +3,6 @@ package manage
 import (
 	"context"
 	"fmt"
-	"net"
-	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
@@ -53,26 +51,10 @@ func CmdCheckServer(cfg *ClientConfig) *cobra.Command {
 
 // CheckServer sets hashes and sets the password
 func (s *Server) CheckServer(ctx context.Context, in *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
-	// TODO: Check in parallel and use grpc streaming to inform the client.
+	// TODO: Use grpc streaming to inform the client.
 	// TODO: Let the client define the services that should be checked.
 
-	waitForService(ctx, s.config.DatastoreWriterHost, s.config.DatastoreWriterPort)
-	waitForService(ctx, s.config.AuthHost, s.config.AuthPort)
+	waitForService(ctx, s.config.DatastoreWriterURL().Host, s.config.AuthURL().Host)
 
 	return new(proto.CheckServerResponse), ctx.Err()
-}
-
-// waitForService checks if the service at host:port is available.
-//
-// Blocks until the connection is established or the context is canceled or
-// expired.
-func waitForService(ctx context.Context, host, port string) {
-	addr := net.JoinHostPort(host, port)
-	d := net.Dialer{}
-	con, err := d.DialContext(ctx, "tcp", addr)
-	for err != nil && ctx.Err() == nil {
-		time.Sleep(100 * time.Millisecond)
-		con, err = d.DialContext(ctx, "tcp", addr)
-	}
-	con.Close()
 }
