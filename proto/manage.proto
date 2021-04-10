@@ -28,12 +28,9 @@ message CreateUserResponse {
 message SetPasswordRequest {
     int64 userID = 1;
     string password = 2;
-    bool only_update = 3;
 }
 
-message SetPasswordResponse {
-    bool password_set = 1;
-};
+message SetPasswordResponse {}
 
 message ConfigRequest {
     enum Field {

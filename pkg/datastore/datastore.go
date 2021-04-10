@@ -6,11 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
-// Get gets a fqField from the datastore.
-func Get(ctx context.Context, addr string, key string, value interface{}) error {
+const (
+	datastoreReaderGetSubpath   = "/get"
+	datastoreWriterWriteSubpath = "/write"
+)
+
+// Get fetches a FQField from the datastore.
+func Get(ctx context.Context, readerURL *url.URL, key string, value interface{}) error {
 	keyParts := strings.Split(key, "/")
 	if len(keyParts) != 3 {
 		return fmt.Errorf("invalid key %s, expected two `/`", key)
@@ -23,8 +29,9 @@ func Get(ctx context.Context, addr string, key string, value interface{}) error 
 		}`,
 		keyParts[0], keyParts[1], keyParts[2],
 	)
+	addr := readerURL.String() + datastoreReaderGetSubpath
 
-	req, err := http.NewRequestWithContext(ctx, "POST", addr+"/internal/datastore/reader/get", strings.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", addr, strings.NewReader(reqBody))
 	if err != nil {
 		return fmt.Errorf("creating request to datastore: %w", err)
 	}
@@ -33,7 +40,7 @@ func Get(ctx context.Context, addr string, key string, value interface{}) error 
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("sending request to datastore: %w", err)
+		return fmt.Errorf("sending request to datastore at %s: %w", addr, err)
 	}
 	defer resp.Body.Close()
 
@@ -63,7 +70,7 @@ func Get(ctx context.Context, addr string, key string, value interface{}) error 
 }
 
 // Set sets a fqField at the datastore. Value has to be json.
-func Set(ctx context.Context, addr, key string, value json.RawMessage) error {
+func Set(ctx context.Context, writerURL *url.URL, key string, value json.RawMessage) error {
 	parts := strings.Split(key, "/")
 	if len(parts) != 3 {
 		return fmt.Errorf("invalid key %s, expected two `/`", key)
@@ -79,17 +86,18 @@ func Set(ctx context.Context, addr, key string, value json.RawMessage) error {
 		}`,
 		parts[0], parts[1], parts[2], value,
 	)
+	addr := writerURL.String() + datastoreWriterWriteSubpath
 
-	req, err := http.NewRequestWithContext(ctx, "POST", addr+"/internal/datastore/writer/write", strings.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", addr, strings.NewReader(reqBody))
 	if err != nil {
-		return fmt.Errorf("creating request to %s: %w", addr, err)
+		return fmt.Errorf("creating request to datastore: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("sending request to %s: %w", addr, err)
+		return fmt.Errorf("sending request to datastore at %s: %w", addr, err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {

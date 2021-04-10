@@ -56,5 +56,5 @@ func (s *Server) CheckServer(ctx context.Context, in *proto.CheckServerRequest) 
 
 	waitForService(ctx, s.config.DatastoreWriterURL().Host, s.config.AuthURL().Host)
 
-	return new(proto.CheckServerResponse), ctx.Err()
+	return &proto.CheckServerResponse{}, ctx.Err()
 }
