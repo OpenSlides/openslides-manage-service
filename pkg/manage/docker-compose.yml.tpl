@@ -6,7 +6,7 @@ version: '3.4'
 services:
   proxy:
     build:
-      context: https://github.com/OpenSlides/OpenSlides.git#{{ .CommitID.proxy }}:proxy
+      context: https://github.com/OpenSlides/OpenSlides.git#{{ .Ref }}:proxy
     depends_on:
       - client
       - backend
@@ -146,7 +146,7 @@ services:
     - auth
     env_file: services.env
     ports:
-    - "127.0.0.1:{ .ExternalManagePort }:9008"
+    - "127.0.0.1:{{ .ExternalManagePort }}:9008"
     networks:
     - uplink
     - frontend
