@@ -12,13 +12,14 @@ import (
 
 const initialDataHelp = `Creates initial data if there is an empty datastore
 
-This command also sets admin password to "admin".
+This command also sets password of user 1 to the value in the docker secret "admin".
 
 It does nothing if the datastore is not empty.
 `
 
-// CmdInitialData creates given initial data and sets admin password if there is an
-// empty datastore. This does nothing if the datastore is not empty.
+// CmdInitialData creates given initial data if there is an empty datastore. It
+// also sets password of user 1 to the value in the docker secret "admin".
+// This does nothing if the datastore is not empty.
 func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "initial-data",
@@ -81,7 +82,10 @@ func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) 
 			return nil, fmt.Errorf("setting datastore key `%s`: %w", k, err)
 		}
 	}
-	// TODO: Set admin password.
+
+	if err := setAdminPassword(); err != nil {
+		return nil, fmt.Errorf("setting admin password: %w", err)
+	}
 
 	return &proto.InitialDataResponse{Initialized: true}, nil
 }
@@ -89,4 +93,9 @@ func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) 
 func parseData(d string) (map[string]json.RawMessage, error) {
 	// TODO: Take JSON encoded string and validate and check it an make an nice map.
 	return nil, nil
+}
+
+func setAdminPassword() error {
+	// TODO: Read docker secret and set password of user 1
+	return nil
 }
