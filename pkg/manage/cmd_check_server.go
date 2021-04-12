@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const checkServerHelp = `Checks if all OpenSlides services are running
+const helpCheckServer = `Checks if all OpenSlides services are running
 
 This command checks if all OpenSlides services are currently running and
 listening on their respective ports.
@@ -19,7 +19,7 @@ func CmdCheckServer(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check-server",
 		Short: "Checks if all services are running.",
-		Long:  checkServerHelp,
+		Long:  helpCheckServer,
 	}
 
 	skipClient := cmd.Flags().Bool("skip-client", false, "Skip checking the client")

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const configHelp = `Gets or sets config values
+const helpConfig = `Gets or sets config values
 
 This command gets or sets the config values for an organisation.
 
@@ -32,7 +32,7 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:       "config",
 		Short:     "Gets or sets config values.",
-		Long:      configHelp,
+		Long:      helpConfig,
 		Args:      cobra.ExactValidArgs(1),
 		ValidArgs: values,
 	}

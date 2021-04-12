@@ -13,6 +13,7 @@ services:
       - autoupdate
       - auth
       - media
+    env_file: services.env
     networks:
       - uplink
       - frontend

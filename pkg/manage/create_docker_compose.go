@@ -2,7 +2,7 @@ package manage
 
 import (
 	"context"
-	_ "embed"
+	_ "embed" // Neeed for embed. See Docu of Go 1.16
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -14,8 +14,9 @@ import (
 // createDockerComposeYML creates a docker-compose.yml file in the current working directory
 // using a template. In non local mode it uses the GitHub API to fetch the required commit IDs
 // of all services.
-func createDockerComposeYML(ctx context.Context) error {
-	filename := "docker-compose.yml"
+func createDockerComposeYML(ctx context.Context, path string) error {
+	filename := path + "/docker-compose.yml"
+
 	f, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("creating file `%s`: %w", filename, err)
@@ -34,9 +35,13 @@ var defaultDockerCompose string
 
 // writeDockerComposeYML writes the populated template to the given writer.
 func writeDockerComposeYML(ctx context.Context, w io.Writer) error {
-	// TODO:
-	// * Use services.env https://github.com/OpenSlides/OpenSlides/blob/openslides4-dev/docker/services.env
+	// TODO: * Use services.env
+	// https://github.com/OpenSlides/OpenSlides/blob/openslides4-dev/docker/services.env
 	// TODO: Local case
+	//
+	// I don't think a function called "writeFoo" should fetch the commit-Data.
+	// I think it should either be renamed or getting the data via an argument.
+	// (Oskar, 2021-04-11)
 
 	composeTPL, err := template.New("compose").Parse(defaultDockerCompose)
 	if err != nil {
@@ -109,4 +114,14 @@ func getCommitIDs(ctx context.Context, ref string) (map[string]string, error) {
 	}
 
 	return commitIDs, nil
+}
+
+//go:embed default_services.env
+var defaultServiesEnv []byte
+
+func createEnvFile(dataPath string) error {
+	if err := os.WriteFile(dataPath+"/services.env", defaultServiesEnv, 0755); err != nil {
+		return fmt.Errorf("write services file at %s: %w", dataPath+"/services", err)
+	}
+	return nil
 }

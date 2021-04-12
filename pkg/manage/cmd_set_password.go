@@ -16,7 +16,7 @@ import (
 
 const authHashPath = "/internal/auth/hash"
 
-const setPasswordHelp = `Sets the password of an user
+const helpSetPassword = `Sets the password of an user
 
 This command sets the password of an user by a given user ID.
 `
@@ -26,7 +26,7 @@ func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set-password",
 		Short: "Sets the password of an user.",
-		Long:  setPasswordHelp,
+		Long:  helpSetPassword,
 	}
 
 	userID := cmd.Flags().Int64P("user_id", "u", 1, "ID of the user account.")
