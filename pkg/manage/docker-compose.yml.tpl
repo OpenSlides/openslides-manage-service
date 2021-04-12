@@ -5,6 +5,7 @@ version: '3.4'
 
 services:
   proxy:
+    image: openslides_proxy:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/OpenSlides.git#{{ .Ref }}:proxy
     depends_on:
@@ -21,6 +22,7 @@ services:
       - "127.0.0.1:{{ .ExternalHTTPPort }}:8000"
 
   client:
+    image: openslides_client:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-client.git#{{ .CommitID.client }}
     depends_on:
@@ -30,6 +32,7 @@ services:
       - frontend
 
   backend:
+    image: openslides_backend:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-backend.git#{{ .CommitID.backend }}
     depends_on:
@@ -45,6 +48,7 @@ services:
       - auth_cookie_key
 
   datastore-reader:
+    image: openslides_datastore_reader:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-datastore-service.git#{{ .CommitID.datastore }}
       args:
@@ -61,6 +65,7 @@ services:
       - postgres
 
   datastore-writer:
+    image: openslides_datastore_writer:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-datastore-service.git#{{ .CommitID.datastore }}
       args:
@@ -85,6 +90,7 @@ services:
       - postgres
 
   autoupdate:
+    image: openslides_autoupdate:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-autoupdate-service.git#{{ .CommitID.autoupdate }}
     depends_on:
@@ -100,6 +106,7 @@ services:
       - auth_cookie_key
 
   auth:
+    image: openslides_auth:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-auth-service.git#{{ .CommitID.auth }}
     depends_on:
@@ -127,6 +134,7 @@ services:
       - message-bus
 
   media:
+    image: openslides_media:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-media-service.git#{{ .CommitID.media }}
     depends_on:
@@ -139,6 +147,7 @@ services:
       - postgres
 
   manage:
+    image: openslides_manage:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-manage-service.git#{{ .CommitID.manage }}
     depends_on:
@@ -155,6 +164,7 @@ services:
 
 # TODO: Remove this service so the networks won't matter any more.
   permission:
+    image: openslides_permission:{{ .Tag }}
     build:
       context: https://github.com/OpenSlides/openslides-permission-service.git#{{ .CommitID.permission }}
     depends_on:

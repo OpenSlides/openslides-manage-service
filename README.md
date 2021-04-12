@@ -26,3 +26,12 @@ The client can be build with
 To compile changed `.proto` files, run `protoc`:
 
     $ make protoc
+
+
+## TODO
+
+This is temporary text during development:
+
+    $ ./manage setup --local
+    $ docker-compose build
+    $ docker-compose up

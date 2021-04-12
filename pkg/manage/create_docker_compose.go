@@ -46,12 +46,14 @@ func constructDockerComposeYML(ctx context.Context, w io.Writer) error {
 	composeTPL.Option("missingkey=error")
 
 	var tplData struct {
+		Tag                string
 		ExternalHTTPPort   string
 		ExternalManagePort string
 		CommitID           map[string]string
 		Ref                string
 	}
 
+	tplData.Tag = "4.0-dev"
 	tplData.ExternalHTTPPort = "8000"
 	tplData.ExternalManagePort = "9008"
 	tplData.Ref = "openslides4-dev"

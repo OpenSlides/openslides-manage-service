@@ -3,8 +3,8 @@ package manage
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -91,8 +91,10 @@ func createSecrets(dataPath string) error {
 
 			// This creates cryptographically secure random bytes. 32 Bytes means
 			// 256bit. The output can contain zero bytes.
-			if _, err := io.Copy(f, io.LimitReader(rand.Reader, 32)); err != nil {
-				return fmt.Errorf("creating and writing cryptographically secure random bytes: %w", err)
+			r := make([]byte, 32)
+			rand.Reader.Read(r)
+			if _, err := f.WriteString(base64.StdEncoding.EncodeToString(r)); err != nil {
+				return fmt.Errorf("writing cryptographically secure random base64 encoded bytes : %w", err)
 			}
 
 			return nil
