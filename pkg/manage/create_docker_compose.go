@@ -7,24 +7,26 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
+	"path"
 )
 
 // createDockerComposeYML creates a docker-compose.yml file in the current working directory
 // using a template. In non local mode it uses the GitHub API to fetch the required commit IDs
 // of all services.
-func createDockerComposeYML(ctx context.Context, path string) error {
-	filename := path + "/docker-compose.yml"
+func createDockerComposeYML(ctx context.Context, dataPath string) error {
+	p := path.Join(dataPath, "docker-compose.yml")
 
-	f, err := os.Create(filename)
+	f, err := os.Create(p)
 	if err != nil {
-		return fmt.Errorf("creating file `%s`: %w", filename, err)
+		return fmt.Errorf("creating file `%s`: %w", p, err)
 	}
 	defer f.Close()
 
-	if err := writeDockerComposeYML(ctx, f); err != nil {
-		return fmt.Errorf("writing content to file `%s`: %w", filename, err)
+	if err := constructDockerComposeYML(ctx, f); err != nil {
+		return fmt.Errorf("writing content to file `%s`: %w", p, err)
 	}
 
 	return nil
@@ -33,15 +35,9 @@ func createDockerComposeYML(ctx context.Context, path string) error {
 //go:embed docker-compose.yml.tpl
 var defaultDockerCompose string
 
-// writeDockerComposeYML writes the populated template to the given writer.
-func writeDockerComposeYML(ctx context.Context, w io.Writer) error {
-	// TODO: * Use services.env
-	// https://github.com/OpenSlides/OpenSlides/blob/openslides4-dev/docker/services.env
+// constructDockerComposeYML writes the populated template to the given writer.
+func constructDockerComposeYML(ctx context.Context, w io.Writer) error {
 	// TODO: Local case
-	//
-	// I don't think a function called "writeFoo" should fetch the commit-Data.
-	// I think it should either be renamed or getting the data via an argument.
-	// (Oskar, 2021-04-11)
 
 	composeTPL, err := template.New("compose").Parse(defaultDockerCompose)
 	if err != nil {
@@ -120,8 +116,9 @@ func getCommitIDs(ctx context.Context, ref string) (map[string]string, error) {
 var defaultServiesEnv []byte
 
 func createEnvFile(dataPath string) error {
-	if err := os.WriteFile(dataPath+"/services.env", defaultServiesEnv, 0755); err != nil {
-		return fmt.Errorf("write services file at %s: %w", dataPath+"/services", err)
+	p := path.Join(dataPath, "services.env")
+	if err := os.WriteFile(p, defaultServiesEnv, fs.ModePerm); err != nil {
+		return fmt.Errorf("write services file at %s: %w", p, err)
 	}
 	return nil
 }

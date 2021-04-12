@@ -1,4 +1,4 @@
-# This configuration was created from a template file. The accompanying .env file
+# This configuration was created from a template file. The accompanying services.env file
 # might be the correct place for customizations.
 
 version: '3.4'

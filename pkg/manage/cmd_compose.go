@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const helpCompose = `Calls docker-compose
+const helpCompose = `Calls docker-compose TODO
 
 TODO
 `
@@ -19,7 +19,7 @@ TODO
 func CmdCompose(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "compose",
-		Short: "Runs a docker-compose command.",
+		Short: "Calls a docker-compose command.",
 		Long:  helpCompose,
 	}
 
@@ -36,6 +36,7 @@ func CmdCompose(cfg *ClientConfig) *cobra.Command {
 		dockerCompose.Dir = dataPath
 
 		if err := dockerCompose.Run(); err != nil {
+			// TODO: Print complete command here
 			return fmt.Errorf("running docker-compose: %w", err)
 		}
 
