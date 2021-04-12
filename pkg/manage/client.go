@@ -33,9 +33,10 @@ func RunClient() error {
 	cmd.AddCommand(
 		CmdSetup(cfg),
 		CmdCompose(cfg),
+		CmdCheckServer(cfg),
+		CmdInitialData(cfg),
 		CmdCreateUser(cfg),
 		CmdSetPassword(cfg),
-		CmdCheckServer(cfg),
 		CmdConfig(cfg),
 	)
 	return cmd.Execute()

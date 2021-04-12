@@ -4,6 +4,7 @@ option go_package = "github.com/OpenSlides/openslides-manage-service/proto";
 
 service Manage {
     rpc CheckServer(CheckServerRequest) returns (CheckServerResponse);
+    rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
     rpc Config(ConfigRequest) returns (ConfigResponse);
@@ -14,6 +15,14 @@ message CheckServerRequest {
 }
 
 message CheckServerResponse {}
+
+message InitialDataRequest {
+    string data = 1;
+}
+
+message InitialDataResponse {
+    bool initialized = 1;
+}
 
 message CreateUserRequest {
     string username = 1;

@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ManageClient interface {
 	CheckServer(ctx context.Context, in *CheckServerRequest, opts ...grpc.CallOption) (*CheckServerResponse, error)
+	InitialData(ctx context.Context, in *InitialDataRequest, opts ...grpc.CallOption) (*InitialDataResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
 	Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error)
@@ -35,6 +36,15 @@ func NewManageClient(cc grpc.ClientConnInterface) ManageClient {
 func (c *manageClient) CheckServer(ctx context.Context, in *CheckServerRequest, opts ...grpc.CallOption) (*CheckServerResponse, error) {
 	out := new(CheckServerResponse)
 	err := c.cc.Invoke(ctx, "/Manage/CheckServer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *manageClient) InitialData(ctx context.Context, in *InitialDataRequest, opts ...grpc.CallOption) (*InitialDataResponse, error) {
+	out := new(InitialDataResponse)
+	err := c.cc.Invoke(ctx, "/Manage/InitialData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +83,7 @@ func (c *manageClient) Config(ctx context.Context, in *ConfigRequest, opts ...gr
 // for forward compatibility
 type ManageServer interface {
 	CheckServer(context.Context, *CheckServerRequest) (*CheckServerResponse, error)
+	InitialData(context.Context, *InitialDataRequest) (*InitialDataResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
 	Config(context.Context, *ConfigRequest) (*ConfigResponse, error)
@@ -84,6 +95,9 @@ type UnimplementedManageServer struct {
 
 func (UnimplementedManageServer) CheckServer(context.Context, *CheckServerRequest) (*CheckServerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckServer not implemented")
+}
+func (UnimplementedManageServer) InitialData(context.Context, *InitialDataRequest) (*InitialDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InitialData not implemented")
 }
 func (UnimplementedManageServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
@@ -120,6 +134,24 @@ func _Manage_CheckServer_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ManageServer).CheckServer(ctx, req.(*CheckServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Manage_InitialData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitialDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManageServer).InitialData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/InitialData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).InitialData(ctx, req.(*InitialDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -188,6 +220,10 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckServer",
 			Handler:    _Manage_CheckServer_Handler,
+		},
+		{
+			MethodName: "InitialData",
+			Handler:    _Manage_InitialData_Handler,
 		},
 		{
 			MethodName: "CreateUser",

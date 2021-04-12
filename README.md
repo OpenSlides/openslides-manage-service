@@ -4,7 +4,7 @@ Manage service for OpenSlides which provides some management commands. The
 service listens on the port given by environment variable `MANAGE_SERVICE_PORT`
 (default 9008) and uses [gRPC](https://grpc.io/).
 
-The client used as follows:
+The tool (client) can be used as follows:
 
     $ ./manage
 
@@ -28,10 +28,19 @@ To compile changed `.proto` files, run `protoc`:
     $ make protoc
 
 
+## Docker
+
+You can build the following Docker images:
+
+    $ docker build .  # Builds the manage service server.
+    $ docker build --target manage-tool-productive .  # Builds the client e. g. for use as one shot container with customized command.
+
+
 ## TODO
 
 This is temporary text during development:
 
     $ ./manage setup --local
     $ docker-compose build
-    $ docker-compose up
+    $ docker-compose up -d
+    $ ./manage initial-data
