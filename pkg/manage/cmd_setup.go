@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -29,11 +30,11 @@ const appName = "openslides"
 func CmdSetup(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "setup",
-		Short: "Builds the required files and docker images.",
+		Short: "Builds the required files and docker images",
 		Long:  setupHelp,
 	}
 
-	local := cmd.Flags().BoolP("local", "l", false, "Create required files in currend working directory.")
+	local := cmd.Flags().BoolP("local", "l", false, "Create required files in currend working directory")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
@@ -77,11 +78,11 @@ func createSecrets(dataPath string) error {
 		return fmt.Errorf("creating directory `%s`: %w", dataPath, err)
 	}
 
-	secrets := []string{
+	randomSecrets := []string{
 		"auth_token_key",
 		"auth_cookie_key",
 	}
-	for _, s := range secrets {
+	for _, s := range randomSecrets {
 		e := func() error {
 			f, err := os.Create(path.Join(dataPath, s))
 			if err != nil {
@@ -91,10 +92,10 @@ func createSecrets(dataPath string) error {
 
 			// This creates cryptographically secure random bytes. 32 Bytes means
 			// 256bit. The output can contain zero bytes.
-			r := make([]byte, 32)
-			rand.Reader.Read(r)
-			if _, err := f.WriteString(base64.StdEncoding.EncodeToString(r)); err != nil {
-				return fmt.Errorf("writing cryptographically secure random base64 encoded bytes : %w", err)
+			b64e := base64.NewEncoder(base64.StdEncoding, f)
+			defer b64e.Close()
+			if _, err := io.Copy(b64e, io.LimitReader(rand.Reader, 32)); err != nil {
+				return fmt.Errorf("writing cryptographically secure random base64 encoded bytes: %w", err)
 			}
 
 			return nil
@@ -102,6 +103,10 @@ func createSecrets(dataPath string) error {
 		if e != nil {
 			return e
 		}
+	}
+
+	if err := os.WriteFile(path.Join(dataPath, "admin"), []byte("admin"), fs.ModePerm); err != nil {
+		return fmt.Errorf("writing admin password to secret file: %w", err)
 	}
 
 	return nil

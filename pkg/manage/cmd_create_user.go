@@ -18,7 +18,7 @@ This command creates an user account on the server.
 func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-user",
-		Short: "Creates an user account.",
+		Short: "Creates an user account",
 		Long:  helpCreateUsers,
 	}
 

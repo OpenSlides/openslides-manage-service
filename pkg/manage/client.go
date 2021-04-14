@@ -15,13 +15,13 @@ const rootHelp = `manage is an admin tool to perform manager actions on an OpenS
 func cmdRoot(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "manage",
-		Short:        "manage swiss army knife for OpenSlides admins.",
+		Short:        "Swiss army knife for OpenSlides admins",
 		Long:         rootHelp,
 		SilenceUsage: true,
 	}
 
-	cmd.PersistentFlags().StringVarP(&cfg.Address, "address", "a", "localhost:9008", "Address of the OpenSlides manage service.")
-	cmd.PersistentFlags().DurationVarP(&cfg.Timeout, "timeout", "t", 5*time.Second, "Time to wait for the command's response.")
+	cmd.PersistentFlags().StringVarP(&cfg.Address, "address", "a", "localhost:9008", "Address of the OpenSlides manage service")
+	cmd.PersistentFlags().DurationVarP(&cfg.Timeout, "timeout", "t", 5*time.Second, "Time to wait for the command's response")
 
 	return cmd
 }

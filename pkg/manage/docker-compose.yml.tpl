@@ -151,16 +151,18 @@ services:
     build:
       context: https://github.com/OpenSlides/openslides-manage-service.git#{{ .CommitID.manage }}
     depends_on:
-    - datastore-reader
-    - datastore-writer
-    - auth
+      - datastore-reader
+      - datastore-writer
+      - auth
     env_file: services.env
     ports:
-    - "127.0.0.1:{{ .ExternalManagePort }}:9008"
+      - "127.0.0.1:{{ .ExternalManagePort }}:9008"
     networks:
-    - uplink
-    - frontend
-    - backend
+      - uplink
+      - frontend
+      - backend
+    secrets:
+      - admin
 
 # TODO: Remove this service so the networks won't matter any more.
   permission:
@@ -196,3 +198,5 @@ secrets:
     file: ./secrets/auth_token_key
   auth_cookie_key:
     file: ./secrets/auth_cookie_key
+  admin:
+    file: ./secrets/admin

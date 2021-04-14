@@ -31,7 +31,7 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:       "config",
-		Short:     "Gets or sets config values.",
+		Short:     "Gets or sets config values",
 		Long:      helpConfig,
 		Args:      cobra.ExactValidArgs(1),
 		ValidArgs: values,

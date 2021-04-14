@@ -25,12 +25,12 @@ This command sets the password of an user by a given user ID.
 func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set-password",
-		Short: "Sets the password of an user.",
+		Short: "Sets the password of an user",
 		Long:  helpSetPassword,
 	}
 
-	userID := cmd.Flags().Int64P("user_id", "u", 1, "ID of the user account.")
-	password := cmd.Flags().StringP("password", "p", "admin", "New password of the user.")
+	userID := cmd.Flags().Int64P("user_id", "u", 1, "ID of the user account")
+	password := cmd.Flags().StringP("password", "p", "admin", "New password of the user")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)

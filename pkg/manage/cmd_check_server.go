@@ -18,7 +18,7 @@ listening on their respective ports.
 func CmdCheckServer(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check-server",
-		Short: "Checks if all services are running.",
+		Short: "Checks if all services are running",
 		Long:  helpCheckServer,
 	}
 

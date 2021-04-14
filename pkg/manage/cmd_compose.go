@@ -19,7 +19,7 @@ TODO
 func CmdCompose(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "compose",
-		Short: "Calls a docker-compose command.",
+		Short: "Calls a docker-compose command",
 		Long:  helpCompose,
 	}
 

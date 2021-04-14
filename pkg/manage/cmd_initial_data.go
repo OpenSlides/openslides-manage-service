@@ -2,8 +2,10 @@ package manage
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -17,15 +19,20 @@ This command also sets password of user 1 to the value in the docker secret "adm
 It does nothing if the datastore is not empty.
 `
 
+//go:embed default-initial-data.json
+var defaultInitialData string
+
 // CmdInitialData creates given initial data if there is an empty datastore. It
 // also sets password of user 1 to the value in the docker secret "admin".
 // This does nothing if the datastore is not empty.
 func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "initial-data",
-		Short: "Creates initial data if there is an empty datastore.",
+		Short: "Creates initial data if there is an empty datastore",
 		Long:  initialDataHelp,
 	}
+
+	path := cmd.Flags().StringP("file", "f", "", "JSON-formated file with initial data")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
@@ -37,8 +44,14 @@ func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 		}
 		defer close()
 
-		// TODO: Use initial data from file given in an env variable.
-		d := `{"foo":"bar"}`
+		d := defaultInitialData
+		if *path != "" {
+			b, err := os.ReadFile(*path)
+			if err != nil {
+				return fmt.Errorf("reading initial data file `%s`: %w", *path, err)
+			}
+			d = string(b)
+		}
 		req := &proto.InitialDataRequest{
 			Data: d,
 		}
