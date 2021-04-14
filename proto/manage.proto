@@ -17,7 +17,7 @@ message CheckServerRequest {
 message CheckServerResponse {}
 
 message InitialDataRequest {
-    string data = 1;
+    bytes data = 1;
 }
 
 message InitialDataResponse {

@@ -20,7 +20,9 @@ It does nothing if the datastore is not empty.
 `
 
 //go:embed default-initial-data.json
-var defaultInitialData string
+var defaultInitialData []byte
+
+const adminSecretPath = "/run/secrets/admin"
 
 // CmdInitialData creates given initial data if there is an empty datastore. It
 // also sets password of user 1 to the value in the docker secret "admin".
@@ -44,16 +46,16 @@ func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 		}
 		defer close()
 
-		d := defaultInitialData
+		iniD := defaultInitialData
 		if *path != "" {
-			b, err := os.ReadFile(*path)
+			c, err := os.ReadFile(*path)
 			if err != nil {
 				return fmt.Errorf("reading initial data file `%s`: %w", *path, err)
 			}
-			d = string(b)
+			iniD = c
 		}
 		req := &proto.InitialDataRequest{
-			Data: d,
+			Data: iniD,
 		}
 
 		resp, err := service.InitialData(ctx, req)
@@ -103,12 +105,37 @@ func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) 
 	return &proto.InitialDataResponse{Initialized: true}, nil
 }
 
-func parseData(d string) (map[string]json.RawMessage, error) {
-	// TODO: Take JSON encoded string and validate and check it an make an nice map.
-	return nil, nil
+// parseData takes a JSON encoded string and transforms it into a map of FQField and value.
+func parseData(d []byte) (map[string]json.RawMessage, error) {
+	container := struct {
+		Data map[string]map[string]map[string]json.RawMessage
+	}{}
+
+	if err := json.Unmarshal(d, &container.Data); err != nil {
+		return nil, fmt.Errorf("unmarshaling JSON: %w", err)
+	}
+
+	res := make(map[string]json.RawMessage)
+	for collection, elements := range container.Data {
+		for id, fields := range elements {
+			for field, value := range fields {
+				FQField := fmt.Sprintf("%s/%s/%s", collection, id, field)
+				res[FQField] = value
+			}
+		}
+	}
+
+	return res, nil
 }
 
+// setAdminPassword reads the docker secret "admin" and sets the password
+// for user 1 to this value.
 func setAdminPassword() error {
-	// TODO: Read docker secret and set password of user 1
+	s, err := os.ReadFile(adminSecretPath)
+	if err != nil {
+		return fmt.Errorf("reading file %s: %w", adminSecretPath, err)
+	}
+	_ = s
+	// TODO: Call the server side SetPassword function. How can we do this without network?
 	return nil
 }
