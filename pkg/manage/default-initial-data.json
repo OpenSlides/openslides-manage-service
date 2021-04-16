@@ -1,6 +1,7 @@
 {
     "organisation": {
         "1": {
+            "id": 1,
             "name": "OpenSlides",
             "description": "The digital motion and assembly system",
             "legal_notice": "<a href=\"http://www.openslides.org\">OpenSlides</a> is a free web based presentation and assembly system for visualizing and controlling agenda, motions and elections of an assembly.",
@@ -19,6 +20,7 @@
     },
     "user": {
         "1": {
+            "id": 1,
             "username": "admin",
             "title": "",
             "first_name": "",
@@ -70,6 +72,7 @@
     "organisation_tag": {},
     "committee": {
         "1": {
+            "id": 1,
             "name": "Default committee",
             "description": "Add description here",
             "meeting_ids": [
@@ -87,6 +90,7 @@
     },
     "meeting": {
         "1": {
+            "id": 1,
             "welcome_title": "Welcome to OpenSlides",
             "welcome_text": "[Space for your welcome text.]",
             "name": "OpenSlides - Die Veranstaltung (Teil II)",
@@ -306,6 +310,7 @@
     },
     "group": {
         "1": {
+            "id": 1,
             "name": "Default",
             "permissions": [
                 "agenda_item.can_see_internal",
@@ -332,6 +337,7 @@
             "meeting_id": 1
         },
         "2": {
+            "id": 2,
             "name": "Admin",
             "permissions": [],
             "user_ids": [
@@ -350,6 +356,7 @@
             "meeting_id": 1
         },
         "3": {
+            "id": 3,
             "name": "Staff",
             "permissions": [
                 "agenda_item.can_manage",
@@ -381,6 +388,7 @@
             "meeting_id": 1
         },
         "4": {
+            "id": 4,
             "name": "Committees",
             "permissions": [
                 "agenda_item.can_see_internal",
@@ -409,6 +417,7 @@
             "meeting_id": 1
         },
         "5": {
+            "id": 5,
             "name": "Delegates",
             "permissions": [
                 "agenda_item.can_see_internal",
@@ -454,6 +463,7 @@
     "motion_change_recommendation": {},
     "motion_state": {
         "1": {
+            "id": 1,
             "name": "submitted",
             "recommendation_label": null,
             "css_class": "lightblue",
@@ -478,6 +488,7 @@
             "meeting_id": 1
         },
         "2": {
+            "id": 2,
             "name": "accepted",
             "recommendation_label": "Acceptance",
             "css_class": "green",
@@ -500,6 +511,7 @@
             "meeting_id": 1
         },
         "3": {
+            "id": 3,
             "name": "rejected",
             "recommendation_label": "Rejection",
             "css_class": "red",
@@ -522,6 +534,7 @@
             "meeting_id": 1
         },
         "4": {
+            "id": 4,
             "name": "not decided",
             "recommendation_label": "No decision",
             "css_class": "grey",
@@ -546,6 +559,7 @@
     },
     "motion_workflow": {
         "1": {
+            "id": 1,
             "name": "Simple Workflow",
             "state_ids": [
                 1,
@@ -569,6 +583,7 @@
     "mediafile": {},
     "projector": {
         "1": {
+            "id": 1,
             "name": "Default projector",
             "scale": 0,
             "scroll": 0,
@@ -629,6 +644,7 @@
     "projector_message": {},
     "projector_countdown": {
         "1": {
+            "id": 1,
             "title": "List of speaker countdown",
             "description": "",
             "default_time": 60,
@@ -640,6 +656,7 @@
             "meeting_id": 1
         },
         "2": {
+            "id": 2,
             "title": "Voting countdown",
             "description": "",
             "default_time": 60,

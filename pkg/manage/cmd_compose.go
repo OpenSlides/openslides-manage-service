@@ -16,6 +16,7 @@ TODO
 `
 
 // CmdCompose calls docker-compose.
+// TODO: Check and maybe refactor this code. Use --local flag and other ...
 func CmdCompose(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "compose",

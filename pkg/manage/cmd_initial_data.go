@@ -77,11 +77,6 @@ func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 
 // Sets initial data in datastore.
 func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	initialData, err := parseData(in.Data)
-	if err != nil {
-		return nil, fmt.Errorf("parsing initial data: %w", err)
-	}
-
 	const magicKey = "organisation/1/id"
 	var existingData bool
 	if err := datastore.Get(ctx, s.config.DatastoreReaderURL(), magicKey, &existingData); err != nil {
@@ -92,13 +87,21 @@ func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) 
 		return &proto.InitialDataResponse{Initialized: false}, nil
 	}
 
-	for k, v := range initialData {
-		if err := datastore.Set(ctx, s.config.DatastoreWriterURL(), k, v); err != nil {
-			return nil, fmt.Errorf("setting datastore key `%s`: %w", k, err)
+	initialData, err := parseData(in.Data)
+	if err != nil {
+		return nil, fmt.Errorf("parsing initial data: %w", err)
+	}
+
+	for collection, elements := range initialData {
+		for id, fields := range elements {
+			fqid := fmt.Sprintf("%s/%s", collection, id)
+			if err := datastore.Create(ctx, s.config.DatastoreWriterURL(), fqid, fields); err != nil {
+				return nil, fmt.Errorf("creating datastore object `%s`: %w", fqid, err)
+			}
 		}
 	}
 
-	if err := setAdminPassword(); err != nil {
+	if err := s.setAdminPassword(ctx); err != nil {
 		return nil, fmt.Errorf("setting admin password: %w", err)
 	}
 
@@ -106,7 +109,7 @@ func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) 
 }
 
 // parseData takes a JSON encoded string and transforms it into a map of FQField and value.
-func parseData(d []byte) (map[string]json.RawMessage, error) {
+func parseData(d []byte) (map[string]map[string]map[string]json.RawMessage, error) {
 	container := struct {
 		Data map[string]map[string]map[string]json.RawMessage
 	}{}
@@ -115,27 +118,24 @@ func parseData(d []byte) (map[string]json.RawMessage, error) {
 		return nil, fmt.Errorf("unmarshaling JSON: %w", err)
 	}
 
-	res := make(map[string]json.RawMessage)
-	for collection, elements := range container.Data {
-		for id, fields := range elements {
-			for field, value := range fields {
-				FQField := fmt.Sprintf("%s/%s/%s", collection, id, field)
-				res[FQField] = value
-			}
-		}
-	}
-
-	return res, nil
+	return container.Data, nil
 }
 
 // setAdminPassword reads the docker secret "admin" and sets the password
 // for user 1 to this value.
-func setAdminPassword() error {
-	s, err := os.ReadFile(adminSecretPath)
+func (s *Server) setAdminPassword(ctx context.Context) error {
+	sec, err := os.ReadFile(adminSecretPath)
 	if err != nil {
 		return fmt.Errorf("reading file %s: %w", adminSecretPath, err)
 	}
-	_ = s
-	// TODO: Call the server side SetPassword function. How can we do this without network?
+
+	in := &proto.SetPasswordRequest{
+		UserID:   1,
+		Password: string(sec),
+	}
+	if _, err := s.SetPassword(ctx, in); err != nil {
+		return fmt.Errorf("setting password: %w", err)
+	}
+
 	return nil
 }

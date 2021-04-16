@@ -16,10 +16,10 @@ const (
 )
 
 // Get fetches a FQField from the datastore.
-func Get(ctx context.Context, readerURL *url.URL, key string, value interface{}) error {
-	keyParts := strings.Split(key, "/")
+func Get(ctx context.Context, readerURL *url.URL, fqfield string, value interface{}) error {
+	keyParts := strings.Split(fqfield, "/")
 	if len(keyParts) != 3 {
-		return fmt.Errorf("invalid key %s, expected two `/`", key)
+		return fmt.Errorf("invalid FQField %s, expected two `/`", fqfield)
 	}
 
 	reqBody := fmt.Sprintf(
@@ -69,11 +69,11 @@ func Get(ctx context.Context, readerURL *url.URL, key string, value interface{})
 	return nil
 }
 
-// Set sets a FQField at the datastore. Value has to be json.
-func Set(ctx context.Context, writerURL *url.URL, key string, value json.RawMessage) error {
-	parts := strings.Split(key, "/")
+// Set sets a FQField at the datastore. Value has to be JSON.
+func Set(ctx context.Context, writerURL *url.URL, fqfield string, value json.RawMessage) error {
+	parts := strings.Split(fqfield, "/")
 	if len(parts) != 3 {
-		return fmt.Errorf("invalid key %s, expected two `/`", key)
+		return fmt.Errorf("invalid FQField %s, expected two `/`", fqfield)
 	}
 
 	reqBody := fmt.Sprintf(
@@ -86,6 +86,41 @@ func Set(ctx context.Context, writerURL *url.URL, key string, value json.RawMess
 		}`,
 		parts[0], parts[1], parts[2], value,
 	)
+
+	if err := sendWriteRequest(ctx, writerURL, reqBody); err != nil {
+		return fmt.Errorf("sending write request to datastore: %w", err)
+	}
+
+	return nil
+}
+
+// Create sends a create event to the datastore.
+func Create(ctx context.Context, writerURL *url.URL, fqid string, fields map[string]json.RawMessage) error {
+	f, err := json.Marshal(fields)
+	if err != nil {
+		return fmt.Errorf("marshalling fields: %w", err)
+	}
+
+	reqBody := fmt.Sprintf(
+		`{
+			"user_id": 0,
+			"information": {},
+			"locked_fields":{}, "events":[
+				{"type":"create","fqid":"%s","fields":%s}
+			]
+		}`,
+		fqid, string(f),
+	)
+
+	if err := sendWriteRequest(ctx, writerURL, reqBody); err != nil {
+		return fmt.Errorf("sending write request to datastore: %w", err)
+	}
+
+	return nil
+}
+
+// sendWriteRequest sends the give request body to the datastore.
+func sendWriteRequest(ctx context.Context, writerURL *url.URL, reqBody string) error {
 	addr := writerURL.String() + writeSubpath
 
 	req, err := http.NewRequestWithContext(ctx, "POST", addr, strings.NewReader(reqBody))
