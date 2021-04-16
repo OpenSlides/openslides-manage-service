@@ -62,7 +62,7 @@ func CmdSetup(cfg *ClientConfig) *cobra.Command {
 			return fmt.Errorf("creating directory `%s`: %w", dataPath, err)
 		}
 
-		if err := createDockerComposeYML(ctx, dataPath, !*local); err != nil {
+		if err := CreateDockerComposeYML(ctx, dataPath, !*local); err != nil {
 			return fmt.Errorf("creating Docker Compose YML: %w", err)
 		}
 
