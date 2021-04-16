@@ -77,13 +77,11 @@ func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 
 // Sets initial data in datastore.
 func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	const magicKey = "organisation/1/id"
-	var existingData bool
-	if err := datastore.Get(ctx, s.config.DatastoreReaderURL(), magicKey, &existingData); err != nil {
-		return nil, fmt.Errorf("reading key `%s` from datastore: %w", magicKey, err)
+	exists, err := datastore.Exists(ctx, s.config.DatastoreReaderURL(), "organisation", 1)
+	if err != nil {
+		return nil, fmt.Errorf("checking existance in datastore: %w", err)
 	}
-
-	if existingData {
+	if exists {
 		return &proto.InitialDataResponse{Initialized: false}, nil
 	}
 

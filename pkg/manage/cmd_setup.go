@@ -18,9 +18,13 @@ const setupHelp = `Builds required files and docker images
 
 This command executes the following steps to start OpenSlides:
 - Create a local docker-compose.yml.
-- Create local secrets for the auth service.
+- Create local secrets for the auth service and admin password.
 - Creates the services.env.
 - Runs docker-compose build to build images. TODO
+- Runs docker-compose up to create the container. TODO
+- Creates initial data and sets admin password.
+
+Then the container are stopped. To start them again, use start command.
 `
 
 const appName = "openslides"

@@ -51,7 +51,7 @@ func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 	return cmd
 }
 
-// CreateUser TODO
+// CreateUser ... TODO
 func (s *Server) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
-	return nil, errors.New("TODO")
+	return nil, errors.New("Not implemented yet.")
 }

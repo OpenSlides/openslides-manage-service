@@ -10,6 +10,7 @@ The tool (client) can be used as follows:
 
 You can find all management commands in the help text.
 
+
 ## Development
 
 For development you need [Go](https://golang.org/) and the [Protocol Buffer
@@ -36,11 +37,25 @@ You can build the following Docker images:
     $ docker build --target manage-tool-productive .  # Builds the client e. g. for use as one shot container with customized command.
 
 
-## TODO
+## How to start the full system
 
-This is temporary text during development:
+You can start OpenSlides with Docker Compose as follows:
+
+Be sure you have Docker and Docker Compose installed and Docker daemon is
+running. Check if you have to run docker as local user or as root.
+
+    $ docker info
+
+First go to a nice place in your filesystem. Then run:
 
     $ ./manage setup --local
-    $ docker-compose build
-    $ docker-compose up -d
+    $ docker-compose up --build --detach
     $ ./manage initial-data
+
+Now open http://localhost:8000, login and have fun. Afterwars run:
+
+    $ docker-compose stop
+
+To remove all containers including the complete database run:
+
+    $ docker-compose rm

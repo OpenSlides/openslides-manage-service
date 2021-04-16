@@ -48,12 +48,17 @@ func CmdCheckServer(cfg *ClientConfig) *cobra.Command {
 	return cmd
 }
 
-// CheckServer sets hashes and sets the password
+// CheckServer checks if services are running.
 func (s *Server) CheckServer(ctx context.Context, in *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
 	// TODO: Use grpc streaming to inform the client.
-	// TODO: Let the client define the services that should be checked.
+	// TODO: Let the client define the services that should be checked. Provide a nice default (at the moment only reader, writer and auth)
 
-	waitForService(ctx, s.config.DatastoreWriterURL().Host, s.config.AuthURL().Host)
+	waitForService(
+		ctx,
+		s.config.DatastoreReaderURL().Host,
+		s.config.DatastoreWriterURL().Host,
+		s.config.AuthURL().Host,
+	)
 
 	return &proto.CheckServerResponse{}, ctx.Err()
 }
