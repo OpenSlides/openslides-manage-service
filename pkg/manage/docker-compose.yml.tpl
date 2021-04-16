@@ -7,7 +7,7 @@ services:
   proxy:
     image: openslides_proxy:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/OpenSlides.git#{{ .Ref }}:proxy
+      context: {{ .Service.proxy }}
     depends_on:
       - client
       - backend
@@ -24,7 +24,7 @@ services:
   client:
     image: openslides_client:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-client.git#{{ .CommitID.client }}
+      context: {{ .Service.client }}
     depends_on:
       - backend
       - autoupdate
@@ -34,7 +34,7 @@ services:
   backend:
     image: openslides_backend:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-backend.git#{{ .CommitID.backend }}
+      context: {{ .Service.backend }}
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -50,7 +50,7 @@ services:
   datastore-reader:
     image: openslides_datastore_reader:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-datastore-service.git#{{ .CommitID.datastore }}
+      context: {{ .Service.datastore }}
       args:
         MODULE: reader
         PORT: 9010
@@ -67,7 +67,7 @@ services:
   datastore-writer:
     image: openslides_datastore_writer:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-datastore-service.git#{{ .CommitID.datastore }}
+      context: {{ .Service.datastore }}
       args:
         MODULE: writer
         PORT: 9011
@@ -92,7 +92,7 @@ services:
   autoupdate:
     image: openslides_autoupdate:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-autoupdate-service.git#{{ .CommitID.autoupdate }}
+      context: {{ .Service.autoupdate }}
     depends_on:
       - datastore-reader
       - message-bus
@@ -108,7 +108,7 @@ services:
   auth:
     image: openslides_auth:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-auth-service.git#{{ .CommitID.auth }}
+      context: {{ .Service.auth }}
     depends_on:
       - datastore-reader
       - message-bus
@@ -136,7 +136,7 @@ services:
   media:
     image: openslides_media:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-media-service.git#{{ .CommitID.media }}
+      context: {{ .Service.media }}
     depends_on:
       - backend
       - postgres
@@ -149,7 +149,7 @@ services:
   manage:
     image: openslides_manage:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-manage-service.git#{{ .CommitID.manage }}
+      context: {{ .Service.manage }}
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -168,7 +168,7 @@ services:
   permission:
     image: openslides_permission:{{ .Tag }}
     build:
-      context: https://github.com/OpenSlides/openslides-permission-service.git#{{ .CommitID.permission }}
+      context: {{ .Service.permission }}
     depends_on:
     - datastore-reader
     env_file: services.env

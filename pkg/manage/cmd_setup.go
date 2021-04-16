@@ -38,26 +38,31 @@ func CmdSetup(cfg *ClientConfig) *cobra.Command {
 		Long:  setupHelp,
 	}
 
-	local := cmd.Flags().BoolP("local", "l", false, "Create required files in currend working directory")
+	cwd := cmd.Flags().Bool("cwd", false, "Create required files in currend working directory")
+	local := cmd.Flags().Bool("local", false, "Use local code to build images instead of URIs to GitHub. This requires --cwd to be set.")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 		defer cancel()
 
 		dataPath := path.Join(xdg.DataHome, appName)
-		if *local {
+		if *cwd {
 			p, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("getting current directory: %w", err)
 			}
 			dataPath = p
+		} else {
+			if *local {
+				return fmt.Errorf("--local requires --cwd to be set")
+			}
 		}
 
 		if err := os.MkdirAll(dataPath, fs.ModePerm); err != nil {
 			return fmt.Errorf("creating directory `%s`: %w", dataPath, err)
 		}
 
-		if err := createDockerComposeYML(ctx, dataPath); err != nil {
+		if err := createDockerComposeYML(ctx, dataPath, !*local); err != nil {
 			return fmt.Errorf("creating Docker Compose YML: %w", err)
 		}
 
