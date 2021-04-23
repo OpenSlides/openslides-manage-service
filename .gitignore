@@ -3,3 +3,8 @@
 # Binaries
 /server
 /manage
+
+# Generated files
+docker-compose.yml
+secrets/
+services.env

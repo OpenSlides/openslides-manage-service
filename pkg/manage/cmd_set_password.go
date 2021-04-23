@@ -16,7 +16,7 @@ import (
 
 const authHashPath = "/internal/auth/hash"
 
-const setPasswordHelp = `Sets the password of an user
+const helpSetPassword = `Sets the password of an user
 
 This command sets the password of an user by a given user ID.
 `
@@ -25,14 +25,18 @@ This command sets the password of an user by a given user ID.
 func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set-password",
-		Short: "Sets the password of an user.",
-		Long:  setPasswordHelp,
+		Short: "Sets the password of an user",
+		Long:  helpSetPassword,
 	}
 
-	userID := cmd.Flags().Int64P("user_id", "u", 1, "ID of the user account.")
-	password := cmd.Flags().StringP("password", "p", "admin", "New password of the user.")
+	userID := cmd.Flags().Int64P("user_id", "u", 0, "ID of the user account")
+	password := cmd.Flags().StringP("password", "p", "", "New password of the user")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if *userID == 0 || *password == "" {
+			return fmt.Errorf("You have to provide user id and password.")
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 		defer cancel()
 
@@ -105,6 +109,7 @@ func hashPassword(ctx context.Context, authURL *url.URL, password string) (strin
 	return respBody.Hash, nil
 }
 
+// setPassword sets the given hashed password in datastore.
 func setPassword(ctx context.Context, writerURL *url.URL, userID int, hash string) error {
 	key := fmt.Sprintf("user/%d/password", userID)
 	value := []byte(`"` + hash + `"`)

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const createUsersHelp = `Creates an user account
+const helpCreateUsers = `Creates an user account
 
 This command creates an user account on the server.
 `
@@ -18,8 +18,8 @@ This command creates an user account on the server.
 func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-user",
-		Short: "Creates an user account.",
-		Long:  createUsersHelp,
+		Short: "Creates an user account",
+		Long:  helpCreateUsers,
 	}
 
 	username := cmd.Flags().StringP("username", "u", "admin", "Name of the user account")
@@ -51,7 +51,7 @@ func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 	return cmd
 }
 
-// CreateUser TODO
+// CreateUser ... TODO
 func (s *Server) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
-	return nil, errors.New("TODO")
+	return nil, errors.New("Not implemented yet.")
 }

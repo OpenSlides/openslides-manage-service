@@ -3,6 +3,7 @@ package manage
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"net/url"
 	"os"
@@ -32,7 +33,7 @@ func RunServer(cfg *ServerConfig) error {
 		srv.GracefulStop()
 	}()
 
-	fmt.Printf("Running manage service on %s\n", addr)
+	log.Printf("Running manage service on %s\n", addr)
 	if err := srv.Serve(lis); err != nil {
 		return fmt.Errorf("running service: %w", err)
 	}

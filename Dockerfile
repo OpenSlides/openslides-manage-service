@@ -15,6 +15,7 @@ COPY proto proto
 # Build service in seperate stage.
 FROM base as builder
 RUN CGO_ENABLED=0 go build ./cmd/server
+RUN CGO_ENABLED=0 go build ./cmd/manage
 
 
 # Test build.
@@ -34,7 +35,13 @@ EXPOSE 9008
 CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
 
 
-# Productive build.
+# Productive build manage tool.
+FROM scratch as manage-tool-productive
+COPY --from=builder /root/manage .
+ENTRYPOINT ["/manage"]
+
+
+# Productive build server.
 FROM scratch
 COPY --from=builder /root/server .
 EXPOSE 9008
