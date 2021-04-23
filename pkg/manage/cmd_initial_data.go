@@ -108,15 +108,13 @@ func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) 
 
 // parseData takes a JSON encoded string and transforms it into a map of FQField and value.
 func parseData(d []byte) (map[string]map[string]map[string]json.RawMessage, error) {
-	container := struct {
-		Data map[string]map[string]map[string]json.RawMessage
-	}{}
+	var data map[string]map[string]map[string]json.RawMessage
 
-	if err := json.Unmarshal(d, &container.Data); err != nil {
+	if err := json.Unmarshal(d, &data); err != nil {
 		return nil, fmt.Errorf("unmarshaling JSON: %w", err)
 	}
 
-	return container.Data, nil
+	return data, nil
 }
 
 // setAdminPassword reads the docker secret "admin" and sets the password

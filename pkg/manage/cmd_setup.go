@@ -45,6 +45,10 @@ func CmdSetup(cfg *ClientConfig) *cobra.Command {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 		defer cancel()
 
+		if *local && !*cwd {
+			return fmt.Errorf("--local requires --cwd to be set")
+		}
+
 		dataPath := path.Join(xdg.DataHome, appName)
 		if *cwd {
 			p, err := os.Getwd()
@@ -52,10 +56,6 @@ func CmdSetup(cfg *ClientConfig) *cobra.Command {
 				return fmt.Errorf("getting current directory: %w", err)
 			}
 			dataPath = p
-		} else {
-			if *local {
-				return fmt.Errorf("--local requires --cwd to be set")
-			}
 		}
 
 		if err := os.MkdirAll(dataPath, fs.ModePerm); err != nil {
@@ -92,7 +92,7 @@ func createSecrets(dataPath string) error {
 		"auth_cookie_key",
 	}
 	for _, s := range randomSecrets {
-		e := func() error {
+		err := func() error {
 			f, err := os.Create(path.Join(dataPath, s))
 			if err != nil {
 				return fmt.Errorf("creating file `%s`: %w", path.Join(dataPath, s), err)
@@ -109,8 +109,8 @@ func createSecrets(dataPath string) error {
 
 			return nil
 		}()
-		if e != nil {
-			return e
+		if err != nil {
+			return err
 		}
 	}
 

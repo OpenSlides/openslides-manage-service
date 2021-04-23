@@ -45,7 +45,7 @@ func Get(ctx context.Context, readerURL *url.URL, fqfield string, value interfac
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			body = []byte("[can not read body]")
@@ -98,7 +98,7 @@ func Exists(ctx context.Context, readerURL *url.URL, collection string, id int) 
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			body = []byte("[can not read body]")
@@ -111,17 +111,13 @@ func Exists(ctx context.Context, readerURL *url.URL, collection string, id int) 
 		return false, fmt.Errorf("reading response body: %w", err)
 	}
 
-	var respData map[string]json.RawMessage
+	var respData struct {
+		Exists bool `json:"exists"`
+	}
 	if err := json.Unmarshal(respBody, &respData); err != nil {
 		return false, fmt.Errorf("decoding response body `%s`: %w", respBody, err)
 	}
-
-	var result bool
-	if err := json.Unmarshal(respData["exists"], &result); err != nil {
-		return false, fmt.Errorf("decoding response field `exists`: %w", err)
-	}
-
-	return result, nil
+	return respData.Exists, nil
 }
 
 // Set sets a FQField at the datastore. Value has to be JSON.
@@ -190,7 +186,7 @@ func sendWriteRequest(ctx context.Context, writerURL *url.URL, reqBody string) e
 		return fmt.Errorf("sending request to datastore at %s: %w", addr, err)
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			body = []byte("[can not read body]")

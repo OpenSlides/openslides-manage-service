@@ -71,11 +71,12 @@ func constructDockerComposeYML(ctx context.Context, w io.Writer, remote bool) er
 
 	const ref = "openslides4-dev"
 
-	var td tplData
+	td := tplData{
+		Tag:                "4.0-dev",
+		ExternalHTTPPort:   "8000",
+		ExternalManagePort: "9008",
+	}
 
-	td.Tag = "4.0-dev"
-	td.ExternalHTTPPort = "8000"
-	td.ExternalManagePort = "9008"
 	if err := populateServices(ctx, &td, ref, remote); err != nil {
 		return fmt.Errorf("populating services to template data: %w", err)
 	}
@@ -87,10 +88,10 @@ func constructDockerComposeYML(ctx context.Context, w io.Writer, remote bool) er
 	return nil
 }
 
-// populateServices is a small helper function that populates service metadate
+// populateServices is a small helper function that populates service metadata
 // to the given template data.
 func populateServices(ctx context.Context, td *tplData, ref string, remote bool) error {
-	services, err := getServices(ctx, ref)
+	services, err := Services(ctx, ref)
 	if err != nil {
 		return fmt.Errorf("getting services from GitHub API: %w", err)
 	}
@@ -112,8 +113,8 @@ func populateServices(ctx context.Context, td *tplData, ref string, remote bool)
 	return nil
 }
 
-// getServices fetches service definitions from GitHub API.
-func getServices(ctx context.Context, ref string) (map[string]Service, error) {
+// Services fetches service definitions from GitHub API.
+func Services(ctx context.Context, ref string) (map[string]Service, error) {
 	addr := "https://api.github.com/repos/OpenSlides/OpenSlides/contents?ref=" + ref
 	req, err := http.NewRequestWithContext(ctx, "GET", addr, nil)
 	if err != nil {

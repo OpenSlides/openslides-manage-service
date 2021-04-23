@@ -31,10 +31,16 @@ To compile changed `.proto` files, run `protoc`:
 
 ## Docker
 
-You can build the following Docker images:
+You can build the following Docker images.
 
-    $ docker build .  # Builds the manage service server.
-    $ docker build --target manage-tool-productive .  # Builds the client e. g. for use as one shot container with customized command.
+To build the manage service server use:
+
+    $ docker build .
+
+To build the client e. g. for use as one shot container with customized command
+use:
+
+    $ docker build --target manage-tool-productive .
 
 
 ## How to start the full system
