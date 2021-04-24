@@ -54,7 +54,7 @@ running. Check if you have to run docker as local user or as root.
 
 First go to a nice place in your filesystem. Then run:
 
-    $ ./manage setup --local
+    $ ./manage setup --cwd
     $ docker-compose up --build --detach
     $ ./manage initial-data
 
