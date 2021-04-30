@@ -5,9 +5,7 @@ version: '3.4'
 
 services:
   proxy:
-    image: openslides_proxy:{{ .Tag }}
-    build:
-      context: {{ .Service.proxy }}
+    {{ .Service.proxy }}
     depends_on:
       - client
       - backend
@@ -22,9 +20,7 @@ services:
       - "127.0.0.1:{{ .ExternalHTTPPort }}:8000"
 
   client:
-    image: openslides_client:{{ .Tag }}
-    build:
-      context: {{ .Service.client }}
+    {{ .Service.client }}
     depends_on:
       - backend
       - autoupdate
@@ -32,9 +28,7 @@ services:
       - frontend
 
   backend:
-    image: openslides_backend:{{ .Tag }}
-    build:
-      context: {{ .Service.backend }}
+    {{ .Service.backend }}
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -48,12 +42,7 @@ services:
       - auth_cookie_key
 
   datastore-reader:
-    image: openslides_datastore_reader:{{ .Tag }}
-    build:
-      context: {{ .Service.datastore }}
-      args:
-        MODULE: reader
-        PORT: 9010
+    {{ .Service.datastore_reader }}
     depends_on:
       - postgres
     env_file: services.env
@@ -65,12 +54,7 @@ services:
       - postgres
 
   datastore-writer:
-    image: openslides_datastore_writer:{{ .Tag }}
-    build:
-      context: {{ .Service.datastore }}
-      args:
-        MODULE: writer
-        PORT: 9011
+    {{ .Service.datastore_writer }}
     depends_on:
       - postgres
       - message-bus
@@ -90,9 +74,7 @@ services:
       - postgres
 
   autoupdate:
-    image: openslides_autoupdate:{{ .Tag }}
-    build:
-      context: {{ .Service.autoupdate }}
+    {{ .Service.autoupdate }}
     depends_on:
       - datastore-reader
       - message-bus
@@ -106,9 +88,7 @@ services:
       - auth_cookie_key
 
   auth:
-    image: openslides_auth:{{ .Tag }}
-    build:
-      context: {{ .Service.auth }}
+    {{ .Service.auth }}
     depends_on:
       - datastore-reader
       - message-bus
@@ -134,9 +114,7 @@ services:
       - message-bus
 
   media:
-    image: openslides_media:{{ .Tag }}
-    build:
-      context: {{ .Service.media }}
+    {{ .Service.media }}
     depends_on:
       - backend
       - postgres
@@ -147,9 +125,7 @@ services:
       - postgres
 
   manage:
-    image: openslides_manage:{{ .Tag }}
-    build:
-      context: {{ .Service.manage }}
+    {{ .Service.manage }}
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -166,9 +142,7 @@ services:
 
 # TODO: Remove this service so the networks won't matter any more.
   permission:
-    image: openslides_permission:{{ .Tag }}
-    build:
-      context: {{ .Service.permission }}
+    {{ .Service.permission }}
     depends_on:
     - datastore-reader
     env_file: services.env
