@@ -1,5 +1,5 @@
 FROM golang:1.16.3-alpine as base
-LABEL maintainer="OpenSlides Team <info@openslides.com>"
+
 WORKDIR /root/
 
 RUN apk add git
@@ -14,6 +14,7 @@ COPY proto proto
 
 # Build service in seperate stage.
 FROM base as builder
+
 RUN CGO_ENABLED=0 go build ./cmd/server
 RUN CGO_ENABLED=0 go build ./cmd/manage
 
@@ -43,6 +44,11 @@ ENTRYPOINT ["/manage"]
 
 # Productive build server.
 FROM scratch
+LABEL org.opencontainers.image.title="OpenSlides Manage Service"
+LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
+provides some management commands to setup and control OpenSlides instances."
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
 COPY --from=builder /root/server .
 EXPOSE 9008
 ENTRYPOINT ["/server"]
