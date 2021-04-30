@@ -3,16 +3,83 @@ package manage
 import (
 	"context"
 	_ "embed" // Neeed for embed. See Docu of Go 1.16
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
-	"net/http"
 	"os"
 	"path"
-	"strings"
+
+	"gopkg.in/yaml.v3"
 )
+
+// Constants to be used in created docker-compose.yml.
+const (
+	DockerRegistry     = "ghcr.io/normanjaeckel/openslides"
+	OpenSlidesTag      = "4.0.0-dev"
+	ExternalHTTPPort   = "8000"
+	ExternalManagePort = "9008"
+)
+
+// servicesYML contains the definitions for all OpenSlides services.
+const servicesYML = `---
+proxy:
+  image: openslides-proxy
+  path: proxy
+client:
+  image: openslides-client
+  path: openslides-client
+backend:
+  image: openslides-backend
+  path: openslides-backend
+datastore_reader:
+  image: openslides-datastore-reader
+  path: openslides-datastore-service
+  args:
+    module: reader
+    port: 9010
+datastore_writer:
+  image: openslides-datastore-writer
+  path: openslides-datastore-service
+  args:
+    module: writer
+    port: 9011
+autoupdate:
+  image: openslides-autoupdate
+  path: openslides-autoupdate-service
+auth:
+  image: openslides-auth
+  path: openslides-auth-service
+media:
+  image: openslides-media
+  path: openslides-media-service
+manage:
+  image: openslides-manage
+  path: openslides-manage-service
+permission:
+  image: openslides-permission
+  path: openslides-permission-service
+`
+
+// Service holds the metadate of an OpenSlides service to be used in
+// docker-compose.yml template.
+type Service struct {
+	Image string
+	Path  string
+	Args  struct {
+		MODULE string
+		PORT   string
+	}
+}
+
+// Services provides a map with all OpenSlides services.
+func Services() (map[string]Service, error) {
+	var s map[string]Service
+	if err := yaml.Unmarshal([]byte(servicesYML), &s); err != nil {
+		return nil, fmt.Errorf("unmarshalling servivesYML: %w", err)
+	}
+	return s, nil
+}
 
 // CreateFileType provides access to os.Create and enables mocking during testing.
 type CreateFileType func(name string) (io.WriteCloser, error)
@@ -46,17 +113,9 @@ var defaultDockerCompose string
 
 // tplData holds the data used to execute the docker-compose.yml template.
 type tplData struct {
-	Tag                string
 	ExternalHTTPPort   string
 	ExternalManagePort string
 	Service            map[string]string
-}
-
-// Service holds service metadata from GitHub API that are used in the
-// docker-compose.yml template.
-type Service struct {
-	Name    string `json:"name"`
-	HTMLURL string `json:"html_url"`
 }
 
 // constructDockerComposeYML writes the populated template to the given writer.
@@ -69,15 +128,12 @@ func constructDockerComposeYML(ctx context.Context, w io.Writer, remote bool) er
 	}
 	composeTPL.Option("missingkey=error")
 
-	const ref = "openslides4-dev"
-
 	td := tplData{
-		Tag:                "4.0-dev",
-		ExternalHTTPPort:   "8000",
-		ExternalManagePort: "9008",
+		ExternalHTTPPort:   ExternalHTTPPort,
+		ExternalManagePort: ExternalManagePort,
 	}
 
-	if err := populateServices(ctx, &td, ref, remote); err != nil {
+	if err := populateServices(ctx, &td, remote); err != nil {
 		return fmt.Errorf("populating services to template data: %w", err)
 	}
 
@@ -90,67 +146,47 @@ func constructDockerComposeYML(ctx context.Context, w io.Writer, remote bool) er
 
 // populateServices is a small helper function that populates service metadata
 // to the given template data.
-func populateServices(ctx context.Context, td *tplData, ref string, remote bool) error {
-	services, err := Services(ctx, ref)
+func populateServices(ctx context.Context, td *tplData, remote bool) error {
+	services, err := Services()
 	if err != nil {
-		return fmt.Errorf("getting services from GitHub API: %w", err)
+		return fmt.Errorf("getting services: %w", err)
 	}
 
 	td.Service = make(map[string]string, len(services))
 
 	if remote {
 		for name, service := range services {
-			td.Service[name] = strings.Replace(service.HTMLURL, "/tree/", ".git#", 1)
+			td.Service[name] = fmt.Sprintf(
+				"image: %s/%s:%s",
+				DockerRegistry,
+				service.Image,
+				OpenSlidesTag,
+			)
 		}
-		td.Service["proxy"] = fmt.Sprintf("https://github.com/OpenSlides/OpenSlides.git#%s:proxy", ref)
 		return nil
 	}
 
+	fragment := `image: %s
+    build:
+      context: ./%s`
+
+	fragmentSuffix := `
+      args:
+        MODULE: %s
+        PORT: %s`
+
 	for name, service := range services {
-		td.Service[name] = "./" + service.Name
-	}
-	td.Service["proxy"] = "./proxy"
-	return nil
-}
-
-// Services fetches service definitions from GitHub API.
-func Services(ctx context.Context, ref string) (map[string]Service, error) {
-	addr := "https://api.github.com/repos/OpenSlides/OpenSlides/contents?ref=" + ref
-	req, err := http.NewRequestWithContext(ctx, "GET", addr, nil)
-	if err != nil {
-		return nil, fmt.Errorf("creating request to GitHub API: %w", err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("sending request to GitHub API at %s: %w", addr, err)
-	}
-	defer resp.Body.Close()
-
-	var apiBody []Service
-	if err := json.NewDecoder(resp.Body).Decode(&apiBody); err != nil {
-		return nil, fmt.Errorf("reading and decoding body from GitHub API: %w", err)
-	}
-
-	s := map[string]string{
-		"openslides-client":             "client",
-		"openslides-backend":            "backend",
-		"openslides-datastore-service":  "datastore",
-		"openslides-autoupdate-service": "autoupdate",
-		"openslides-auth-service":       "auth",
-		"openslides-media-service":      "media",
-		"openslides-manage-service":     "manage",
-		"openslides-permission-service": "permission", // TODO: Remove this line after permission service is removed.
-	}
-	services := make(map[string]Service, len(s))
-	for _, apiElement := range apiBody {
-		tplName, ok := s[apiElement.Name]
-		if ok {
-			services[tplName] = apiElement
+		s := fmt.Sprintf(
+			fragment,
+			fmt.Sprintf("%s:%s", service.Image, OpenSlidesTag),
+			service.Path,
+		)
+		if service.Args.MODULE != "" || service.Args.PORT != "" {
+			s += fmt.Sprintf(fragmentSuffix, service.Args.MODULE, service.Args.PORT)
 		}
+		td.Service[name] = s
 	}
-
-	return services, nil
+	return nil
 }
 
 //go:embed default_services.env
