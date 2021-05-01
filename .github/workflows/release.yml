@@ -1,5 +1,7 @@
 name: GitHub Releaae
-on: [push]
+on:
+  push:
+    branches: [main]
 jobs:
   release:
     name: Create GitHub Release and upload binary
