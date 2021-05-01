@@ -81,27 +81,22 @@ func Services() (map[string]Service, error) {
 	return s, nil
 }
 
-// CreateFileType provides access to os.Create and enables mocking during testing.
-type CreateFileType func(name string) (io.WriteCloser, error)
-
-var CreateFile CreateFileType = func(name string) (io.WriteCloser, error) {
-	return os.Create(name)
-}
-
 // CreateDockerComposeYML creates a docker-compose.yml file in the current working directory
 // using a template. In remote mode it uses the GitHub API to fetch the required commit IDs
 // of all services. Else it uses relative paths to local code as provided in OpenSlides
 // main repository.
-func CreateDockerComposeYML(ctx context.Context, dataPath string, remote bool) error {
+func CreateDockerComposeYML(ctx context.Context, creator func(name string) (io.Writer, error), dataPath string, remote bool) error {
 	p := path.Join(dataPath, "docker-compose.yml")
 
-	f, err := CreateFile(p)
+	w, err := creator(p)
 	if err != nil {
 		return fmt.Errorf("creating file `%s`: %w", p, err)
 	}
-	defer f.Close()
+	if closer, ok := w.(io.Closer); ok {
+		defer closer.Close()
+	}
 
-	if err := constructDockerComposeYML(ctx, f, remote); err != nil {
+	if err := constructDockerComposeYML(ctx, w, remote); err != nil {
 		return fmt.Errorf("writing content to file `%s`: %w", p, err)
 	}
 
