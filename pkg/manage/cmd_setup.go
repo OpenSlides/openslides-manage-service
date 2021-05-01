@@ -62,7 +62,7 @@ func CmdSetup(cfg *ClientConfig) *cobra.Command {
 			return fmt.Errorf("creating directory `%s`: %w", dataPath, err)
 		}
 
-		c := func(name string) (io.WriteCloser, error) {
+		c := func(name string) (io.Writer, error) {
 			return os.Create(name)
 		}
 
