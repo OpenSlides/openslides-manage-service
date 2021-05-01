@@ -26,10 +26,18 @@ func TestCreateDockerComposeYML(t *testing.T) {
 			t.Errorf("CreateDockerComposeYML should not return an error, but returns error: %s", err)
 		}
 
-		if strings.Contains(buf.String(), "ghcr.io") != remote {
+		if remote {
+			if !strings.Contains(buf.String(), "ghcr.io") {
+				t.Error(
+					"CreateDockerComposeYML with remote true should write ",
+					"GitHub Container Registry URIs to the file")
+			}
+			continue
+		}
+		if strings.Contains(buf.String(), "ghcr.io") {
 			t.Error(
-				"CreateDockerComposeYML with remote true should and with remote ",
-				"false should not write GitHub Container Registry URIs to the file")
+				"CreateDockerComposeYML with remote false should not write ",
+				"GitHub Container Registry URIs to the file")
 		}
 	}
 }
