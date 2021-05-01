@@ -2,7 +2,7 @@ package manage
 
 import (
 	"context"
-	_ "embed"
+	_ "embed" // Blank import required to use go directive.
 	"encoding/json"
 	"fmt"
 	"os"
@@ -75,7 +75,7 @@ func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 	return cmd
 }
 
-// Sets initial data in datastore.
+// InitialData sets initial data in datastore.
 func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
 	exists, err := datastore.Exists(ctx, s.config.DatastoreReaderURL(), "organisation", 1)
 	if err != nil {

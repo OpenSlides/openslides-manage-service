@@ -1,8 +1,10 @@
 # OpenSlides Manage Service
 
-Manage service for OpenSlides which provides some management commands. The
-service listens on the port given by environment variable `MANAGE_SERVICE_PORT`
-(default 9008) and uses [gRPC](https://grpc.io/).
+Manage service and tool for OpenSlides which provides some management commands
+to setup and control OpenSlides instances.
+
+The service listens on the port given by environment variable
+`MANAGE_SERVICE_PORT` (default 9008) and uses [gRPC](https://grpc.io/).
 
 The tool (client) can be used as follows:
 
@@ -55,7 +57,7 @@ running. Check if you have to run docker as local user or as root.
 First go to a nice place in your filesystem. Then run:
 
     $ ./manage setup --cwd
-    $ docker-compose up --build --detach
+    $ docker-compose up --detach
     $ ./manage initial-data
 
 Now open http://localhost:8000, login and have fun. Afterwars run:

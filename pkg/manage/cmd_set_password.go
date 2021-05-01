@@ -34,7 +34,7 @@ func CmdSetPassword(cfg *ClientConfig) *cobra.Command {
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if *userID == 0 || *password == "" {
-			return fmt.Errorf("You have to provide user id and password.")
+			return fmt.Errorf("you have to provide user id and password")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
