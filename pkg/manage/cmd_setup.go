@@ -29,9 +29,9 @@ Then the container are stopped. To start them again, use start command.
 
 const appName = "openslides"
 
-// CmdSetup creates docker-compose.yml, secrets and services.env. Also runs
+// cmdSetup creates docker-compose.yml, secrets and services.env. Also runs
 // docker-compose build to build all images.
-func CmdSetup(cfg *ClientConfig) *cobra.Command {
+func cmdSetup(cfg *ClientConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "setup",
 		Short: "Builds the required files and docker images",
@@ -42,46 +42,55 @@ func CmdSetup(cfg *ClientConfig) *cobra.Command {
 	local := cmd.Flags().Bool("local", false, "Use local code to build images instead of URIs to GitHub. This requires --cwd to be set.")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
-		defer cancel()
-
 		if *local && !*cwd {
 			return fmt.Errorf("--local requires --cwd to be set")
 		}
 
-		dataPath := path.Join(xdg.DataHome, appName)
-		if *cwd {
-			p, err := os.Getwd()
-			if err != nil {
-				return fmt.Errorf("getting current directory: %w", err)
-			}
-			dataPath = p
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+		defer cancel()
+
+		var dataPath string
+		if !*cwd {
+			dataPath = path.Join(xdg.DataHome, appName)
 		}
 
-		if err := os.MkdirAll(dataPath, fs.ModePerm); err != nil {
-			return fmt.Errorf("creating directory `%s`: %w", dataPath, err)
-		}
-
-		c := func(name string) (io.Writer, error) {
-			return os.Create(name)
-		}
-
-		if err := CreateDockerComposeYML(ctx, c, dataPath, !*local); err != nil {
-			return fmt.Errorf("creating Docker Compose YML: %w", err)
-		}
-
-		if err := createEnvFile(dataPath); err != nil {
-			return fmt.Errorf("creating .env file: %w", err)
-		}
-
-		if err := createSecrets(dataPath); err != nil {
-			return fmt.Errorf("creating secrets: %w", err)
+		if err := installOpenSlides(ctx, dataPath, !*local); err != nil {
+			return fmt.Errorf("installing OpenSlides: %w", err)
 		}
 
 		return nil
 	}
 
 	return cmd
+}
+
+// installOpenSlides creates the required files to run OpenSlides.
+func installOpenSlides(ctx context.Context, dataPath string, remote bool) error {
+	if dataPath == "" {
+		p, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("getting current directory: %w", err)
+		}
+		dataPath = p
+	}
+
+	if err := os.MkdirAll(dataPath, fs.ModePerm); err != nil {
+		return fmt.Errorf("creating directory `%s`: %w", dataPath, err)
+	}
+
+	if err := createDockerComposeYML(ctx, dataPath, remote); err != nil {
+		return fmt.Errorf("creating Docker Compose YML: %w", err)
+	}
+
+	if err := createEnvFile(dataPath); err != nil {
+		return fmt.Errorf("creating .env file: %w", err)
+	}
+
+	if err := createSecrets(dataPath); err != nil {
+		return fmt.Errorf("creating secrets: %w", err)
+	}
+
+	return nil
 }
 
 // createSecrets creates random values uses as secrets in Docker Compose file.
@@ -97,13 +106,18 @@ func createSecrets(dataPath string) error {
 	}
 	for _, s := range randomSecrets {
 		err := func() error {
-			f, err := os.Create(path.Join(dataPath, s))
+			p := path.Join(dataPath, s)
+			if fileExists(p) {
+				return nil
+			}
+
+			f, err := os.Create(p)
 			if err != nil {
 				return fmt.Errorf("creating file `%s`: %w", path.Join(dataPath, s), err)
 			}
 			defer f.Close()
 
-			// This creates cryptographically secure random bytes. 32 Bytes means
+			// This creates cryptographically secure random bytes. 32 bytes means
 			// 256bit. The output can contain zero bytes.
 			b64e := base64.NewEncoder(base64.StdEncoding, f)
 			defer b64e.Close()
