@@ -81,20 +81,22 @@ func Services() (map[string]Service, error) {
 	return s, nil
 }
 
-// CreateDockerComposeYML creates a docker-compose.yml file in the current working directory
+// createDockerComposeYML creates a docker-compose.yml file in the current working directory
 // using a template. In remote mode it uses the GitHub API to fetch the required commit IDs
 // of all services. Else it uses relative paths to local code as provided in OpenSlides
 // main repository.
-func CreateDockerComposeYML(ctx context.Context, creator func(name string) (io.Writer, error), dataPath string, remote bool) error {
+func createDockerComposeYML(ctx context.Context, dataPath string, remote bool) error {
 	p := path.Join(dataPath, "docker-compose.yml")
 
-	w, err := creator(p)
+	if fileExists(p) {
+		return nil
+	}
+
+	w, err := os.Create(p)
 	if err != nil {
 		return fmt.Errorf("creating file `%s`: %w", p, err)
 	}
-	if closer, ok := w.(io.Closer); ok {
-		defer closer.Close()
-	}
+	defer w.Close()
 
 	if err := constructDockerComposeYML(ctx, w, remote); err != nil {
 		return fmt.Errorf("writing content to file `%s`: %w", p, err)
@@ -189,8 +191,19 @@ var defaultServiesEnv []byte
 
 func createEnvFile(dataPath string) error {
 	p := path.Join(dataPath, "services.env")
+
+	if fileExists(p) {
+		return nil
+	}
+
 	if err := os.WriteFile(p, defaultServiesEnv, fs.ModePerm); err != nil {
 		return fmt.Errorf("write services file at %s: %w", p, err)
 	}
 	return nil
+}
+
+// fileExists checks if the file exists.
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }
