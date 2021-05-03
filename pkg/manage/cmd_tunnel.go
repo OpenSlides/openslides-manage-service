@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"sync"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
@@ -16,14 +17,25 @@ const helpTunnel = `Opens local ports to all services and creates
 tunnels into the OpenSlides network to the services they belong to.`
 
 func cmdTunnel(cfg *ClientConfig) *cobra.Command {
+	defaultAddrs := map[string]string{
+		":6379": "message-bus:6379",
+		":9010": "datastore-reader:9010",
+		":9011": "datastore-writer:9011",
+		":9002": "backend:9002",
+		":9003": "backend:9003",
+		":9012": "autoupdate:9012",
+		":9005": "permission:9005", // TODO: Remove after permission is removed.
+		":9004": "auth:9004",
+		//":6379": "cache:6379",
+		":9006": "media:9006",
+		":5432": ":postgres",
+		// TODO: Add voting after it was added.
+	}
 	cmd := cobra.Command{
 		Use:   "tunnel",
 		Short: "Creates tcp tunnels to the OpenSlides network.",
 		Long:  helpTunnel,
 	}
-
-	local := cmd.Flags().StringP("local", "L", ":1080", "Local address the tunnel will listen to")
-	remote := cmd.Flags().StringP("remote", "R", "localhost:6379", "Remote address the tunnel will connect to")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// Connect to manage server via grpc.
@@ -33,9 +45,20 @@ func cmdTunnel(cfg *ClientConfig) *cobra.Command {
 		}
 		defer close()
 
-		if err := newTunnel(service, *local, *remote); err != nil {
-			return fmt.Errorf("creating tunnel: %w", err)
+		var wg sync.WaitGroup
+		for local, remote := range defaultAddrs {
+			wg.Add(1)
+			go func(local, remote string) {
+				defer wg.Done()
+				if err := newTunnel(service, local, remote); err != nil {
+					log.Printf("Error connecting %s to %s: %v", local, remote, err)
+					return
+				}
+			}(local, remote)
 		}
+
+		wg.Wait()
+
 		return nil
 	}
 	return &cmd
@@ -49,13 +72,12 @@ func cmdTunnel(cfg *ClientConfig) *cobra.Command {
 // Blocks until the tunnel is closed.
 func newTunnel(service proto.ManageClient, localAddr string, remoteAddr string) error {
 	// Listen on localAddr
-	addr := ":1080"
-	lst, err := net.Listen("tcp", addr)
+	lst, err := net.Listen("tcp", localAddr)
 	if err != nil {
-		return fmt.Errorf("start listening on %s: %v", addr, err)
+		return fmt.Errorf("start listening on %s: %v", localAddr, err)
 	}
 	defer lst.Close()
-	log.Printf("Listen on %s", addr)
+	log.Printf("Listen on %s", localAddr)
 
 	// Waiting for connections
 	for {
