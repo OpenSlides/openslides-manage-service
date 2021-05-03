@@ -10,6 +10,7 @@ RUN go mod download
 COPY cmd cmd
 COPY pkg pkg
 COPY proto proto
+COPY Makefile Makefile
 
 
 # Build service in seperate stage.
@@ -24,7 +25,7 @@ FROM base as testing
 
 RUN apk add build-base
 
-CMD go vet ./... && go test ./...
+CMD make test
 
 
 # Development build.
