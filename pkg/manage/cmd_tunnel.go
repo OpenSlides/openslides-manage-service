@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -14,7 +15,13 @@ import (
 )
 
 const helpTunnel = `Opens local ports to all services and creates
-tunnels into the OpenSlides network to the services they belong to.`
+tunnels into the OpenSlides network to the services they belong to.
+
+Without any argument, the command creates tunnels to all services at there 
+default ports. You can use the argument -L to create other tunnels. The
+syntax of the -L argument is the same as "ssh -L". The argument can be used
+more then one time.
+`
 
 func cmdTunnel(cfg *ClientConfig) *cobra.Command {
 	defaultAddrs := map[string]string{
@@ -37,6 +44,8 @@ func cmdTunnel(cfg *ClientConfig) *cobra.Command {
 		Long:  helpTunnel,
 	}
 
+	addrsF := cmd.Flags().StringArray("L", nil, "[bind_address:]port:host:hostport")
+
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// Connect to manage server via grpc.
 		service, close, err := Dial(context.Background(), cfg.Address)
@@ -44,6 +53,11 @@ func cmdTunnel(cfg *ClientConfig) *cobra.Command {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}
 		defer close()
+
+		addrs := tunnelParseArgument(*addrsF)
+		if len(addrs) == 0 {
+			addrs = defaultAddrs
+		}
 
 		var wg sync.WaitGroup
 		for local, remote := range defaultAddrs {
@@ -62,6 +76,18 @@ func cmdTunnel(cfg *ClientConfig) *cobra.Command {
 		return nil
 	}
 	return &cmd
+}
+
+func tunnelParseArgument(args []string) map[string]string {
+	m := make(map[string]string, len(args))
+	for _, arg := range args {
+		parts := strings.Split(arg, ":")
+		if len(parts) == 3 {
+			parts = append([]string{""}, parts...)
+		}
+		m[parts[0]+":"+parts[1]] = parts[2] + ":" + parts[3]
+	}
+	return m
 }
 
 // newTunnel creates a new tunnel via grpc to the manage service.
