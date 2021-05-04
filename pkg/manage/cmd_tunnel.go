@@ -198,8 +198,8 @@ func (s *Server) Tunnel(ts proto.Manage_TunnelServer) error {
 	return nil
 }
 
-// SendReceiver reads and writes from a grpc tunnel connection.
-type SendReceiver interface {
+// sendReceiver reads and writes from a grpc tunnel connection.
+type sendReceiver interface {
 	Recv() (*proto.TunnelData, error)
 	Send(*proto.TunnelData) error
 }
@@ -207,13 +207,12 @@ type SendReceiver interface {
 // copyStream connects the grcp connection with a io.ReadWriter.
 //
 // Blocks until one connection is closed.
-func copyStream(sr SendReceiver, rw io.ReadWriter) error {
+func copyStream(sr sendReceiver, rw io.ReadWriter) error {
 	fromGRPC := make(chan error, 1)
 	fromRW := make(chan error, 1)
 
 	// Message from grpc.
 	go func() {
-
 		defer close(fromGRPC)
 
 		for {
@@ -235,9 +234,9 @@ func copyStream(sr SendReceiver, rw io.ReadWriter) error {
 	// Message from ReadWriter.
 	go func() {
 		defer close(fromRW)
-		buff := make([]byte, 1_000_000)
+		buff := make([]byte, 2^20) // 1 MB buffer
 		for {
-			bs, err := rw.Read(buff)
+			n, err := rw.Read(buff)
 			if err != nil {
 				if err != io.EOF {
 					fromRW <- fmt.Errorf("receiving data: %w", err)
@@ -246,7 +245,7 @@ func copyStream(sr SendReceiver, rw io.ReadWriter) error {
 			}
 
 			err = sr.Send(&proto.TunnelData{
-				Data: buff[:bs],
+				Data: buff[:n],
 			})
 
 			if err != nil {
