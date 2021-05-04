@@ -18,49 +18,87 @@ const helpTunnel = `Opens local ports to all services and creates
 tunnels into the OpenSlides network to the services they belong to.
 
 Without any argument, the command creates tunnels to all services at there 
-default ports. You can use the argument -L to create other tunnels. The
-syntax of the -L argument is the same as "ssh -L". The argument can be used
-more then one time.
-`
+default ports. To specify tunnels, the flag "-L" can be used or the name
+of a known services as argument.
+
+The syntax of the -L argument is the same as "ssh -L". The argument can be
+used more then one time.
+
+Example:
+
+Open tunnels to all known services:
+$ manage tunnel
+
+Open tunnels to the datastore and auth
+$ manage tunnel datastore-reader datastore-writer auth
+
+Open a tunnel to auth on localhost:8080
+$ manage tunnel -L localhost:8080:auth:9004
+ `
 
 func cmdTunnel(cfg *ClientConfig) *cobra.Command {
-	defaultAddrs := map[string]string{
-		":6379": "message-bus:6379",
-		":9010": "datastore-reader:9010",
-		":9011": "datastore-writer:9011",
-		":9002": "backend:9002",
-		":9003": "backend:9003",
-		":9012": "autoupdate:9012",
-		":9005": "permission:9005", // TODO: Remove after permission is removed.
-		":9004": "auth:9004",
-		//":6379": "cache:6379",
-		":9006": "media:9006",
-		":5432": ":postgres",
+	services := map[string]string{
+		"message-bus":       ":6379:message-bus:6379",
+		"datastore-reader":  ":9010:datastore-reader:9010",
+		"datastore-writer":  ":9011:datastore-writer:9011",
+		"backend-action":    ":9002:backend:9002",
+		"backend-presenter": ":9003:backend:9003",
+		"autoupdate":        ":9012:autoupdate:9012",
+		"permission":        ":9005:permission:9005", // TODO: Remove after permission is removed.
+		"auth":              ":9004:auth:9004",
+		"media":             ":9006:media:9006",
+		"postgres":          ":5432:postgres:5432",
+		"cache":             ":6379:cache:6379", // TODO: Another port would be nice.
 		// TODO: Add voting after it was added.
 	}
-	cmd := cobra.Command{
-		Use:   "tunnel",
-		Short: "Creates tcp tunnels to the OpenSlides network.",
-		Long:  helpTunnel,
+
+	var serviceNames []string
+	for service := range services {
+		serviceNames = append(serviceNames, service)
 	}
 
-	addrsF := cmd.Flags().StringArray("L", nil, "[bind_address:]port:host:hostport")
+	cmd := cobra.Command{
+		Use:       "tunnel",
+		Short:     "Creates tcp tunnels to the OpenSlides network.",
+		Long:      helpTunnel,
+		Args:      cobra.OnlyValidArgs,
+		ValidArgs: serviceNames,
+	}
+
+	addrsF := cmd.Flags().StringArrayP("addr", "L", nil, "[bind_address:]port:host:hostport")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		// Connect to manage server via grpc.
-		service, close, err := Dial(context.Background(), cfg.Address)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+		defer cancel()
+
+		service, close, err := Dial(ctx, cfg.Address)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}
 		defer close()
 
-		addrs := tunnelParseArgument(*addrsF)
-		if len(addrs) == 0 {
-			addrs = defaultAddrs
+		if len(*addrsF) == 0 && len(args) == 0 {
+			// No tunnel was specified. Use all services.
+
+			// Remove cache from all serviceName. It has the same port as the
+			// messageBus. TODO: Use another port for the cache.
+			delete(services, "cache")
+
+			args = serviceNames
 		}
+		for _, arg := range args {
+			a, ok := services[arg]
+			if !ok {
+				// This is only necessary to remove the cache if all services
+				// are used. Remove this after the cache has its own port.
+				continue
+			}
+			*addrsF = append(*addrsF, a)
+		}
+		addrs := tunnelParseArgument(*addrsF)
 
 		var wg sync.WaitGroup
-		for local, remote := range defaultAddrs {
+		for local, remote := range addrs {
 			wg.Add(1)
 			go func(local, remote string) {
 				defer wg.Done()
