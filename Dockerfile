@@ -38,7 +38,7 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 
 
 # Productive build manage tool.
-FROM scratch as manage-tool-productive
+FROM scratch as manage
 COPY --from=builder /root/manage .
 ENTRYPOINT ["/manage"]
 
