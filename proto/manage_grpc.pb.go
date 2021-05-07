@@ -23,6 +23,7 @@ type ManageClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
 	Config(ctx context.Context, in *ConfigRequest, opts ...grpc.CallOption) (*ConfigResponse, error)
+	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error)
 }
 
 type manageClient struct {
@@ -78,6 +79,37 @@ func (c *manageClient) Config(ctx context.Context, in *ConfigRequest, opts ...gr
 	return out, nil
 }
 
+func (c *manageClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Manage_ServiceDesc.Streams[0], "/Manage/Tunnel", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &manageTunnelClient{stream}
+	return x, nil
+}
+
+type Manage_TunnelClient interface {
+	Send(*TunnelData) error
+	Recv() (*TunnelData, error)
+	grpc.ClientStream
+}
+
+type manageTunnelClient struct {
+	grpc.ClientStream
+}
+
+func (x *manageTunnelClient) Send(m *TunnelData) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *manageTunnelClient) Recv() (*TunnelData, error) {
+	m := new(TunnelData)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ManageServer is the server API for Manage service.
 // All implementations should embed UnimplementedManageServer
 // for forward compatibility
@@ -87,6 +119,7 @@ type ManageServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
 	Config(context.Context, *ConfigRequest) (*ConfigResponse, error)
+	Tunnel(Manage_TunnelServer) error
 }
 
 // UnimplementedManageServer should be embedded to have forward compatible implementations.
@@ -107,6 +140,9 @@ func (UnimplementedManageServer) SetPassword(context.Context, *SetPasswordReques
 }
 func (UnimplementedManageServer) Config(context.Context, *ConfigRequest) (*ConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Config not implemented")
+}
+func (UnimplementedManageServer) Tunnel(Manage_TunnelServer) error {
+	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
 }
 
 // UnsafeManageServer may be embedded to opt out of forward compatibility for this service.
@@ -210,6 +246,32 @@ func _Manage_Config_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Manage_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ManageServer).Tunnel(&manageTunnelServer{stream})
+}
+
+type Manage_TunnelServer interface {
+	Send(*TunnelData) error
+	Recv() (*TunnelData, error)
+	grpc.ServerStream
+}
+
+type manageTunnelServer struct {
+	grpc.ServerStream
+}
+
+func (x *manageTunnelServer) Send(m *TunnelData) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *manageTunnelServer) Recv() (*TunnelData, error) {
+	m := new(TunnelData)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Manage_ServiceDesc is the grpc.ServiceDesc for Manage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -238,6 +300,13 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Manage_Config_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Tunnel",
+			Handler:       _Manage_Tunnel_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "proto/manage.proto",
 }

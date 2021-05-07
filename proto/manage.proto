@@ -8,6 +8,7 @@ service Manage {
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
     rpc Config(ConfigRequest) returns (ConfigResponse);
+    rpc Tunnel(stream TunnelData) returns (stream TunnelData);
 }
 
 message CheckServerRequest {
@@ -51,4 +52,8 @@ message ConfigRequest {
 
 message ConfigResponse {
     string value = 1;
+}
+
+message TunnelData {
+    bytes data = 3;
 }

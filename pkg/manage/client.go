@@ -38,6 +38,7 @@ func RunClient() error {
 		CmdCreateUser(cfg),
 		CmdSetPassword(cfg),
 		CmdConfig(cfg),
+		cmdTunnel(cfg),
 	)
 	return cmd.Execute()
 }
