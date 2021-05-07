@@ -17,7 +17,7 @@ import (
 const helpTunnel = `Opens local ports to all services and creates
 tunnels into the OpenSlides network to the services they belong to.
 
-Without any argument, the command creates tunnels to all services at there 
+Without any argument, the command creates tunnels to all services at ther 
 default ports. To specify tunnels, the flag "-L" can be used or the name
 of a known services as argument.
 
@@ -116,6 +116,12 @@ func cmdTunnel(cfg *ClientConfig) *cobra.Command {
 	return &cmd
 }
 
+// tunnelParseArgument parses the "-L" argument of the tunnel command.
+//
+// The argument is a list of the values of all the "-L" arguments.
+//
+// The keys of the returned map are the local addr (for example ":9002") and the
+// values the remote addr (for example "backend:9002").
 func tunnelParseArgument(args []string) map[string]string {
 	m := make(map[string]string, len(args))
 	for _, arg := range args {
@@ -138,7 +144,7 @@ func newTunnel(service proto.ManageClient, localAddr string, remoteAddr string) 
 	// Listen on localAddr
 	lst, err := net.Listen("tcp", localAddr)
 	if err != nil {
-		return fmt.Errorf("start listening on %s: %v", localAddr, err)
+		return fmt.Errorf("start listening on %s: %w", localAddr, err)
 	}
 	defer lst.Close()
 	log.Printf("Listen on %s", localAddr)
@@ -187,12 +193,12 @@ func (s *Server) Tunnel(ts proto.Manage_TunnelServer) error {
 
 	conn, err := new(net.Dialer).DialContext(ts.Context(), "tcp", addr[0])
 	if err != nil {
-		return fmt.Errorf("connecting to %s: %v", addr[0], err)
+		return fmt.Errorf("connecting to %s: %w", addr[0], err)
 	}
 	defer conn.Close()
 
 	if err := copyStream(ts, conn); err != nil {
-		return fmt.Errorf("connection grpc to server: %v", err)
+		return fmt.Errorf("connection grpc to server: %w", err)
 	}
 
 	return nil
@@ -200,7 +206,15 @@ func (s *Server) Tunnel(ts proto.Manage_TunnelServer) error {
 
 // sendReceiver reads and writes from a grpc tunnel connection.
 type sendReceiver interface {
+	receiver
+	sender
+}
+
+type receiver interface {
 	Recv() (*proto.TunnelData, error)
+}
+
+type sender interface {
 	Send(*proto.TunnelData) error
 }
 
@@ -208,50 +222,27 @@ type sendReceiver interface {
 //
 // Blocks until one connection is closed.
 func copyStream(sr sendReceiver, rw io.ReadWriter) error {
+	// Create channels to send errors from the goroutines. The channels have to
+	// be buffered. If an error in one goroutine happens this function exists.
+	// If this happens, the other goroutine still runs. If an error happens, it
+	// is wirtten to the channel. An unblocked channel would block forever.
 	fromGRPC := make(chan error, 1)
 	fromRW := make(chan error, 1)
 
-	// Message from grpc.
+	// Message from gRPC
 	go func() {
 		defer close(fromGRPC)
-
-		for {
-			c, err := sr.Recv()
-			if err != nil {
-				if err != io.EOF {
-					fromGRPC <- fmt.Errorf("receiving data: %w", err)
-				}
-				return
-			}
-
-			if _, err = rw.Write(c.Data); err != nil {
-				fromGRPC <- fmt.Errorf("writing data data: %w", err)
-				return
-			}
+		if err := receiverToWriter(rw, sr); err != nil {
+			fromGRPC <- fmt.Errorf("copy data from gRPC: %w", err)
 		}
 	}()
 
-	// Message from ReadWriter.
+	// Message to gRPC
 	go func() {
 		defer close(fromRW)
-		buff := make([]byte, 2^20) // 1 MB buffer
-		for {
-			n, err := rw.Read(buff)
-			if err != nil {
-				if err != io.EOF {
-					fromRW <- fmt.Errorf("receiving data: %w", err)
-				}
-				return
-			}
 
-			err = sr.Send(&proto.TunnelData{
-				Data: buff[:n],
-			})
-
-			if err != nil {
-				fromRW <- fmt.Errorf("writing data data: %w", err)
-				return
-			}
+		if err := readerToSender(sr, rw); err != nil {
+			fromGRPC <- fmt.Errorf("copy data to gRPC: %w", err)
 		}
 	}()
 
@@ -267,4 +258,39 @@ func copyStream(sr sendReceiver, rw io.ReadWriter) error {
 		}
 	}
 	return nil
+}
+
+// receiverToWriter copies the data from the receiver (gRPC tunnel) to a writer.
+func receiverToWriter(w io.Writer, r receiver) error {
+	for {
+		c, err := r.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return fmt.Errorf("receiving data: %w", err)
+		}
+
+		if _, err := w.Write(c.Data); err != nil {
+			return fmt.Errorf("writing data: %w", err)
+		}
+	}
+}
+
+//rederToSender copys data from the reader to the sender (gPRC tunnel).
+func readerToSender(s sender, r io.Reader) error {
+	buff := make([]byte, 2^20) // 1 MB buffer
+	for {
+		n, err := r.Read(buff)
+		if err != nil {
+			if err != io.EOF {
+				return nil
+			}
+			return fmt.Errorf("receiving data: %w", err)
+		}
+
+		if err := s.Send(&proto.TunnelData{Data: buff[:n]}); err != nil {
+			return fmt.Errorf("writing data: %w", err)
+		}
+	}
 }
