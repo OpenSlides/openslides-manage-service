@@ -19,7 +19,7 @@ tunnels into the OpenSlides network to the services they belong to.
 
 Without any argument, the command creates tunnels to all services at ther 
 default ports. To specify tunnels, the flag "-L" can be used or the name
-of a known services as argument.
+of a known service as argument.
 
 The syntax of the -L argument is the same as "ssh -L". The argument can be
 used more then one time.
