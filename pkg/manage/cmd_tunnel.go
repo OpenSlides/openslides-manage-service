@@ -279,7 +279,7 @@ func receiverToWriter(w io.Writer, r receiver) error {
 
 //rederToSender copys data from the reader to the sender (gPRC tunnel).
 func readerToSender(s sender, r io.Reader) error {
-	buff := make([]byte, 2^20) // 1 MB buffer
+	buff := make([]byte, 1<<20) // 1 MB buffer
 	for {
 		n, err := r.Read(buff)
 		if err != nil {
