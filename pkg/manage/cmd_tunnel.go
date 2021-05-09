@@ -242,7 +242,7 @@ func copyStream(sr sendReceiver, rw io.ReadWriter) error {
 		defer close(fromRW)
 
 		if err := readerToSender(sr, rw); err != nil {
-			fromGRPC <- fmt.Errorf("copy data to gRPC: %w", err)
+			fromRW <- fmt.Errorf("copy data to gRPC: %w", err)
 		}
 	}()
 
@@ -283,7 +283,7 @@ func readerToSender(s sender, r io.Reader) error {
 	for {
 		n, err := r.Read(buff)
 		if err != nil {
-			if err != io.EOF {
+			if err == io.EOF {
 				return nil
 			}
 			return fmt.Errorf("receiving data: %w", err)
