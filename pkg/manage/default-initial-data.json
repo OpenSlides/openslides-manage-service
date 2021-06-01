@@ -29,6 +29,7 @@
             "is_physical_person": true,
             "password": "",
             "default_password": "admin",
+            "can_change_own_password": true,
             "gender": "",
             "email": "",
             "default_number": "",
@@ -38,10 +39,13 @@
             "is_demo_user": false,
             "organisation_management_level": "superadmin",
             "is_present_in_meeting_ids": [],
-            "meeting_id": null,
-            "guest_meeting_ids": [],
-            "committee_as_member_ids": [],
-            "committee_as_manager_ids": [],
+            "committee_ids": [
+                1
+            ],
+            "committee_$_management_level": [
+                "1"
+            ],
+            "committee_$1_management_level": "can_manage",
             "comment_$": [],
             "number_$": [],
             "structure_level_$": [],
@@ -65,7 +69,10 @@
             "projection_$_ids": [],
             "current_projector_$_ids": [],
             "vote_delegated_$_to_id": [],
-            "vote_delegations_$_from_ids": []
+            "vote_delegations_$_from_ids": [],
+            "meeting_ids": [
+                1
+            ]
         }
     },
     "resource": {},
@@ -80,8 +87,9 @@
             ],
             "template_meeting_id": null,
             "default_meeting_id": 1,
-            "member_ids": [],
-            "manager_ids": [],
+            "user_ids": [
+                1
+            ],
             "forward_to_committee_ids": [],
             "receive_forwardings_from_committee_ids": [],
             "organisation_tag_ids": [],
@@ -133,9 +141,9 @@
             "list_of_speakers_present_users_only": false,
             "list_of_speakers_show_first_contribution": false,
             "list_of_speakers_enable_point_of_order_speakers": false,
-            "list_of_speakers_enable_pro_contra_speech": true,
-            "list_of_speakers_can_set_contribution_self": true,
-            "list_of_speakers_speaker_note_for_everyone": true,
+            "list_of_speakers_enable_pro_contra_speech": false,
+            "list_of_speakers_can_set_contribution_self": false,
+            "list_of_speakers_speaker_note_for_everyone": false,
             "list_of_speakers_initially_closed": false,
             "motions_default_workflow_id": 1,
             "motions_default_amendment_workflow_id": 1,
@@ -266,15 +274,13 @@
             "default_meeting_for_committee_id": 1,
             "organisation_tag_ids": [],
             "present_user_ids": [],
-            "temporary_user_ids": [],
-            "guest_ids": [],
             "user_ids": [
                 1
             ],
             "reference_projector_id": 1,
             "list_of_speakers_countdown_id": 1,
             "poll_countdown_id": 2,
-            "default_$_projector_id": [
+            "default_projector_$_id": [
                 "agenda_all_items",
                 "topics",
                 "list_of_speakers",
@@ -291,21 +297,21 @@
                 "motion_poll",
                 "poll"
             ],
-            "default_$agenda_all_items_projector_id": 1,
-            "default_$topics_projector_id": 1,
-            "default_$list_of_speakers_projector_id": 1,
-            "default_$current_list_of_speakers_projector_id": 1,
-            "default_$motion_projector_id": 1,
-            "default_$amendment_projector_id": 1,
-            "default_$motion_block_projector_id": 1,
-            "default_$assignment_projector_id": 1,
-            "default_$user_projector_id": 1,
-            "default_$mediafile_projector_id": 1,
-            "default_$projector_message_projector_id": 1,
-            "default_$projector_countdowns_projector_id": 1,
-            "default_$assignment_poll_projector_id": 1,
-            "default_$motion_poll_projector_id": 1,
-            "default_$poll_projector_id": 1,
+            "default_projector_$agenda_all_items_id": 1,
+            "default_projector_$topics_id": 1,
+            "default_projector_$list_of_speakers_id": 1,
+            "default_projector_$current_list_of_speakers_id": 1,
+            "default_projector_$motion_id": 1,
+            "default_projector_$amendment_id": 1,
+            "default_projector_$motion_block_id": 1,
+            "default_projector_$assignment_id": 1,
+            "default_projector_$user_id": 1,
+            "default_projector_$mediafile_id": 1,
+            "default_projector_$projector_message_id": 1,
+            "default_projector_$projector_countdowns_id": 1,
+            "default_projector_$assignment_poll_id": 1,
+            "default_projector_$motion_poll_id": 1,
+            "default_projector_$poll_id": 1,
             "projection_ids": [],
             "default_group_id": 1,
             "admin_group_id": 2
@@ -323,8 +329,7 @@
                 "meeting.can_see_frontpage",
                 "motion.can_see",
                 "projector.can_see",
-                "user.can_see",
-                "user.can_change_own_password"
+                "user.can_see"
             ],
             "user_ids": [],
             "default_group_for_meeting_id": 1,
@@ -374,8 +379,7 @@
                 "poll.can_manage",
                 "projector.can_manage",
                 "tag.can_manage",
-                "user.can_manage",
-                "user.can_change_own_password"
+                "user.can_manage"
             ],
             "user_ids": [],
             "default_group_for_meeting_id": null,
@@ -403,8 +407,7 @@
                 "motion.can_create_amendments",
                 "motion.can_support",
                 "projector.can_see",
-                "user.can_see",
-                "user.can_change_own_password"
+                "user.can_see"
             ],
             "user_ids": [],
             "default_group_for_meeting_id": null,
@@ -434,8 +437,7 @@
                 "motion.can_create_amendments",
                 "motion.can_support",
                 "projector.can_see",
-                "user.can_see",
-                "user.can_change_own_password"
+                "user.can_see"
             ],
             "user_ids": [],
             "default_group_for_meeting_id": null,
