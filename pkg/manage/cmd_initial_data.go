@@ -77,7 +77,7 @@ func CmdInitialData(cfg *ClientConfig) *cobra.Command {
 
 // InitialData sets initial data in datastore.
 func (s *Server) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	exists, err := datastore.Exists(ctx, s.config.DatastoreReaderURL(), "organisation", 1)
+	exists, err := datastore.Exists(ctx, s.config.DatastoreReaderURL(), "organization", 1)
 	if err != nil {
 		return nil, fmt.Errorf("checking existance in datastore: %w", err)
 	}

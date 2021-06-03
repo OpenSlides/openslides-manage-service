@@ -254,7 +254,7 @@ type CreateUserRequest struct {
 
 	Username                    string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
 	Password                    string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	OrganisationManagementLevel string `protobuf:"bytes,3,opt,name=organisation_management_level,json=organisationManagementLevel,proto3" json:"organisation_management_level,omitempty"`
+	OrganizationManagementLevel string `protobuf:"bytes,3,opt,name=organization_management_level,json=organizationManagementLevel,proto3" json:"organization_management_level,omitempty"`
 }
 
 func (x *CreateUserRequest) Reset() {
@@ -303,9 +303,9 @@ func (x *CreateUserRequest) GetPassword() string {
 	return ""
 }
 
-func (x *CreateUserRequest) GetOrganisationManagementLevel() string {
+func (x *CreateUserRequest) GetOrganizationManagementLevel() string {
 	if x != nil {
-		return x.OrganisationManagementLevel
+		return x.OrganizationManagementLevel
 	}
 	return ""
 }

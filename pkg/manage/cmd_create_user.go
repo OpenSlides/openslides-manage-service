@@ -24,7 +24,7 @@ func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 
 	username := cmd.Flags().StringP("username", "u", "admin", "Name of the user account")
 	password := cmd.Flags().StringP("password", "p", "admin", "Password for the user")
-	orgaLvl := cmd.Flags().StringP("organisation_management_level", "m", "superadmin", "Set organisation management level")
+	orgaLvl := cmd.Flags().StringP("organization_management_level", "m", "superadmin", "Set organization management level")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
@@ -39,7 +39,7 @@ func CmdCreateUser(cfg *ClientConfig) *cobra.Command {
 		req := &proto.CreateUserRequest{
 			Username:                    *username,
 			Password:                    *password,
-			OrganisationManagementLevel: *orgaLvl,
+			OrganizationManagementLevel: *orgaLvl,
 		}
 
 		if _, err := service.CreateUser(ctx, req); err != nil {
