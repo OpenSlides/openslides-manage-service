@@ -1,5 +1,5 @@
 {
-    "organisation": {
+    "organization": {
         "1": {
             "id": 1,
             "name": "OpenSlides",
@@ -15,7 +15,7 @@
                 1
             ],
             "resource_ids": [],
-            "organisation_tag_ids": []
+            "organization_tag_ids": []
         }
     },
     "user": {
@@ -37,7 +37,7 @@
             "default_vote_weight": "1.000000",
             "last_email_send": null,
             "is_demo_user": false,
-            "organisation_management_level": "superadmin",
+            "organization_management_level": "superadmin",
             "is_present_in_meeting_ids": [],
             "committee_ids": [
                 1
@@ -76,7 +76,7 @@
         }
     },
     "resource": {},
-    "organisation_tag": {},
+    "organization_tag": {},
     "committee": {
         "1": {
             "id": 1,
@@ -92,8 +92,8 @@
             ],
             "forward_to_committee_ids": [],
             "receive_forwardings_from_committee_ids": [],
-            "organisation_tag_ids": [],
-            "organisation_id": 1
+            "organization_tag_ids": [],
+            "organization_id": 1
         }
     },
     "meeting": {
@@ -272,7 +272,7 @@
             "font_$_id": [],
             "committee_id": 1,
             "default_meeting_for_committee_id": 1,
-            "organisation_tag_ids": [],
+            "organization_tag_ids": [],
             "present_user_ids": [],
             "user_ids": [
                 1

@@ -11,7 +11,7 @@ import (
 
 const helpConfig = `Gets or sets config values
 
-This command gets or sets the config values for an organisation.
+This command gets or sets the config values for an organization.
 
 Example:
 
@@ -106,12 +106,12 @@ func CmdConfig(cfg *ClientConfig) *cobra.Command {
 	return cmd
 }
 
-// Config gets or sets an organisation config value.
+// Config gets or sets an organization config value.
 func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.ConfigResponse, error) {
 	var key string
 	switch in.Field {
 	case proto.ConfigRequest_ELECTRONIC_VOTING:
-		key = "organisation/1/enable_electronic_voting"
+		key = "organization/1/enable_electronic_voting"
 	default:
 		return nil, fmt.Errorf("Invalid request")
 	}
@@ -130,7 +130,7 @@ func (s *Server) Config(ctx context.Context, in *proto.ConfigRequest) (*proto.Co
 	return &proto.ConfigResponse{}, nil
 }
 
-// getConfig fetches the organisation config value from datastore.
+// getConfig fetches the organization config value from datastore.
 func getConfig(ctx context.Context, cfg *ServerConfig, key string) (string, error) {
 	waitForService(ctx, cfg.DatastoreReaderURL().Host)
 
@@ -146,7 +146,7 @@ func getConfig(ctx context.Context, cfg *ServerConfig, key string) (string, erro
 
 }
 
-// setConfig sets the given organisation config value in datastore.
+// setConfig sets the given organization config value in datastore.
 func setConfig(ctx context.Context, cfg *ServerConfig, key string, newValue string) error {
 	waitForService(ctx, cfg.DatastoreReaderURL().Host)
 
