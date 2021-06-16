@@ -15,7 +15,7 @@ import (
 
 // Constants to be used in created docker-compose.yml.
 const (
-	DockerRegistry     = "ghcr.io/normanjaeckel/openslides"
+	DockerRegistry     = "ghcr.io/openslides/openslides"
 	OpenSlidesTag      = "4.0.0-dev"
 	ExternalHTTPPort   = "8000"
 	ExternalManagePort = "9008"
