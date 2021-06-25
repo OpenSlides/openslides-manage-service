@@ -1,0 +1,9 @@
+# Patterns of intentionally untracked files that Git should ignore
+
+# Binaries
+/openslides
+/server
+
+# Generated files
+docker-compose.yml
+secrets/
