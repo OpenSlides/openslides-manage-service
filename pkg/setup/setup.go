@@ -1,6 +1,7 @@
 package setup
 
 import (
+	_ "embed" // Blank import required to use go directive.
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,9 @@ import (
 )
 
 const ymlFileName = "docker-compose.yml"
+
+//go:embed default-docker-compose.yml
+var defaultDockerComposeYml []byte
 
 // Setup creates YAML file for Docker Compose or Docker Swarm and secrets directory.
 func Setup(d string) error {
@@ -43,7 +47,7 @@ func createYMLFile(d string) error {
 }
 
 func writeContent(w io.Writer) error {
-	if _, err := w.Write([]byte("---\nfoo: bar\n")); err != nil {
+	if _, err := w.Write(defaultDockerComposeYml); err != nil {
 		return fmt.Errorf("writing content: %w", err)
 	}
 	return nil
