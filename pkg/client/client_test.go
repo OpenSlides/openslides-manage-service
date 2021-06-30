@@ -1,13 +1,48 @@
 package client_test
 
 import (
+	"bytes"
+	"io/ioutil"
+	"reflect"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/client"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 )
 
 func TestRunClient(t *testing.T) {
 	if err := client.RunClient(); err != nil {
 		t.Errorf("running RunClient() failed: %v", err)
 	}
+}
+
+func TestCmdHelpTexts(t *testing.T) {
+	cmd := client.RootCmd()
+	cmdTests := []struct {
+		name             string
+		input            []string
+		outputStartsWith []byte
+	}{
+		{name: "root command", input: []string{}, outputStartsWith: []byte(client.RootHelp)},
+		{name: "setup command", input: []string{"setup", "--help"}, outputStartsWith: []byte(setup.SetupHelp)},
+	}
+
+	for _, tt := range cmdTests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := new(bytes.Buffer)
+			cmd.SetOut(buf)
+			cmd.SetArgs(tt.input)
+			cmd.Execute()
+			got, err := ioutil.ReadAll(buf)
+			if err != nil {
+				t.Errorf("reading output from command execution: %v", err)
+			}
+			gotStartsWith := got[:len(tt.outputStartsWith)]
+			if !reflect.DeepEqual(tt.outputStartsWith, gotStartsWith) {
+				t.Errorf("wrong cobra command output, expected %q, got %q", tt.outputStartsWith, gotStartsWith)
+			}
+
+		})
+	}
+
 }

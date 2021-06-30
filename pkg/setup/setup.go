@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -19,8 +21,41 @@ var defaultDockerComposeYml []byte
 //go:embed default-environment.env
 var defaultEnvFile []byte
 
+const (
+	// SetupHelp contains the short help text for the setup command.
+	SetupHelp = "Builds the required files for using Docker Compose or Docker Swarm."
+
+	// SetupHelpExtra contains the long help text for the setup command without the headline.
+	SetupHelpExtra = `This command creates a YAML file with a default .env nearby. It also
+creates the required secrets and directories for volumes containing
+persistent database and SSL certs.`
+)
+
+// Cmd returns the setup subcommand.
+func Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "setup",
+		Short: SetupHelp,
+		Long:  SetupHelp + "\n\n" + SetupHelpExtra,
+		Args:  cobra.ExactArgs(1),
+	}
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+
+		return nil
+	}
+	return cmd
+}
+
 // Setup creates YAML file for Docker Compose or Docker Swarm with .env file and secrets directory.
 func Setup(dir string) error {
+	fi, err := os.Stat(dir)
+	if err != nil {
+		return fmt.Errorf("checking directory: %w", err)
+	}
+	if !fi.Mode().IsDir() {
+		return fmt.Errorf("%q is not a directory", dir)
+	}
+
 	if err := createYMLFile(dir); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}

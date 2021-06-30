@@ -5,10 +5,19 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 )
+
+func TestCmd(t *testing.T) {
+	cmd := setup.Cmd()
+	cmd.SetArgs([]string{"/path/to/tmp"})
+	if err := cmd.Execute(); err != nil {
+		t.Errorf("executing setup subcommand: %v", err)
+	}
+}
 
 func TestSetup(t *testing.T) {
 	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
@@ -40,7 +49,7 @@ func testFile(t testing.TB, dir, name, expected string) {
 	}
 
 	got := string(content[:])
-	if !reflect.DeepEqual(got, expected) {
+	if !reflect.DeepEqual(expected, got) {
 		t.Errorf("wrong content of YML file, expected %q, got %q", expected, got)
 	}
 
@@ -233,3 +242,27 @@ MEDIA_DATABASE_NAME=openslides
 MANAGE_HOST=manage
 MANAGE_PORT=9008
 `
+
+func TestSetupNoDirectory(t *testing.T) {
+	dirCases := []struct {
+		name   string
+		p      string
+		errMsg string
+	}{
+		{name: "non existing path", p: "this-is-not-a-directory", errMsg: "no such file or directory"},
+		{name: "file path", p: "setup_test.go", errMsg: "is not a directory"},
+	}
+
+	for _, tt := range dirCases {
+		t.Run(tt.name, func(t *testing.T) {
+			err := setup.Setup(tt.p)
+			if err == nil {
+				t.Errorf("running Setup() with invalid directory should failed, but it doesn't")
+			}
+			if !strings.Contains(err.Error(), tt.errMsg) {
+				t.Errorf("running Setup() with invalid directory should return containing with %q, got %q", tt.errMsg, err.Error())
+			}
+		})
+	}
+
+}
