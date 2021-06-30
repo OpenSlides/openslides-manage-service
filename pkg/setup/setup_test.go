@@ -4,67 +4,46 @@ import (
 	"errors"
 	"os"
 	"path"
-	"strings"
+	"reflect"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
-	"github.com/go-test/deep"
 )
 
 func TestSetup(t *testing.T) {
 	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
 	if err != nil {
-		t.Error("generating temporary directory failed")
+		t.Errorf("generating temporary directory failed: %v", err)
 	}
 	defer os.RemoveAll(testDir)
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
 		if err := setup.Setup(testDir); err != nil {
-			t.Errorf("Setup returned error %w, expected nil", err)
+			t.Errorf("running Setup() failed with error: %v", err)
 		}
-		testDockerComposeYML(t, testDir)
-		testEnvFile(t, testDir)
+		testFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testFile(t, testDir, ".env", defaultEnvFile)
 	})
 
 }
 
-func testDockerComposeYML(t testing.TB, dir string) {
+func testFile(t testing.TB, dir, name, expected string) {
 	t.Helper()
 
-	dcYml := path.Join(dir, "docker-compose.yml")
-	if _, err := os.Stat(dcYml); errors.Is(err, os.ErrNotExist) {
-		t.Errorf("file %s does not exist, expected existance", dcYml)
+	p := path.Join(dir, name)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		t.Errorf("file %q does not exist, expected existance", p)
 	}
-	dcYmlContent, err := os.ReadFile(dcYml)
+	content, err := os.ReadFile(p)
 	if err != nil {
-		t.Errorf("reading file %s: %w", dcYml, err)
+		t.Errorf("error reading file %q: %v", p, err)
 	}
 
-	got := strings.Split(string(dcYmlContent[:]), "\n")
-	expected := strings.Split(defaultDockerComposeYml, "\n")
-	diff := deep.Equal(got, expected)
-	if diff != nil {
-		t.Errorf("wrong content of YML file: %s", diff)
-	}
-}
-
-func testEnvFile(t testing.TB, dir string) {
-	t.Helper()
-	envFile := path.Join(dir, ".env")
-	if _, err := os.Stat(envFile); errors.Is(err, os.ErrNotExist) {
-		t.Errorf("file %s does not exist, expected existance", envFile)
-	}
-	envFileContent, err := os.ReadFile(envFile)
-	if err != nil {
-		t.Errorf("reading file %s: %w", envFile, err)
+	got := string(content[:])
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("wrong content of YML file, expected %q, got %q", expected, got)
 	}
 
-	got := strings.Split(string(envFileContent[:]), "\n")
-	expected := strings.Split(defaultEnvFile, "\n")
-	diff := deep.Equal(got, expected)
-	if diff != nil {
-		t.Errorf("wrong content of YML file: %s", diff)
-	}
 }
 
 const defaultDockerComposeYml = `---
