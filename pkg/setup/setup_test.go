@@ -10,22 +10,25 @@ import (
 )
 
 func TestSetup(t *testing.T) {
-	d, err := os.MkdirTemp("", "openslides-manage-service-")
+	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
 	if err != nil {
 		t.Error("generating temporary directory failed")
 	}
-	defer os.RemoveAll(d)
+	defer os.RemoveAll(testDir)
 
-	if err := setup.Setup(d); err != nil {
-		t.Errorf("Setup returned error %w, expected nil", err)
-	}
-
-	testDockerComposeYML(t, d)
+	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
+		if err := setup.Setup(testDir); err != nil {
+			t.Errorf("Setup returned error %w, expected nil", err)
+		}
+		testDockerComposeYML(t, testDir)
+	})
 
 }
 
-func testDockerComposeYML(t *testing.T, d string) {
-	dcYml := path.Join(d, "docker-compose.yml")
+func testDockerComposeYML(t testing.TB, dir string) {
+	t.Helper()
+
+	dcYml := path.Join(dir, "docker-compose.yml")
 	if _, err := os.Stat(dcYml); errors.Is(err, os.ErrNotExist) {
 		t.Errorf("file %s does not exist, expected existance", dcYml)
 	}
@@ -33,9 +36,11 @@ func testDockerComposeYML(t *testing.T, d string) {
 	if err != nil {
 		t.Errorf("reading file %s: %w", dcYml, err)
 	}
+
 	got := string(dcYmlContent[:])
-	if got != defaultDockerComposeYml {
-		t.Errorf("checking content of YML file, expected `%s`, got `%s`", defaultDockerComposeYml, got)
+	expected := defaultDockerComposeYml
+	if got != expected {
+		t.Errorf("checking content of YML file, expected %q, got %q", expected, got)
 	}
 }
 
