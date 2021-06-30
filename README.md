@@ -22,11 +22,11 @@ running. Check if you have to run docker as local user or as root.
 
     $ docker info
 
-First go to a nice place in your filesystem. Then run:
+Then run:
 
-    $ ./manage setup --cwd
+    $ ./openslides setup .
     $ docker-compose up --detach
-    $ ./manage initial-data
+    $ ./openslides initial-data
 
 Now open http://localhost:8000, login and have fun. Afterwars run:
 

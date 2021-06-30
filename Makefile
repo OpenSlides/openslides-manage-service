@@ -14,3 +14,6 @@ test:
 	go install golang.org/x/lint/golint@latest
 	golint -set_exit_status ./...
 	go test -timeout 10s -race ./...
+
+go-build:
+	go build ./cmd/openslides
