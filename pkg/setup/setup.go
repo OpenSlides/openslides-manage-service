@@ -4,26 +4,48 @@ import (
 	_ "embed" // Blank import required to use go directive.
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path"
 )
 
-const ymlFileName = "docker-compose.yml"
+const (
+	ymlFileName = "docker-compose.yml"
+	envFileName = ".env"
+)
 
 //go:embed default-docker-compose.yml
 var defaultDockerComposeYml []byte
 
-// Setup creates YAML file for Docker Compose or Docker Swarm and secrets directory.
-func Setup(d string) error {
-	if err := createYMLFile(d); err != nil {
-		return fmt.Errorf("creating YML file at %s: %w", d, err)
+//go:embed default-environment.env
+var defaultEnvFile []byte
+
+// Setup creates YAML file for Docker Compose or Docker Swarm with .env file and secrets directory.
+func Setup(dir string) error {
+	if err := createYMLFile(dir); err != nil {
+		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
+	}
+	if err := createEnvFile(dir); err != nil {
+		return fmt.Errorf("creating .env file at %q: %w", dir, err)
 	}
 	return nil
 }
 
-func createYMLFile(d string) error {
-	p := path.Join(d, ymlFileName)
+func createYMLFile(dir string) error {
+	if err := createFile(dir, ymlFileName, defaultDockerComposeYml); err != nil {
+		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
+	}
+	return nil
+}
+
+func createEnvFile(dir string) error {
+	if err := createFile(dir, envFileName, defaultEnvFile); err != nil {
+		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
+	}
+	return nil
+}
+
+func createFile(dir string, name string, content []byte) error {
+	p := path.Join(dir, name)
 
 	pExists, err := fileExists(p)
 	if err != nil {
@@ -36,19 +58,12 @@ func createYMLFile(d string) error {
 
 	w, err := os.Create(p)
 	if err != nil {
-		return fmt.Errorf("creating file `%s`: %w", p, err)
+		return fmt.Errorf("creating file %q: %w", p, err)
 	}
 	defer w.Close()
 
-	if err := writeContent(w); err != nil {
-		return fmt.Errorf("writing content to file %s: %w", p, err)
-	}
-	return nil
-}
-
-func writeContent(w io.Writer) error {
-	if _, err := w.Write(defaultDockerComposeYml); err != nil {
-		return fmt.Errorf("writing content: %w", err)
+	if _, err := w.Write(content); err != nil {
+		return fmt.Errorf("writing content to file %q: %w", p, err)
 	}
 	return nil
 }

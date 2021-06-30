@@ -6,4 +6,5 @@
 
 # Generated files
 docker-compose.yml
+.env
 secrets/
