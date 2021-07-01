@@ -12,11 +12,22 @@ import (
 )
 
 func TestCmd(t *testing.T) {
-	cmd := setup.Cmd()
-	cmd.SetArgs([]string{"/path/to/tmp"})
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("executing setup subcommand: %v", err)
-	}
+	t.Run("executing setup.Cmd() with new directory", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		cmd := setup.Cmd()
+		cmd.SetArgs([]string{testDir})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing setup subcommand: %v", err)
+		}
+
+		testFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testFile(t, testDir, ".env", defaultEnvFile)
+	})
 }
 
 func TestSetup(t *testing.T) {

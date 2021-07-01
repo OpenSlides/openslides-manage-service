@@ -28,19 +28,23 @@ const (
 	// SetupHelpExtra contains the long help text for the setup command without the headline.
 	SetupHelpExtra = `This command creates a YAML file with a default .env nearby. It also
 creates the required secrets and directories for volumes containing
-persistent database and SSL certs.`
+persistent database and SSL certs. Everything is created in the given
+directory.`
 )
 
 // Cmd returns the setup subcommand.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "setup",
+		Use:   "setup directory",
 		Short: SetupHelp,
 		Long:  SetupHelp + "\n\n" + SetupHelpExtra,
 		Args:  cobra.ExactArgs(1),
 	}
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-
+		dir := args[0]
+		if err := Setup(dir); err != nil {
+			return fmt.Errorf("running Setup(): %w", err)
+		}
 		return nil
 	}
 	return cmd
@@ -56,26 +60,14 @@ func Setup(dir string) error {
 		return fmt.Errorf("%q is not a directory", dir)
 	}
 
-	if err := createYMLFile(dir); err != nil {
-		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
-	}
-	if err := createEnvFile(dir); err != nil {
-		return fmt.Errorf("creating .env file at %q: %w", dir, err)
-	}
-	return nil
-}
-
-func createYMLFile(dir string) error {
 	if err := createFile(dir, ymlFileName, defaultDockerComposeYml); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
-	return nil
-}
 
-func createEnvFile(dir string) error {
 	if err := createFile(dir, envFileName, defaultEnvFile); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
+
 	return nil
 }
 
