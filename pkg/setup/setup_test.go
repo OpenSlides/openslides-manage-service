@@ -25,8 +25,8 @@ func TestCmd(t *testing.T) {
 			t.Fatalf("executing setup subcommand: %v", err)
 		}
 
-		testFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testFile(t, testDir, ".env", defaultEnvFile)
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, ".env", defaultEnvFile)
 	})
 }
 
@@ -41,8 +41,12 @@ func TestSetup(t *testing.T) {
 		if err := setup.Setup(testDir); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
-		testFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testFile(t, testDir, ".env", defaultEnvFile)
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, ".env", defaultEnvFile)
+		testKeyFile(t, testDir, "secrets/auth_token_key")
+		testKeyFile(t, testDir, "secrets/auth_cookie_key")
+		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+
 	})
 
 	t.Run("running setup.Setup() twice without changing existant files", func(t *testing.T) {
@@ -59,13 +63,16 @@ func TestSetup(t *testing.T) {
 		if err := setup.Setup(testDir); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
-		testFile(t, testDir, "docker-compose.yml", testContent)
-		testFile(t, testDir, ".env", defaultEnvFile)
+		testContentFile(t, testDir, "docker-compose.yml", testContent)
+		testContentFile(t, testDir, ".env", defaultEnvFile)
+		testKeyFile(t, testDir, "secrets/auth_token_key")
+		testKeyFile(t, testDir, "secrets/auth_cookie_key")
+		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
 	})
 
 }
 
-func testFile(t testing.TB, dir, name, expected string) {
+func testContentFile(t testing.TB, dir, name, expected string) {
 	t.Helper()
 
 	p := path.Join(dir, name)
@@ -79,9 +86,27 @@ func testFile(t testing.TB, dir, name, expected string) {
 
 	got := string(content)
 	if !reflect.DeepEqual(got, expected) {
-		t.Fatalf("wrong content of YML file, got %q, expected %q", got, expected)
+		t.Fatalf("wrong content of file %q, got %q, expected %q", p, got, expected)
+	}
+}
+
+func testKeyFile(t testing.TB, dir, name string) {
+	t.Helper()
+
+	p := path.Join(dir, name)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file %q does not exist, expected existance", p)
+	}
+	content, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("error reading file %q: %v", p, err)
 	}
 
+	got := string(content)
+	expected := 40 // 32 bytes base64 encoded give 40 characters
+	if len(got) != expected {
+		t.Fatalf("wrong length of key file %q, got %d, expected %d", p, len(got), expected)
+	}
 }
 
 const defaultDockerComposeYml = `---
