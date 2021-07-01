@@ -15,22 +15,40 @@ func TestCmd(t *testing.T) {
 	cmd := setup.Cmd()
 	cmd.SetArgs([]string{"/path/to/tmp"})
 	if err := cmd.Execute(); err != nil {
-		t.Errorf("executing setup subcommand: %v", err)
+		t.Fatalf("executing setup subcommand: %v", err)
 	}
 }
 
 func TestSetup(t *testing.T) {
 	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
 	if err != nil {
-		t.Errorf("generating temporary directory failed: %v", err)
+		t.Fatalf("generating temporary directory failed: %v", err)
 	}
 	defer os.RemoveAll(testDir)
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
 		if err := setup.Setup(testDir); err != nil {
-			t.Errorf("running Setup() failed with error: %v", err)
+			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testFile(t, testDir, ".env", defaultEnvFile)
+	})
+
+	t.Run("running setup.Setup() twice without changing existant files", func(t *testing.T) {
+		p := path.Join(testDir, "docker-compose.yml")
+		testContent := "test-content-of-a-file"
+		f, err := os.OpenFile(p, os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+		if err != nil {
+			t.Fatalf("opening file %q: %v", p, err)
+		}
+		if _, err := f.WriteString(testContent); err != nil {
+			t.Fatalf("writing to file %q: %v", p, err)
+		}
+
+		if err := setup.Setup(testDir); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testFile(t, testDir, "docker-compose.yml", testContent)
 		testFile(t, testDir, ".env", defaultEnvFile)
 	})
 
@@ -41,16 +59,16 @@ func testFile(t testing.TB, dir, name, expected string) {
 
 	p := path.Join(dir, name)
 	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
-		t.Errorf("file %q does not exist, expected existance", p)
+		t.Fatalf("file %q does not exist, expected existance", p)
 	}
 	content, err := os.ReadFile(p)
 	if err != nil {
-		t.Errorf("error reading file %q: %v", p, err)
+		t.Fatalf("error reading file %q: %v", p, err)
 	}
 
-	got := string(content[:])
-	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("wrong content of YML file, expected %q, got %q", expected, got)
+	got := string(content)
+	if !reflect.DeepEqual(got, expected) {
+		t.Fatalf("wrong content of YML file, got %q, expected %q", got, expected)
 	}
 
 }
@@ -245,22 +263,22 @@ MANAGE_PORT=9008
 
 func TestSetupNoDirectory(t *testing.T) {
 	dirCases := []struct {
-		name   string
-		p      string
-		errMsg string
+		name      string
+		p         string
+		hasErrMsg string
 	}{
-		{name: "non existing path", p: "this-is-not-a-directory", errMsg: "no such file or directory"},
-		{name: "file path", p: "setup_test.go", errMsg: "is not a directory"},
+		{name: "non existing path", p: "this-is-not-a-directory", hasErrMsg: "no such file or directory"},
+		{name: "file path", p: "setup_test.go", hasErrMsg: "is not a directory"},
 	}
 
 	for _, tt := range dirCases {
 		t.Run(tt.name, func(t *testing.T) {
 			err := setup.Setup(tt.p)
 			if err == nil {
-				t.Errorf("running Setup() with invalid directory should failed, but it doesn't")
+				t.Fatalf("running Setup() with invalid directory should failed, but it doesn't")
 			}
-			if !strings.Contains(err.Error(), tt.errMsg) {
-				t.Errorf("running Setup() with invalid directory should return containing with %q, got %q", tt.errMsg, err.Error())
+			if !strings.Contains(err.Error(), tt.hasErrMsg) {
+				t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), tt.hasErrMsg)
 			}
 		})
 	}

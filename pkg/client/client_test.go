@@ -12,7 +12,7 @@ import (
 
 func TestRunClient(t *testing.T) {
 	if err := client.RunClient(); err != nil {
-		t.Errorf("running RunClient() failed: %v", err)
+		t.Fatalf("running RunClient() failed: %v", err)
 	}
 }
 
@@ -35,11 +35,11 @@ func TestCmdHelpTexts(t *testing.T) {
 			cmd.Execute()
 			got, err := ioutil.ReadAll(buf)
 			if err != nil {
-				t.Errorf("reading output from command execution: %v", err)
+				t.Fatalf("reading output from command execution: %v", err)
 			}
 			gotStartsWith := got[:len(tt.outputStartsWith)]
 			if !reflect.DeepEqual(tt.outputStartsWith, gotStartsWith) {
-				t.Errorf("wrong cobra command output, expected %q, got %q", tt.outputStartsWith, gotStartsWith)
+				t.Fatalf("wrong cobra command output, expected %q, got %q", tt.outputStartsWith, gotStartsWith)
 			}
 
 		})

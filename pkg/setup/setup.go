@@ -103,6 +103,8 @@ func createFile(dir string, name string, content []byte) error {
 	return nil
 }
 
+// fileExists is a small helper function to check if a file already exists. It is not
+// save in concurrent usage.
 func fileExists(p string) (bool, error) {
 	_, err := os.Stat(p)
 	if err == nil {
