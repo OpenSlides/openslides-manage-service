@@ -16,7 +16,7 @@ import (
 
 const (
 	ymlFileName           = "docker-compose.yml"
-	envFileName           = ".env"
+	envFileName           = "services.env"
 	secretsDirName        = "secrets"
 	authTokenKeyFileName  = "auth_token_key"
 	authCookieKeyFileName = "auth_cookie_key"

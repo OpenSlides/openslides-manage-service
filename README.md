@@ -28,11 +28,11 @@ Then run:
     $ docker-compose up --detach
     $ ./openslides initial-data
 
-Now open http://localhost:8000, login and have fun. Afterwars run:
+Now open https://localhost:8000, login and have fun. Afterwars run:
 
     $ docker-compose stop
 
-To remove all containers including the complete database run:
+To remove all containers run:
 
     $ docker-compose rm
 

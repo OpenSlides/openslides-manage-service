@@ -8,6 +8,7 @@ services:
       - autoupdate
       - auth
       - media
+    env_file: services.env
     networks:
       - uplink
       - frontend
@@ -19,6 +20,7 @@ services:
     depends_on:
       - backend
       - autoupdate
+    env_file: services.env
     networks:
       - frontend
 
@@ -28,6 +30,7 @@ services:
       - datastore-reader
       - datastore-writer
       - auth
+    env_file: services.env
     networks:
       - frontend
       - backend
@@ -39,6 +42,7 @@ services:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:4.0.0-dev
     depends_on:
       - postgres
+    env_file: services.env
     environment:
       - NUM_WORKERS=8
     networks:
@@ -51,6 +55,7 @@ services:
     depends_on:
       - postgres
       - message-bus
+    env_file: services.env
     networks:
       - backend
       - postgres
@@ -58,18 +63,23 @@ services:
 
   postgres:
     image: postgres:11
+    env_file: services.env
     environment:
       - POSTGRES_USER=openslides
       - POSTGRES_PASSWORD=openslides
       - POSTGRES_DB=openslides
+      - PGDATA=/var/lib/postgresql/data/pgdata
     networks:
       - postgres
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
 
   autoupdate:
     image: ghcr.io/openslides/openslides/openslides-autoupdate:4.0.0-dev
     depends_on:
       - datastore-reader
       - message-bus
+    env_file: services.env
     networks:
       - frontend
       - datastore-reader
@@ -84,6 +94,7 @@ services:
       - datastore-reader
       - message-bus
       - cache
+    env_file: services.env
     networks:
       - frontend
       - datastore-reader
@@ -95,11 +106,13 @@ services:
 
   cache:
     image: redis:latest
+    env_file: services.env
     networks:
       - cache
 
   message-bus:
     image: redis:latest
+    env_file: services.env
     networks:
       - message-bus
 
@@ -108,6 +121,7 @@ services:
     depends_on:
       - backend
       - postgres
+    env_file: services.env
     networks:
       - frontend
       - backend
@@ -119,14 +133,15 @@ services:
       - datastore-reader
       - datastore-writer
       - auth
-    ports:
-      - 127.0.0.1:9008:9008
+    env_file: services.env
     networks:
       - uplink
       - frontend
       - backend
     secrets:
       - admin
+    ports:
+      - 127.0.0.1:9008:9008
 
 networks:
   uplink:
