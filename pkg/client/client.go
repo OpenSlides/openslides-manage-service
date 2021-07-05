@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,7 @@ func RootCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		setup.Cmd(),
+		initialdata.Cmd(),
 	)
 
 	return cmd
