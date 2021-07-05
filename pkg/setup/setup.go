@@ -69,8 +69,8 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-// Setup creates YAML file for Docker Compose or Docker Swarm with services.env file
-// and secrets directory.
+// Setup creates YAML file for Docker Compose or Docker Swarm with secrets directory and
+// directories for database and SSL certs volumes.
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
 // can be provided.

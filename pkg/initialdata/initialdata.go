@@ -24,3 +24,39 @@ func Cmd() *cobra.Command {
 	}
 	return cmd
 }
+
+func Initialdata() error {
+	// ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+	// defer cancel()
+
+	// service, close, err := Dial(ctx, cfg.Address)
+	// if err != nil {
+	// 	return fmt.Errorf("connecting to gRPC server: %w", err)
+	// }
+	// defer close()
+
+	// iniD := defaultInitialData
+	// if *path != "" {
+	// 	c, err := os.ReadFile(*path)
+	// 	if err != nil {
+	// 		return fmt.Errorf("reading initial data file `%s`: %w", *path, err)
+	// 	}
+	// 	iniD = c
+	// }
+	// req := &proto.InitialDataRequest{
+	// 	Data: iniD,
+	// }
+
+	// resp, err := service.InitialData(ctx, req)
+	// if err != nil {
+	// 	return fmt.Errorf("setting initial data: %w", err)
+	// }
+
+	// msg := "Datastore contains data. Initial data were NOT set."
+	// if resp.Initialized {
+	// 	msg = "Initial data were set successfully."
+	// }
+	// fmt.Println(msg)
+
+	return nil
+}
