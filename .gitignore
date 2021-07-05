@@ -6,7 +6,6 @@
 
 # Generated files
 docker-compose.yml
-services.env
 secrets/
 db-data/
 

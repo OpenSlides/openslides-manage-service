@@ -26,7 +26,6 @@ func TestCmd(t *testing.T) {
 		}
 
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -47,7 +46,6 @@ func TestCmd(t *testing.T) {
 		}
 
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -79,7 +77,6 @@ func TestCmd(t *testing.T) {
 		}
 
 		testContentFile(t, testDir, "docker-compose.yml", customTpl)
-		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -100,7 +97,6 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -122,7 +118,6 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
-		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -134,7 +129,6 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -155,7 +149,6 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
-		testContentFile(t, dir, "services.env", defaultEnvFile)
 		testKeyFile(t, dir, "secrets/auth_token_key")
 		testKeyFile(t, dir, "secrets/auth_cookie_key")
 		testContentFile(t, dir, "secrets/admin", setup.DefaultAdminPassword)
@@ -176,7 +169,6 @@ func TestSetupExternalTemplate(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", tplText)
-		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -231,6 +223,38 @@ func testDirectory(t testing.TB, dir, name string) {
 }
 
 const defaultDockerComposeYml = `---
+x-default-environment: &default-environment
+  ACTION_HOST: backend
+  ACTION_PORT: 9002
+  PRESENTER_HOST: backend
+  PRESENTER_PORT: 9003
+
+  DATASTORE_READER_HOST: datastore-reader
+  DATASTORE_READER_PORT: 9010
+  DATASTORE_WRITER_HOST: datastore-writer
+  DATASTORE_WRITER_PORT: 9011
+  DATASTORE_DATABASE_HOST: postgres
+
+  AUTOUPDATE_HOST: autoupdate
+  AUTOUPDATE_PORT: 9012
+
+  AUTH_HOST: auth
+  AUTH_PORT: 9004
+
+  CACHE_HOST: cache
+  CACHE_PORT: 6379
+
+  MESSAGE_BUS_HOST: message-bus
+  MESSAGE_BUS_PORT: 6379
+
+  MEDIA_HOST: media
+  MEDIA_PORT: 9006
+  MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_NAME: openslides
+
+  MANAGE_HOST: manage
+  MANAGE_PORT: 9008
+
 services:
   proxy:
     image: ghcr.io/openslides/openslides/openslides-proxy:4.0.0-dev
@@ -240,7 +264,8 @@ services:
       - autoupdate
       - auth
       - media
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - uplink
       - frontend
@@ -252,7 +277,8 @@ services:
     depends_on:
       - backend
       - autoupdate
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - frontend
 
@@ -262,7 +288,8 @@ services:
       - datastore-reader
       - datastore-writer
       - auth
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - frontend
       - backend
@@ -274,9 +301,9 @@ services:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:4.0.0-dev
     depends_on:
       - postgres
-    env_file: services.env
     environment:
-      - NUM_WORKERS=8
+      << : *default-environment
+      NUM_WORKERS: 8
     networks:
       - backend
       - datastore-reader
@@ -287,7 +314,8 @@ services:
     depends_on:
       - postgres
       - message-bus
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - backend
       - postgres
@@ -295,12 +323,12 @@ services:
 
   postgres:
     image: postgres:11
-    env_file: services.env
     environment:
-      - POSTGRES_USER=openslides
-      - POSTGRES_PASSWORD=openslides
-      - POSTGRES_DB=openslides
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      << : *default-environment
+      POSTGRES_USER: openslides
+      POSTGRES_PASSWORD: openslides
+      POSTGRES_DB: openslides
+      PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres
     volumes:
@@ -311,7 +339,8 @@ services:
     depends_on:
       - datastore-reader
       - message-bus
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - frontend
       - datastore-reader
@@ -326,7 +355,8 @@ services:
       - datastore-reader
       - message-bus
       - cache
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - frontend
       - datastore-reader
@@ -338,13 +368,15 @@ services:
 
   cache:
     image: redis:latest
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - cache
 
   message-bus:
     image: redis:latest
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - message-bus
 
@@ -353,7 +385,8 @@ services:
     depends_on:
       - backend
       - postgres
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - frontend
       - backend
@@ -365,7 +398,8 @@ services:
       - datastore-reader
       - datastore-writer
       - auth
-    env_file: services.env
+    environment:
+      << : *default-environment
     networks:
       - uplink
       - frontend
@@ -397,40 +431,6 @@ secrets:
     file: ./secrets/auth_cookie_key
   admin:
     file: ./secrets/admin
-`
-
-const defaultEnvFile = `MESSAGE_BUS_HOST=message-bus
-MESSAGE_BUS_PORT=6379
-
-DATASTORE_READER_HOST=datastore-reader
-DATASTORE_READER_PORT=9010
-DATASTORE_WRITER_HOST=datastore-writer
-DATASTORE_WRITER_PORT=9011
-DATASTORE_DATABASE_HOST=postgres
-
-ACTION_HOST=backend
-ACTION_PORT=9002
-PRESENTER_HOST=backend
-PRESENTER_PORT=9003
-
-AUTOUPDATE_HOST=autoupdate
-AUTOUPDATE_PORT=9012
-
-PERMISSION_HOST=permission
-PERMISSION_PORT=9005
-
-AUTH_HOST=auth
-AUTH_PORT=9004
-CACHE_HOST=cache
-CACHE_PORT=6379
-
-MEDIA_HOST=media
-MEDIA_PORT=9006
-MEDIA_DATABASE_HOST=postgres
-MEDIA_DATABASE_NAME=openslides
-
-MANAGE_HOST=manage
-MANAGE_PORT=9008
 `
 
 func TestSetupNoDirectory(t *testing.T) {

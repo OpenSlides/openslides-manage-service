@@ -27,9 +27,6 @@ const (
 //go:embed default-docker-compose.yml
 var defaultDockerComposeYml []byte
 
-//go:embed default-environment.env
-var defaultEnvFile []byte
-
 // DefaultAdminPassword is the password for the first admin created with initial data.
 const DefaultAdminPassword = "admin"
 
@@ -91,11 +88,6 @@ func Setup(dir string, force bool, tpl []byte) error {
 	}
 	if err := createFile(dir, force, ymlFileName, tpl); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
-	}
-
-	// Create environment file
-	if err := createFile(dir, force, envFileName, defaultEnvFile); err != nil {
-		return fmt.Errorf("creating environment file at %q: %w", dir, err)
 	}
 
 	// Create secrets directory
