@@ -52,9 +52,14 @@ func Cmd() *cobra.Command {
 		Long:  SetupHelp + "\n\n" + SetupHelpExtra,
 		Args:  cobra.ExactArgs(1),
 	}
+	force := cmd.Flags().BoolP("force", "f", false, "Do not skip existing files but overwrite them.")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		if err := Setup(dir); err != nil {
+		fn := WithSkip
+		if *force {
+			fn = WithForce
+		}
+		if err := fn(dir); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -62,20 +67,35 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-// Setup creates YAML file for Docker Compose or Docker Swarm with .env file and secrets directory.
-func Setup(dir string) error {
+// WithSkip creates YAML file for Docker Compose or Docker Swarm with services.env file
+// and secrets directory.
+//
+// Existing files are skipped.
+func WithSkip(dir string) error {
+	return setup(dir, false)
+}
+
+// WithForce creates YAML file for Docker Compose or Docker Swarm with services.env file
+// and secrets directory.
+//
+// Existing files are overwritten.
+func WithForce(dir string) error {
+	return setup(dir, true)
+}
+
+func setup(dir string, force bool) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
-	if err := createFile(dir, ymlFileName, defaultDockerComposeYml); err != nil {
+	if err := createFile(dir, force, ymlFileName, defaultDockerComposeYml); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
 	// Create environment file
-	if err := createFile(dir, envFileName, defaultEnvFile); err != nil {
+	if err := createFile(dir, force, envFileName, defaultEnvFile); err != nil {
 		return fmt.Errorf("creating environment file at %q: %w", dir, err)
 	}
 
@@ -90,7 +110,7 @@ func Setup(dir string) error {
 	if err != nil {
 		return fmt.Errorf("creating random key for auth token: %w", err)
 	}
-	if err := createFile(secrDir, authTokenKeyFileName, secrToken); err != nil {
+	if err := createFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
 		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
 	}
 
@@ -99,12 +119,12 @@ func Setup(dir string) error {
 	if err != nil {
 		return fmt.Errorf("creating random key for auth cookie: %w", err)
 	}
-	if err := createFile(secrDir, authCookieKeyFileName, secrCookie); err != nil {
+	if err := createFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
 		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
 	}
 
 	// Create admin file
-	if err := createFile(secrDir, adminFileName, []byte(DefaultAdminPassword)); err != nil {
+	if err := createFile(secrDir, force, adminFileName, []byte(DefaultAdminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
 
@@ -116,15 +136,15 @@ func Setup(dir string) error {
 	return nil
 }
 
-func createFile(dir string, name string, content []byte) error {
+func createFile(dir string, force bool, name string, content []byte) error {
 	p := path.Join(dir, name)
 
 	pExists, err := fileExists(p)
 	if err != nil {
 		return fmt.Errorf("checking file existance: %w", err)
 	}
-	if pExists {
-		// File already exists, so skip this step.
+	if !force && pExists {
+		// No force-mode and file already exists, so skip this file.
 		return nil
 	}
 

@@ -32,6 +32,27 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
+
+	t.Run("executing setup.Cmd() with new directory with --force flag", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		cmd := setup.Cmd()
+		cmd.SetArgs([]string{testDir, "--force"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing setup subcommand: %v", err)
+		}
+
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "services.env", defaultEnvFile)
+		testKeyFile(t, testDir, "secrets/auth_token_key")
+		testKeyFile(t, testDir, "secrets/auth_cookie_key")
+		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
 }
 
 func TestSetup(t *testing.T) {
@@ -41,8 +62,8 @@ func TestSetup(t *testing.T) {
 	}
 	defer os.RemoveAll(testDir)
 
-	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
-		if err := setup.Setup(testDir); err != nil {
+	t.Run("running setup.WithSkip() and create all stuff in tmp directory", func(t *testing.T) {
+		if err := setup.WithSkip(testDir); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
@@ -53,7 +74,7 @@ func TestSetup(t *testing.T) {
 		testDirectory(t, testDir, "db-data")
 	})
 
-	t.Run("running setup.Setup() twice without changing existant files", func(t *testing.T) {
+	t.Run("running setup.WithSkip() twice without changing existant files", func(t *testing.T) {
 		p := path.Join(testDir, "docker-compose.yml")
 		testContent := "test-content-of-a-file"
 		f, err := os.OpenFile(p, os.O_WRONLY|os.O_TRUNC, os.ModePerm)
@@ -64,7 +85,7 @@ func TestSetup(t *testing.T) {
 			t.Fatalf("writing to file %q: %v", p, err)
 		}
 
-		if err := setup.Setup(testDir); err != nil {
+		if err := setup.WithSkip(testDir); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
@@ -75,9 +96,21 @@ func TestSetup(t *testing.T) {
 		testDirectory(t, testDir, "db-data")
 	})
 
-	t.Run("running setup.Setup() and give a previously not existing subdirectory", func(t *testing.T) {
+	t.Run("running setup.WithForce() with changing existant files", func(t *testing.T) {
+		if err := setup.WithForce(testDir); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "services.env", defaultEnvFile)
+		testKeyFile(t, testDir, "secrets/auth_token_key")
+		testKeyFile(t, testDir, "secrets/auth_cookie_key")
+		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+
+	t.Run("running setup.WithSkip() and give a previously not existing subdirectory", func(t *testing.T) {
 		dir := path.Join(testDir, "new_directory")
-		if err := setup.Setup(dir); err != nil {
+		if err := setup.WithSkip(dir); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
@@ -341,7 +374,7 @@ MANAGE_PORT=9008
 
 func TestSetupNoDirectory(t *testing.T) {
 	hasErrMsg := "not a directory"
-	err := setup.Setup("setup_test.go")
+	err := setup.WithSkip("setup_test.go")
 	if !strings.Contains(err.Error(), hasErrMsg) {
 		t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), hasErrMsg)
 	}
