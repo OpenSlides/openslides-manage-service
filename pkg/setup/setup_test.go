@@ -53,6 +53,39 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
+
+	t.Run("executing setup.Cmd() with new directory with --template flag", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		customTplFileName := path.Join(testDir, "custom-template.yaml.tpl")
+		f, err := os.OpenFile(customTplFileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			t.Fatalf("creating custom template file: %v", err)
+		}
+		defer f.Close()
+		customTpl := "custom template Oht2oph9qu"
+		if _, err := f.WriteString(customTpl); err != nil {
+			t.Fatalf("writing custom template to file %q: %v", customTplFileName, err)
+		}
+
+		cmd := setup.Cmd()
+		cmd.SetArgs([]string{testDir, "--template", customTplFileName})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing setup subcommand: %v", err)
+		}
+
+		testContentFile(t, testDir, "docker-compose.yml", customTpl)
+		testContentFile(t, testDir, "services.env", defaultEnvFile)
+		testKeyFile(t, testDir, "secrets/auth_token_key")
+		testKeyFile(t, testDir, "secrets/auth_cookie_key")
+		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+
 }
 
 func TestSetupCommon(t *testing.T) {
@@ -142,7 +175,7 @@ func TestSetupExternalTemplate(t *testing.T) {
 		if err := setup.Setup(testDir, false, []byte(tplText)); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
-		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "docker-compose.yml", tplText)
 		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")

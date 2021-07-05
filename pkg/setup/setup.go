@@ -38,8 +38,8 @@ const (
 	SetupHelp = "Builds the required files for using Docker Compose or Docker Swarm."
 
 	// SetupHelpExtra contains the long help text for the setup command without the headline.
-	SetupHelpExtra = `This command creates a YAML file with a default .env nearby. It also
-creates the required secrets and directories for volumes containing
+	SetupHelpExtra = `This command creates a YAML file with a default services.env nearby. It
+also creates the required secrets and directories for volumes containing
 persistent database and SSL certs. Everything is created in the given
 directory.`
 )
@@ -53,9 +53,20 @@ func Cmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 	}
 	force := cmd.Flags().BoolP("force", "f", false, "Do not skip existing files but overwrite them.")
+	tplFile := cmd.Flags().StringP("template", "t", "", "Path to custom YAML template file.")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		if err := Setup(dir, *force, nil); err != nil {
+
+		var tpl []byte
+		if *tplFile != "" {
+			fc, err := os.ReadFile(*tplFile)
+			if err != nil {
+				return fmt.Errorf("reading file %q: %w", *tplFile, err)
+			}
+			tpl = fc
+		}
+
+		if err := Setup(dir, *force, tpl); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -66,7 +77,8 @@ func Cmd() *cobra.Command {
 // Setup creates YAML file for Docker Compose or Docker Swarm with services.env file
 // and secrets directory.
 //
-// Existing files are skipped unless force is true.
+// Existing files are skipped unless force is true. A custom template for the YAML file
+// can be provided.
 func Setup(dir string, force bool, tpl []byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -74,7 +86,10 @@ func Setup(dir string, force bool, tpl []byte) error {
 	}
 
 	// Create YAML file
-	if err := createFile(dir, force, ymlFileName, defaultDockerComposeYml); err != nil {
+	if tpl == nil {
+		tpl = defaultDockerComposeYml
+	}
+	if err := createFile(dir, force, ymlFileName, tpl); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
