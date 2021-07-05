@@ -21,6 +21,7 @@ const (
 	authTokenKeyFileName  = "auth_token_key"
 	authCookieKeyFileName = "auth_cookie_key"
 	adminFileName         = "admin"
+	dbDirName             = "db-data"
 )
 
 //go:embed default-docker-compose.yml
@@ -105,6 +106,11 @@ func Setup(dir string) error {
 	// Create admin file
 	if err := createFile(secrDir, adminFileName, []byte(DefaultAdminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
+	}
+
+	// Create database directory
+	if err := os.MkdirAll(path.Join(dir, dbDirName), os.ModePerm); err != nil {
+		return fmt.Errorf("creating database directory at %q: %w", dir, err)
 	}
 
 	return nil

@@ -27,6 +27,10 @@ func TestCmd(t *testing.T) {
 
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testContentFile(t, testDir, "services.env", defaultEnvFile)
+		testKeyFile(t, testDir, "secrets/auth_token_key")
+		testKeyFile(t, testDir, "secrets/auth_cookie_key")
+		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testDirectory(t, testDir, "db-data")
 	})
 }
 
@@ -46,7 +50,7 @@ func TestSetup(t *testing.T) {
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
-
+		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("running setup.Setup() twice without changing existant files", func(t *testing.T) {
@@ -68,6 +72,7 @@ func TestSetup(t *testing.T) {
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("running setup.Setup() and give a previously not existing subdirectory", func(t *testing.T) {
@@ -80,6 +85,7 @@ func TestSetup(t *testing.T) {
 		testKeyFile(t, dir, "secrets/auth_token_key")
 		testKeyFile(t, dir, "secrets/auth_cookie_key")
 		testContentFile(t, dir, "secrets/admin", setup.DefaultAdminPassword)
+		testDirectory(t, testDir, "db-data")
 	})
 
 }
@@ -118,6 +124,15 @@ func testKeyFile(t testing.TB, dir, name string) {
 	expected := 40 // 32 bytes base64 encoded give 40 characters
 	if len(got) != expected {
 		t.Fatalf("wrong length of key file %q, got %d, expected %d", p, len(got), expected)
+	}
+}
+
+func testDirectory(t testing.TB, dir, name string) {
+	t.Helper()
+
+	subdir := path.Join(dir, name)
+	if _, err := os.Stat(subdir); err != nil {
+		t.Fatalf("missing (sub-)directory %q", subdir)
 	}
 }
 
