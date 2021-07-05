@@ -26,7 +26,7 @@ func TestCmd(t *testing.T) {
 		}
 
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testContentFile(t, testDir, ".env", defaultEnvFile)
+		testContentFile(t, testDir, "services.env", defaultEnvFile)
 	})
 }
 
@@ -42,7 +42,7 @@ func TestSetup(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testContentFile(t, testDir, ".env", defaultEnvFile)
+		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
@@ -64,10 +64,22 @@ func TestSetup(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
-		testContentFile(t, testDir, ".env", defaultEnvFile)
+		testContentFile(t, testDir, "services.env", defaultEnvFile)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+	})
+
+	t.Run("running setup.Setup() and give a previously not existing subdirectory", func(t *testing.T) {
+		dir := path.Join(testDir, "new_directory")
+		if err := setup.Setup(dir); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, dir, "services.env", defaultEnvFile)
+		testKeyFile(t, dir, "secrets/auth_token_key")
+		testKeyFile(t, dir, "secrets/auth_cookie_key")
+		testContentFile(t, dir, "secrets/admin", setup.DefaultAdminPassword)
 	})
 
 }
@@ -119,6 +131,7 @@ services:
       - autoupdate
       - auth
       - media
+    env_file: services.env
     networks:
       - uplink
       - frontend
@@ -130,6 +143,7 @@ services:
     depends_on:
       - backend
       - autoupdate
+    env_file: services.env
     networks:
       - frontend
 
@@ -139,6 +153,7 @@ services:
       - datastore-reader
       - datastore-writer
       - auth
+    env_file: services.env
     networks:
       - frontend
       - backend
@@ -150,6 +165,7 @@ services:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:4.0.0-dev
     depends_on:
       - postgres
+    env_file: services.env
     environment:
       - NUM_WORKERS=8
     networks:
@@ -162,6 +178,7 @@ services:
     depends_on:
       - postgres
       - message-bus
+    env_file: services.env
     networks:
       - backend
       - postgres
@@ -169,6 +186,7 @@ services:
 
   postgres:
     image: postgres:11
+    env_file: services.env
     environment:
       - POSTGRES_USER=openslides
       - POSTGRES_PASSWORD=openslides
@@ -184,6 +202,7 @@ services:
     depends_on:
       - datastore-reader
       - message-bus
+    env_file: services.env
     networks:
       - frontend
       - datastore-reader
@@ -198,6 +217,7 @@ services:
       - datastore-reader
       - message-bus
       - cache
+    env_file: services.env
     networks:
       - frontend
       - datastore-reader
@@ -209,11 +229,13 @@ services:
 
   cache:
     image: redis:latest
+    env_file: services.env
     networks:
       - cache
 
   message-bus:
     image: redis:latest
+    env_file: services.env
     networks:
       - message-bus
 
@@ -222,6 +244,7 @@ services:
     depends_on:
       - backend
       - postgres
+    env_file: services.env
     networks:
       - frontend
       - backend
@@ -233,14 +256,15 @@ services:
       - datastore-reader
       - datastore-writer
       - auth
-    ports:
-      - 127.0.0.1:9008:9008
+    env_file: services.env
     networks:
       - uplink
       - frontend
       - backend
     secrets:
       - admin
+    ports:
+      - 127.0.0.1:9008:9008
 
 networks:
   uplink:
@@ -301,25 +325,9 @@ MANAGE_PORT=9008
 `
 
 func TestSetupNoDirectory(t *testing.T) {
-	dirCases := []struct {
-		name      string
-		p         string
-		hasErrMsg string
-	}{
-		{name: "non existing path", p: "this-is-not-a-directory", hasErrMsg: "no such file or directory"},
-		{name: "file path", p: "setup_test.go", hasErrMsg: "is not a directory"},
+	hasErrMsg := "not a directory"
+	err := setup.Setup("setup_test.go")
+	if !strings.Contains(err.Error(), hasErrMsg) {
+		t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), hasErrMsg)
 	}
-
-	for _, tt := range dirCases {
-		t.Run(tt.name, func(t *testing.T) {
-			err := setup.Setup(tt.p)
-			if err == nil {
-				t.Fatalf("running Setup() with invalid directory should failed, but it doesn't")
-			}
-			if !strings.Contains(err.Error(), tt.hasErrMsg) {
-				t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), tt.hasErrMsg)
-			}
-		})
-	}
-
 }

@@ -63,13 +63,9 @@ func Cmd() *cobra.Command {
 
 // Setup creates YAML file for Docker Compose or Docker Swarm with .env file and secrets directory.
 func Setup(dir string) error {
-	// Check directory
-	fi, err := os.Stat(dir)
-	if err != nil {
-		return fmt.Errorf("checking directory: %w", err)
-	}
-	if !fi.Mode().IsDir() {
-		return fmt.Errorf("%q is not a directory", dir)
+	// Create directory
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
