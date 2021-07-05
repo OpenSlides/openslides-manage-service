@@ -1,6 +1,13 @@
 package initialdata
 
-import "github.com/spf13/cobra"
+import (
+	"context"
+	"fmt"
+
+	"github.com/OpenSlides/openslides-manage-service/proto"
+	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+)
 
 const (
 	// InitialDataHelp contains the short help text for the command.
@@ -25,7 +32,20 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-func Initialdata() error {
+type gRPCClient interface {
+	InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error)
+}
+
+// Initialdata calls respective procedure to set initial data to an empty database via given gRPC client.
+func Initialdata(ctx context.Context, c gRPCClient) error {
+	req := &proto.InitialDataRequest{
+		Data: []byte("harr"),
+	}
+	_, err := c.InitialData(ctx, req)
+	if err != nil {
+		return fmt.Errorf("setting initial data: %w", err)
+	}
+
 	// ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	// defer cancel()
 
