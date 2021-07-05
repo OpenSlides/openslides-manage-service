@@ -55,11 +55,7 @@ func Cmd() *cobra.Command {
 	force := cmd.Flags().BoolP("force", "f", false, "Do not skip existing files but overwrite them.")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		fn := WithSkip
-		if *force {
-			fn = WithForce
-		}
-		if err := fn(dir); err != nil {
+		if err := Setup(dir, *force, nil); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -67,23 +63,11 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-// WithSkip creates YAML file for Docker Compose or Docker Swarm with services.env file
+// Setup creates YAML file for Docker Compose or Docker Swarm with services.env file
 // and secrets directory.
 //
-// Existing files are skipped.
-func WithSkip(dir string) error {
-	return setup(dir, false)
-}
-
-// WithForce creates YAML file for Docker Compose or Docker Swarm with services.env file
-// and secrets directory.
-//
-// Existing files are overwritten.
-func WithForce(dir string) error {
-	return setup(dir, true)
-}
-
-func setup(dir string, force bool) error {
+// Existing files are skipped unless force is true.
+func Setup(dir string, force bool, tpl []byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)

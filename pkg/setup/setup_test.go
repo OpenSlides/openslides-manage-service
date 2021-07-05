@@ -55,15 +55,15 @@ func TestCmd(t *testing.T) {
 	})
 }
 
-func TestSetup(t *testing.T) {
+func TestSetupCommon(t *testing.T) {
 	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
 	if err != nil {
 		t.Fatalf("generating temporary directory failed: %v", err)
 	}
 	defer os.RemoveAll(testDir)
 
-	t.Run("running setup.WithSkip() and create all stuff in tmp directory", func(t *testing.T) {
-		if err := setup.WithSkip(testDir); err != nil {
+	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
+		if err := setup.Setup(testDir, false, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
@@ -74,7 +74,7 @@ func TestSetup(t *testing.T) {
 		testDirectory(t, testDir, "db-data")
 	})
 
-	t.Run("running setup.WithSkip() twice without changing existant files", func(t *testing.T) {
+	t.Run("running setup.Setup() twice without changing existant files", func(t *testing.T) {
 		p := path.Join(testDir, "docker-compose.yml")
 		testContent := "test-content-of-a-file"
 		f, err := os.OpenFile(p, os.O_WRONLY|os.O_TRUNC, os.ModePerm)
@@ -85,7 +85,7 @@ func TestSetup(t *testing.T) {
 			t.Fatalf("writing to file %q: %v", p, err)
 		}
 
-		if err := setup.WithSkip(testDir); err != nil {
+		if err := setup.Setup(testDir, false, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
@@ -96,8 +96,8 @@ func TestSetup(t *testing.T) {
 		testDirectory(t, testDir, "db-data")
 	})
 
-	t.Run("running setup.WithForce() with changing existant files", func(t *testing.T) {
-		if err := setup.WithForce(testDir); err != nil {
+	t.Run("running setup.Setup() with force flag with changing existant files", func(t *testing.T) {
+		if err := setup.Setup(testDir, true, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
@@ -107,10 +107,18 @@ func TestSetup(t *testing.T) {
 		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
+}
 
-	t.Run("running setup.WithSkip() and give a previously not existing subdirectory", func(t *testing.T) {
+func TestSetupNonExistingSubdirectory(t *testing.T) {
+	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+	if err != nil {
+		t.Fatalf("generating temporary directory failed: %v", err)
+	}
+	defer os.RemoveAll(testDir)
+
+	t.Run("running setup.Setup() and give a previously not existing subdirectory", func(t *testing.T) {
 		dir := path.Join(testDir, "new_directory")
-		if err := setup.WithSkip(dir); err != nil {
+		if err := setup.Setup(dir, false, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
@@ -118,9 +126,29 @@ func TestSetup(t *testing.T) {
 		testKeyFile(t, dir, "secrets/auth_token_key")
 		testKeyFile(t, dir, "secrets/auth_cookie_key")
 		testContentFile(t, dir, "secrets/admin", setup.DefaultAdminPassword)
+		testDirectory(t, dir, "db-data")
+	})
+}
+
+func TestSetupExternalTemplate(t *testing.T) {
+	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+	if err != nil {
+		t.Fatalf("generating temporary directory failed: %v", err)
+	}
+	defer os.RemoveAll(testDir)
+
+	t.Run("running setup.Setup() and give an external template", func(t *testing.T) {
+		tplText := "test-from-external-template"
+		if err := setup.Setup(testDir, false, []byte(tplText)); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "services.env", defaultEnvFile)
+		testKeyFile(t, testDir, "secrets/auth_token_key")
+		testKeyFile(t, testDir, "secrets/auth_cookie_key")
+		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
-
 }
 
 func testContentFile(t testing.TB, dir, name, expected string) {
@@ -374,7 +402,7 @@ MANAGE_PORT=9008
 
 func TestSetupNoDirectory(t *testing.T) {
 	hasErrMsg := "not a directory"
-	err := setup.WithSkip("setup_test.go")
+	err := setup.Setup("setup_test.go", false, nil)
 	if !strings.Contains(err.Error(), hasErrMsg) {
 		t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), hasErrMsg)
 	}
