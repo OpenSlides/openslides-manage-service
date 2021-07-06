@@ -2,7 +2,9 @@ package initialdata
 
 import (
 	"context"
+	_ "embed" // Blank import required to use go directive.
 	"fmt"
+	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
@@ -18,6 +20,10 @@ const (
 secret "admin". It does nothing if the datastore is not empty.`
 )
 
+//go:embed default-initial-data.json
+// DefaultInitialData contains default initial data as JSON
+var DefaultInitialData []byte
+
 // Cmd returns the initial-data subcommand.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -27,6 +33,16 @@ func Cmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 	}
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+
+		// ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+		// defer cancel()
+
+		// service, close, err := Dial(ctx, cfg.Address)
+		// if err != nil {
+		// 	return fmt.Errorf("connecting to gRPC server: %w", err)
+		// }
+		// defer close()
+
 		return nil
 	}
 	return cmd
@@ -37,46 +53,30 @@ type gRPCClient interface {
 }
 
 // Initialdata calls respective procedure to set initial data to an empty database via given gRPC client.
-func Initialdata(ctx context.Context, c gRPCClient) error {
-	req := &proto.InitialDataRequest{
-		Data: []byte("harr"),
+// If dataFile is an empty string, the default initial data are used.
+func Initialdata(ctx context.Context, c gRPCClient, dataFile string) error {
+	iniD := DefaultInitialData
+	if dataFile != "" {
+		c, err := os.ReadFile(dataFile)
+		if err != nil {
+			return fmt.Errorf("reading initial data file %q: %w", dataFile, err)
+		}
+		iniD = c
 	}
-	_, err := c.InitialData(ctx, req)
+	req := &proto.InitialDataRequest{
+		Data: iniD,
+	}
+
+	resp, err := c.InitialData(ctx, req)
 	if err != nil {
 		return fmt.Errorf("setting initial data: %w", err)
 	}
 
-	// ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
-	// defer cancel()
-
-	// service, close, err := Dial(ctx, cfg.Address)
-	// if err != nil {
-	// 	return fmt.Errorf("connecting to gRPC server: %w", err)
-	// }
-	// defer close()
-
-	// iniD := defaultInitialData
-	// if *path != "" {
-	// 	c, err := os.ReadFile(*path)
-	// 	if err != nil {
-	// 		return fmt.Errorf("reading initial data file `%s`: %w", *path, err)
-	// 	}
-	// 	iniD = c
-	// }
-	// req := &proto.InitialDataRequest{
-	// 	Data: iniD,
-	// }
-
-	// resp, err := service.InitialData(ctx, req)
-	// if err != nil {
-	// 	return fmt.Errorf("setting initial data: %w", err)
-	// }
-
-	// msg := "Datastore contains data. Initial data were NOT set."
-	// if resp.Initialized {
-	// 	msg = "Initial data were set successfully."
-	// }
-	// fmt.Println(msg)
+	msg := "Datastore contains data. Initial data were NOT set."
+	if resp.Initialized {
+		msg = "Initial data were set successfully."
+	}
+	fmt.Println(msg)
 
 	return nil
 }

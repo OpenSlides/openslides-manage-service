@@ -1,8 +1,10 @@
 package initialdata_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
@@ -20,27 +22,43 @@ func TestCmd(t *testing.T) {
 }
 
 type MockInitialdataClient struct {
-	validator func(in *proto.InitialDataRequest) error
+	expected []byte
 }
 
 func (m *MockInitialdataClient) InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error) {
-	return nil, m.validator(in)
+	if bytes.Compare(m.expected, in.Data) != 0 {
+		return nil, fmt.Errorf("wrong initial data, expected %q, got %q", m.expected, in.Data)
+	}
+	return &proto.InitialDataResponse{Initialized: true}, nil
 }
 
 func TestInitialdata(t *testing.T) {
-	iniD := "foo: bar"
-
-	mc := new(MockInitialdataClient)
-	mc.validator = func(in *proto.InitialDataRequest) error {
-		got := string(in.Data)
-		if iniD != got {
-			x := string(in.Data)
-			return fmt.Errorf("wrong initial data, expected %q, got %q", iniD, x)
+	t.Run("default initial data", func(t *testing.T) {
+		mc := new(MockInitialdataClient)
+		mc.expected = []byte(initialdata.DefaultInitialData)
+		ctx := context.Background()
+		if err := initialdata.Initialdata(ctx, mc, ""); err != nil {
+			t.Fatalf("running Initialdata() failed with error: %v", err)
 		}
-		return nil
-	}
-	ctx := context.Background()
-	if err := initialdata.Initialdata(ctx, mc); err != nil {
-		t.Fatalf("running Initialdata() failed with error: %v", err)
-	}
+	})
+	t.Run("custom initial data", func(t *testing.T) {
+		customIniD := "foo:bar"
+
+		f, err := os.CreateTemp("", "openslides-initial-data.json")
+		if err != nil {
+			t.Fatalf("creating temporary file for initial data: %v", err)
+		}
+		defer os.Remove(f.Name())
+		f.WriteString(customIniD)
+		if err := f.Close(); err != nil {
+			t.Fatalf("closing temporary file for initial data: %v", err)
+		}
+
+		mc := new(MockInitialdataClient)
+		mc.expected = []byte(customIniD)
+		ctx := context.Background()
+		if err := initialdata.Initialdata(ctx, mc, f.Name()); err != nil {
+			t.Fatalf("running Initialdata() failed with error: %v", err)
+		}
+	})
 }
