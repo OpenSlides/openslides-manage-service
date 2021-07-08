@@ -3,10 +3,12 @@ package initialdata
 import (
 	"context"
 	_ "embed" // Blank import required to use go directive.
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -41,7 +43,7 @@ func Cmd() *cobra.Command {
 		}
 		defer close()
 
-		if err := Initialdata(cmd.Context(), c, *dataFile); err != nil {
+		if err := Run(cmd.Context(), c, *dataFile); err != nil {
 			return fmt.Errorf("setting initial data: %w", err)
 		}
 
@@ -54,22 +56,22 @@ type gRPCClient interface {
 	InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error)
 }
 
-// Initialdata calls respective procedure to set initial data to an empty database via given gRPC client.
+// Run calls respective procedure to set initial data to an empty database via given gRPC client.
 // If dataFile is an empty string, the default initial data are used.
-func Initialdata(ctx context.Context, c gRPCClient, dataFile string) error {
+func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 	iniD := DefaultInitialData
 	if dataFile != "" {
-		c, err := os.ReadFile(dataFile)
+		content, err := os.ReadFile(dataFile)
 		if err != nil {
 			return fmt.Errorf("reading initial data file %q: %w", dataFile, err)
 		}
-		iniD = c
+		iniD = content
 	}
 	req := &proto.InitialDataRequest{
 		Data: iniD,
 	}
 
-	resp, err := c.InitialData(ctx, req)
+	resp, err := gc.InitialData(ctx, req)
 	if err != nil {
 		return fmt.Errorf("setting initial data: %w", err)
 	}
@@ -79,6 +81,55 @@ func Initialdata(ctx context.Context, c gRPCClient, dataFile string) error {
 		msg = "Initial data were set successfully."
 	}
 	fmt.Println(msg)
+
+	return nil
+}
+
+// InitialData sets initial data in the datastore.
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, services *connection.Services) (*proto.InitialDataResponse, error) {
+	exists, err := CheckDatastore(services.Datastore)
+	if err != nil {
+		return nil, fmt.Errorf("checking existance in datastore: %w", err)
+	}
+	if exists {
+		return &proto.InitialDataResponse{Initialized: false}, nil
+	}
+
+	if err := InsertIntoDatastore(services.Datastore, in.Data); err != nil {
+		return nil, fmt.Errorf("inserting initial data into datastore: %w", err)
+	}
+
+	// if err := SetAdminPassword(opts.Datastore); err != nil {
+	// 	return nil, fmt.Errorf("setting admin password: %w", err)
+	// }
+
+	return &proto.InitialDataResponse{Initialized: true}, nil
+}
+
+// CheckDatastore checks if the object organization/1 exists in the datastore.
+func CheckDatastore(ds datastore.Datastore) (bool, error) {
+	exists, err := ds.Exists("organization", 1)
+	if err != nil {
+		return false, fmt.Errorf("checking existance in datastore: %w", err)
+	}
+	return exists, nil
+}
+
+// InsertIntoDatastore inserts the given JSON data into datastore with write requests.
+func InsertIntoDatastore(ds datastore.Datastore, data []byte) error {
+	var parsedData map[string]map[string]map[string]json.RawMessage
+	if err := json.Unmarshal(data, &parsedData); err != nil {
+		return fmt.Errorf("unmarshaling JSON: %w", err)
+	}
+
+	for collection, elements := range parsedData {
+		for id, fields := range elements {
+			fqid := fmt.Sprintf("%s/%s", collection, id)
+			if err := ds.Create(fqid, fields); err != nil {
+				return fmt.Errorf("creating datastore object %q: %w", fqid, err)
+			}
+		}
+	}
 
 	return nil
 }
