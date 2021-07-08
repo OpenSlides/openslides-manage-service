@@ -42,7 +42,7 @@ func TestInitialdata(t *testing.T) {
 		}
 	})
 	t.Run("custom initial data", func(t *testing.T) {
-		customIniD := "foo:bar"
+		customIniD := `{"foo":"bar"}`
 
 		f, err := os.CreateTemp("", "openslides-initial-data.json")
 		if err != nil {
