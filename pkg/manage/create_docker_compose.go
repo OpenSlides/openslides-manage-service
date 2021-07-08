@@ -53,6 +53,9 @@ auth:
 media:
   image: openslides-media
   path: openslides-media-service
+icc:
+  image: openslides-icc
+  path: openslides-icc-service
 manage:
   image: openslides-manage
   path: openslides-manage-service

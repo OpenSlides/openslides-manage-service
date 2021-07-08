@@ -124,6 +124,21 @@ services:
       - backend
       - postgres
 
+  icc:
+    {{ .Service.icc }}
+    depends_on:
+      - datastore-reader
+      - message-bus
+      - auth
+    env_file: services.env
+    networks:
+      - frontend
+      - datastore-reader
+      - message-bus
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+
   manage:
     {{ .Service.manage }}
     depends_on:
