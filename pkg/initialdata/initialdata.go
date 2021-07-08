@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -32,16 +33,17 @@ func Cmd() *cobra.Command {
 		Long:  InitialDataHelp + "\n\n" + InitialDataHelpExtra,
 		Args:  cobra.NoArgs,
 	}
+	dataFile := cmd.Flags().StringP("file", "f", "", "custom JSON file with initial data")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		c, close, err := connection.Dial(cmd.Context())
+		if err != nil {
+			return fmt.Errorf("connecting to gRPC server: %w", err)
+		}
+		defer close()
 
-		// ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
-		// defer cancel()
-
-		// service, close, err := Dial(ctx, cfg.Address)
-		// if err != nil {
-		// 	return fmt.Errorf("connecting to gRPC server: %w", err)
-		// }
-		// defer close()
+		if err := Initialdata(cmd.Context(), c, *dataFile); err != nil {
+			return fmt.Errorf("setting initial data: %w", err)
+		}
 
 		return nil
 	}

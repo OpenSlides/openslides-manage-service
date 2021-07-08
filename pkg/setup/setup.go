@@ -47,8 +47,8 @@ func Cmd() *cobra.Command {
 		Long:  SetupHelp + "\n\n" + SetupHelpExtra,
 		Args:  cobra.ExactArgs(1),
 	}
-	force := cmd.Flags().BoolP("force", "f", false, "Do not skip existing files but overwrite them.")
-	tplFile := cmd.Flags().StringP("template", "t", "", "Path to custom YAML template file.")
+	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
+	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
 
