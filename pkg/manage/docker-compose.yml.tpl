@@ -70,8 +70,11 @@ services:
       - POSTGRES_USER=openslides
       - POSTGRES_PASSWORD=openslides
       - POSTGRES_DB=openslides
+      - PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
 
   autoupdate:
     {{ .Service.autoupdate }}
