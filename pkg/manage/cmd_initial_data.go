@@ -22,7 +22,7 @@ It does nothing if the datastore is not empty.
 //go:embed default-initial-data.json
 var defaultInitialData []byte
 
-const adminSecretPath = "/run/secrets/admin"
+const superAdminSecretPath = "/run/secrets/superadmin"
 
 // CmdInitialData creates given initial data if there is an empty datastore. It
 // also sets password of user 1 to the value in the docker secret "admin".
@@ -117,12 +117,12 @@ func parseData(d []byte) (map[string]map[string]map[string]json.RawMessage, erro
 	return data, nil
 }
 
-// setAdminPassword reads the docker secret "admin" and sets the password
+// setAdminPassword reads the docker secret "superadmin" and sets the password
 // for user 1 to this value.
 func (s *Server) setAdminPassword(ctx context.Context) error {
-	sec, err := os.ReadFile(adminSecretPath)
+	sec, err := os.ReadFile(superAdminSecretPath)
 	if err != nil {
-		return fmt.Errorf("reading file %s: %w", adminSecretPath, err)
+		return fmt.Errorf("reading file %s: %w", superAdminSecretPath, err)
 	}
 
 	in := &proto.SetPasswordRequest{
