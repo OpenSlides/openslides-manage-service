@@ -132,8 +132,8 @@ func createSecrets(dataPath string) error {
 		}
 	}
 
-	if err := os.WriteFile(path.Join(dataPath, "admin"), []byte("admin"), fs.ModePerm); err != nil {
-		return fmt.Errorf("writing admin password to secret file: %w", err)
+	if err := os.WriteFile(path.Join(dataPath, "admin"), []byte("superadmin"), fs.ModePerm); err != nil {
+		return fmt.Errorf("writing superadmin password to secret file: %w", err)
 	}
 
 	return nil
