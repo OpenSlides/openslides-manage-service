@@ -29,6 +29,8 @@ Then the container are stopped. To start them again, use start command.
 
 const appName = "openslides"
 
+const superAdminPassword = "superadmin"
+
 // cmdSetup creates docker-compose.yml, secrets and services.env. Also runs
 // docker-compose build to build all images.
 func cmdSetup(cfg *ClientConfig) *cobra.Command {
@@ -132,7 +134,7 @@ func createSecrets(dataPath string) error {
 		}
 	}
 
-	if err := os.WriteFile(path.Join(dataPath, "admin"), []byte("superadmin"), fs.ModePerm); err != nil {
+	if err := os.WriteFile(path.Join(dataPath, "superadmin"), []byte(superAdminPassword), fs.ModePerm); err != nil {
 		return fmt.Errorf("writing superadmin password to secret file: %w", err)
 	}
 
