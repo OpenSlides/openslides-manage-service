@@ -66,17 +66,17 @@ func TestInitialdata(t *testing.T) {
 	})
 }
 
-type MockDatastore struct {
+type mockDatastore struct {
 	content map[string]json.RawMessage
 }
 
-func (m *MockDatastore) Exists(collection string, id int) (bool, error) {
+func (m *mockDatastore) Exists(collection string, id int) (bool, error) {
 	k := fmt.Sprintf("%s/%d/id", collection, id)
 	_, ok := m.content[k]
 	return ok, nil
 }
 
-func (m *MockDatastore) Create(fqid string, fields map[string]json.RawMessage) error {
+func (m *mockDatastore) Create(fqid string, fields map[string]json.RawMessage) error {
 
 	ss := strings.Split(fqid, "/")
 	collection := ss[0]
@@ -94,10 +94,36 @@ func (m *MockDatastore) Create(fqid string, fields map[string]json.RawMessage) e
 	return nil
 }
 
-func TestInitialdataServer(t *testing.T) {
-	md := new(MockDatastore)
+func TestInitialDataServerAll(t *testing.T) {
+	md := new(mockDatastore)
+	ctx := context.Background()
+	in := &proto.InitialDataRequest{
+		Data: initialdata.DefaultInitialData,
+	}
+	t.Run("running the first time", func(t *testing.T) {
+		resp, err := initialdata.InitialData(ctx, in, md)
+		if err != nil {
+			t.Fatalf("running InitialData() failed: %v", err)
+		}
+		if !resp.Initialized {
+			t.Fatalf("running InitialData() should return a truthy result, got falsy")
+		}
+	})
+	t.Run("running the second time", func(t *testing.T) {
+		resp, err := initialdata.InitialData(ctx, in, md)
+		if err != nil {
+			t.Fatalf("running InitialData() failed: %v", err)
+		}
+		if resp.Initialized {
+			t.Fatalf("running InitialData() should return a falsy result, got truthy")
+		}
+	})
+}
 
-	t.Run("checking datastore", func(t *testing.T) {
+func TestInitialDataServer(t *testing.T) {
+	md := new(mockDatastore)
+
+	t.Run("checking datastore existance", func(t *testing.T) {
 		exists, err := initialdata.CheckDatastore(md)
 		if err != nil {
 			t.Fatalf("checking if data in datastore exist failed: %v", err)

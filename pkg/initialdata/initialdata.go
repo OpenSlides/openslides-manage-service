@@ -84,18 +84,14 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 	return nil
 }
 
-type services interface {
-	Datastore() ds
-}
-
-type ds interface {
+type datastore interface {
 	Exists(collection string, id int) (bool, error)
 	Create(fqid string, fields map[string]json.RawMessage) error
 }
 
 // InitialData sets initial data in the datastore.
-func InitialData(ctx context.Context, in *proto.InitialDataRequest, services services) (*proto.InitialDataResponse, error) {
-	exists, err := CheckDatastore(services.Datastore())
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, ds datastore) (*proto.InitialDataResponse, error) {
+	exists, err := CheckDatastore(ds)
 	if err != nil {
 		return nil, fmt.Errorf("checking existance in datastore: %w", err)
 	}
@@ -103,11 +99,11 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, services ser
 		return &proto.InitialDataResponse{Initialized: false}, nil
 	}
 
-	if err := InsertIntoDatastore(services.Datastore(), in.Data); err != nil {
+	if err := InsertIntoDatastore(ds, in.Data); err != nil {
 		return nil, fmt.Errorf("inserting initial data into datastore: %w", err)
 	}
 
-	// if err := SetAdminPassword(opts.Datastore); err != nil {
+	// if err := SetAdminPassword(ds); err != nil {
 	// 	return nil, fmt.Errorf("setting admin password: %w", err)
 	// }
 
@@ -115,7 +111,7 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, services ser
 }
 
 // CheckDatastore checks if the object organization/1 exists in the datastore.
-func CheckDatastore(ds ds) (bool, error) {
+func CheckDatastore(ds datastore) (bool, error) {
 	exists, err := ds.Exists("organization", 1)
 	if err != nil {
 		return false, fmt.Errorf("checking existance in datastore: %w", err)
@@ -124,7 +120,7 @@ func CheckDatastore(ds ds) (bool, error) {
 }
 
 // InsertIntoDatastore inserts the given JSON data into datastore with write requests.
-func InsertIntoDatastore(ds ds, data []byte) error {
+func InsertIntoDatastore(ds datastore, data []byte) error {
 	var parsedData map[string]map[string]map[string]json.RawMessage
 	if err := json.Unmarshal(data, &parsedData); err != nil {
 		return fmt.Errorf("unmarshaling JSON: %w", err)

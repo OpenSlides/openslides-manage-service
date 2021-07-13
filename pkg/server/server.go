@@ -41,16 +41,6 @@ func Run(cfg *Config) error {
 	return nil
 }
 
-// services implements a collection of connections to services like datastore and auth.
-type services struct {
-	ctx    context.Context
-	config *Config
-}
-
-func (s *services) Datastore() *datastore.Conn {
-	return datastore.New(s.ctx, s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
-}
-
 // srv implements the manage methods on server side.
 type srv struct {
 	config *Config
@@ -67,11 +57,8 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	ss := &services{
-		ctx:    ctx,
-		config: s.config,
-	}
-	return initialdata.InitialData(ctx, in, ss)
+	ds := datastore.New(ctx, s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
+	return initialdata.InitialData(ctx, in, ds)
 
 }
 
