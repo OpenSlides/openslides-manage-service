@@ -15,21 +15,16 @@ const (
 	writeSubpath  = "/write"
 )
 
-// Datastore represents a connection to the datastore.
-type Datastore interface {
-	Exists(collection string, id int) (bool, error)
-	Create(fqid string, fields map[string]json.RawMessage) error
-}
-
-type datastoreConnection struct {
+// Conn holds a connection to the datastore service (reader and writer).
+type Conn struct {
 	ctx       context.Context
 	readerURL *url.URL
 	writerURL *url.URL
 }
 
-// NewDatastore returns a new connection to the datastore.
-func NewDatastore(ctx context.Context, readerURL *url.URL, writerURL *url.URL) Datastore {
-	d := new(datastoreConnection)
+// New returns a new connection to the datastore.
+func New(ctx context.Context, readerURL *url.URL, writerURL *url.URL) *Conn {
+	d := new(Conn)
 	d.ctx = ctx
 	d.readerURL = readerURL
 	d.writerURL = writerURL
@@ -37,7 +32,7 @@ func NewDatastore(ctx context.Context, readerURL *url.URL, writerURL *url.URL) D
 }
 
 // Exists does check if a collection object with given id exists.
-func (d *datastoreConnection) Exists(collection string, id int) (bool, error) {
+func (d *Conn) Exists(collection string, id int) (bool, error) {
 	reqBody := fmt.Sprintf(
 		`{
 			"collection": "%s",
@@ -87,7 +82,7 @@ func (d *datastoreConnection) Exists(collection string, id int) (bool, error) {
 }
 
 // Create sends a create event to the datastore.
-func (d *datastoreConnection) Create(fqid string, fields map[string]json.RawMessage) error {
+func (d *Conn) Create(fqid string, fields map[string]json.RawMessage) error {
 	f, err := json.Marshal(fields)
 	if err != nil {
 		return fmt.Errorf("marshalling fields: %w", err)

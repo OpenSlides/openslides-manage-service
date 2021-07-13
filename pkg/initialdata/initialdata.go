@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
-	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -85,9 +84,18 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 	return nil
 }
 
+type services interface {
+	Datastore() ds
+}
+
+type ds interface {
+	Exists(collection string, id int) (bool, error)
+	Create(fqid string, fields map[string]json.RawMessage) error
+}
+
 // InitialData sets initial data in the datastore.
-func InitialData(ctx context.Context, in *proto.InitialDataRequest, services *connection.Services) (*proto.InitialDataResponse, error) {
-	exists, err := CheckDatastore(services.Datastore)
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, services services) (*proto.InitialDataResponse, error) {
+	exists, err := CheckDatastore(services.Datastore())
 	if err != nil {
 		return nil, fmt.Errorf("checking existance in datastore: %w", err)
 	}
@@ -95,7 +103,7 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, services *co
 		return &proto.InitialDataResponse{Initialized: false}, nil
 	}
 
-	if err := InsertIntoDatastore(services.Datastore, in.Data); err != nil {
+	if err := InsertIntoDatastore(services.Datastore(), in.Data); err != nil {
 		return nil, fmt.Errorf("inserting initial data into datastore: %w", err)
 	}
 
@@ -107,7 +115,7 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, services *co
 }
 
 // CheckDatastore checks if the object organization/1 exists in the datastore.
-func CheckDatastore(ds datastore.Datastore) (bool, error) {
+func CheckDatastore(ds ds) (bool, error) {
 	exists, err := ds.Exists("organization", 1)
 	if err != nil {
 		return false, fmt.Errorf("checking existance in datastore: %w", err)
@@ -116,7 +124,7 @@ func CheckDatastore(ds datastore.Datastore) (bool, error) {
 }
 
 // InsertIntoDatastore inserts the given JSON data into datastore with write requests.
-func InsertIntoDatastore(ds datastore.Datastore, data []byte) error {
+func InsertIntoDatastore(ds ds, data []byte) error {
 	var parsedData map[string]map[string]map[string]json.RawMessage
 	if err := json.Unmarshal(data, &parsedData); err != nil {
 		return fmt.Errorf("unmarshaling JSON: %w", err)

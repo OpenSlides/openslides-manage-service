@@ -12,7 +12,7 @@ import (
 
 // RunClient is the entrypoint for the client tool of this service. It starts the root command.
 func RunClient() error {
-	timeout := 30 * time.Second
+	timeout := 20 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 )
@@ -19,9 +18,4 @@ func Dial(ctx context.Context) (proto.ManageClient, func() error, error) {
 	}
 
 	return proto.NewManageClient(conn), conn.Close, nil
-}
-
-// Services contains connections to several services like datastore and auth.s
-type Services struct {
-	Datastore datastore.Datastore
 }

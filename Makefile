@@ -17,6 +17,7 @@ test:
 
 go-build:
 	go build ./cmd/openslides
+	go build ./cmd/server
 
 protoc:
 	protoc --go_out=. --go_opt=paths=source_relative \
