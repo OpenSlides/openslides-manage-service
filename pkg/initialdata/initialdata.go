@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -87,6 +88,11 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 type datastore interface {
 	Exists(collection string, id int) (bool, error)
 	Create(fqid string, fields map[string]json.RawMessage) error
+	Set(fqfield string, value json.RawMessage) error
+}
+
+type auth interface {
+	Hash(password string) (string, error)
 }
 
 // InitialData sets initial data in the datastore.
@@ -135,5 +141,22 @@ func InsertIntoDatastore(ds datastore, data []byte) error {
 		}
 	}
 
+	return nil
+}
+
+// SetSuperadminPassword sets the first password for the superadmin according to respective secret.
+func SetSuperadminPassword(superadminSecretFile string, ds datastore, auth auth) error {
+	sapw, err := os.ReadFile(superadminSecretFile)
+	if err != nil {
+		return fmt.Errorf("reading file %q: %w", superadminSecretFile, err)
+	}
+
+	in := &proto.SetPasswordRequest{
+		UserID:   1,
+		Password: string(sapw),
+	}
+	if _, err := setpassword.SetPassword(in, ds, auth); err != nil {
+		return fmt.Errorf("setting superadmin password: %w", err)
+	}
 	return nil
 }

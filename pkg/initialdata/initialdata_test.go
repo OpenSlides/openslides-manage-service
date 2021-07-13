@@ -25,11 +25,13 @@ func TestCmd(t *testing.T) {
 	})
 }
 
-type MockInitialdataClient struct {
+// Client tests.
+
+type mockInitialdataClient struct {
 	expected []byte
 }
 
-func (m *MockInitialdataClient) InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error) {
+func (m *mockInitialdataClient) InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error) {
 	if bytes.Compare(m.expected, in.Data) != 0 {
 		return nil, fmt.Errorf("wrong initial data, expected %q, got %q", m.expected, in.Data)
 	}
@@ -38,7 +40,7 @@ func (m *MockInitialdataClient) InitialData(ctx context.Context, in *proto.Initi
 
 func TestInitialdata(t *testing.T) {
 	t.Run("default initial data", func(t *testing.T) {
-		mc := new(MockInitialdataClient)
+		mc := new(mockInitialdataClient)
 		mc.expected = []byte(initialdata.DefaultInitialData)
 		ctx := context.Background()
 		if err := initialdata.Run(ctx, mc, ""); err != nil {
@@ -57,7 +59,7 @@ func TestInitialdata(t *testing.T) {
 			t.Fatalf("closing temporary file for initial data: %v", err)
 		}
 
-		mc := new(MockInitialdataClient)
+		mc := new(mockInitialdataClient)
 		mc.expected = []byte(customIniD)
 		ctx := context.Background()
 		if err := initialdata.Run(ctx, mc, f.Name()); err != nil {
@@ -65,6 +67,8 @@ func TestInitialdata(t *testing.T) {
 		}
 	})
 }
+
+// Server tests.
 
 type mockDatastore struct {
 	content map[string]json.RawMessage
@@ -94,6 +98,20 @@ func (m *mockDatastore) Create(fqid string, fields map[string]json.RawMessage) e
 	return nil
 }
 
+func (m *mockDatastore) Set(fqfield string, value json.RawMessage) error {
+	if m.content == nil {
+		m.content = make(map[string]json.RawMessage)
+	}
+	m.content[fqfield] = value
+	return nil
+}
+
+type mockAuth struct{}
+
+func (m *mockAuth) Hash(password string) (string, error) {
+	return "hash:" + password, nil
+}
+
 func TestInitialDataServerAll(t *testing.T) {
 	md := new(mockDatastore)
 	ctx := context.Background()
@@ -108,6 +126,9 @@ func TestInitialDataServerAll(t *testing.T) {
 		if !resp.Initialized {
 			t.Fatalf("running InitialData() should return a truthy result, got falsy")
 		}
+
+		// TODO: Check superadmin password here.
+
 	})
 	t.Run("running the second time", func(t *testing.T) {
 		resp, err := initialdata.InitialData(ctx, in, md)
@@ -149,7 +170,28 @@ func TestInitialDataServer(t *testing.T) {
 		}
 	})
 
-	t.Run("setting admin password", func(t *testing.T) {
-		t.Fail() // TODO: Implement this but implement common SetPassword first.
+	t.Run("setting superadmin password", func(t *testing.T) {
+		ma := new(mockAuth)
+
+		superadminPassword := "my_superadmin_password"
+		f, err := os.CreateTemp("", "openslides-superadmin-secret")
+		if err != nil {
+			t.Fatalf("creating temporary file for superadmin password: %v", err)
+		}
+		defer os.Remove(f.Name())
+		f.WriteString(superadminPassword)
+		if err := f.Close(); err != nil {
+			t.Fatalf("closing temporary file for superadmin password: %v", err)
+		}
+
+		if err := initialdata.SetSuperadminPassword(f.Name(), md, ma); err != nil {
+			t.Fatalf("setting superadmin password failed: %v", err)
+		}
+		key := "user/1/password"
+		got := string(md.content[key])
+		expected := fmt.Sprintf("%q", "hash:"+superadminPassword)
+		if expected != got {
+			t.Fatalf("wrong superadmin password, expected %q, got %q", expected, got)
+		}
 	})
 }

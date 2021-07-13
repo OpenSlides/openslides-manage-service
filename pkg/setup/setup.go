@@ -19,15 +19,15 @@ const (
 	secretsDirName        = "secrets"
 	authTokenKeyFileName  = "auth_token_key"
 	authCookieKeyFileName = "auth_cookie_key"
-	adminFileName         = "admin"
+	superadminFileName    = "superadmin"
 	dbDirName             = "db-data"
 )
 
 //go:embed default-docker-compose.yml
 var defaultDockerComposeYml []byte
 
-// DefaultAdminPassword is the password for the first admin created with initial data.
-const DefaultAdminPassword = "admin"
+// DefaultSuperadminPassword is the password for the first superadmin created with initial data.
+const DefaultSuperadminPassword = "superadmin"
 
 const (
 	// SetupHelp contains the short help text for the command.
@@ -112,8 +112,8 @@ func Setup(dir string, force bool, tpl []byte) error {
 		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
 	}
 
-	// Create admin file
-	if err := createFile(secrDir, force, adminFileName, []byte(DefaultAdminPassword)); err != nil {
+	// Create supereadmin file
+	if err := createFile(secrDir, force, superadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
 

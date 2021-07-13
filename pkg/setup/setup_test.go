@@ -28,7 +28,7 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -48,7 +48,7 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -79,7 +79,7 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", customTpl)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -99,7 +99,7 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -120,7 +120,7 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -131,7 +131,7 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 }
@@ -151,7 +151,7 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, dir, "secrets/auth_token_key")
 		testKeyFile(t, dir, "secrets/auth_cookie_key")
-		testContentFile(t, dir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, dir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, dir, "db-data")
 	})
 }
@@ -171,7 +171,7 @@ func TestSetupExternalTemplate(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", tplText)
 		testKeyFile(t, testDir, "secrets/auth_token_key")
 		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/admin", setup.DefaultAdminPassword)
+		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 }

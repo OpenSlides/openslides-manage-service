@@ -12,26 +12,22 @@ import (
 
 const authHashPath = "/internal/auth/hash"
 
-// Auth represents a connection to the auth service.
-type Auth interface {
-	Hash(password string) (string, error)
-}
-
-type authConnection struct {
+// Conn holds a connection to the auth service.
+type Conn struct {
 	ctx     context.Context
 	authURL *url.URL
 }
 
 // New returns a new connection to the auth service.
-func New(ctx context.Context, authURL *url.URL) Auth {
-	a := new(authConnection)
+func New(ctx context.Context, authURL *url.URL) *Conn {
+	a := new(Conn)
 	a.ctx = ctx
 	a.authURL = authURL
 	return a
 }
 
 // Hash returns the hashed form of password as JSON.
-func (a *authConnection) Hash(password string) (string, error) {
+func (a *Conn) Hash(password string) (string, error) {
 	url := a.authURL
 	url.Path = authHashPath
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)

@@ -106,6 +106,11 @@ func (d *Conn) Create(fqid string, fields map[string]json.RawMessage) error {
 	return nil
 }
 
+// Set ... TODO
+func (d *Conn) Set(fqfield string, value json.RawMessage) error {
+	return nil
+}
+
 // sendWriteRequest sends the give request body to the datastore.
 func sendWriteRequest(ctx context.Context, writerURL *url.URL, reqBody string) error {
 	addr := writerURL.String() + writeSubpath
