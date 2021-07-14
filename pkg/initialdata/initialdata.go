@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -96,7 +98,7 @@ type auth interface {
 }
 
 // InitialData sets initial data in the datastore.
-func InitialData(ctx context.Context, in *proto.InitialDataRequest, ds datastore) (*proto.InitialDataResponse, error) {
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, ds datastore, auth auth) (*proto.InitialDataResponse, error) {
 	exists, err := CheckDatastore(ds)
 	if err != nil {
 		return nil, fmt.Errorf("checking existance in datastore: %w", err)
@@ -109,9 +111,10 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, ds datastore
 		return nil, fmt.Errorf("inserting initial data into datastore: %w", err)
 	}
 
-	// if err := SetAdminPassword(ds); err != nil {
-	// 	return nil, fmt.Errorf("setting admin password: %w", err)
-	// }
+	p := path.Join(runPath, setup.SecretsDirName, setup.SuperadminFileName)
+	if err := SetSuperadminPassword(p, ds, auth); err != nil {
+		return nil, fmt.Errorf("setting superadmin password: %w", err)
+	}
 
 	return &proto.InitialDataResponse{Initialized: true}, nil
 }

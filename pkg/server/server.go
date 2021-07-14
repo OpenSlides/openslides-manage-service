@@ -11,11 +11,14 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/auth"
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 )
+
+const runDir = "/run"
 
 // Run starts the manage server.
 func Run(cfg *Config) error {
@@ -58,7 +61,8 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
 	ds := datastore.New(ctx, s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
-	return initialdata.InitialData(ctx, in, ds)
+	auth := auth.New(ctx, s.config.authURL())
+	return initialdata.InitialData(ctx, in, runDir, ds, auth)
 
 }
 

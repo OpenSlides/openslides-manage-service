@@ -16,18 +16,13 @@ import (
 
 const (
 	ymlFileName           = "docker-compose.yml"
-	secretsDirName        = "secrets"
 	authTokenKeyFileName  = "auth_token_key"
 	authCookieKeyFileName = "auth_cookie_key"
-	superadminFileName    = "superadmin"
 	dbDirName             = "db-data"
 )
 
 //go:embed default-docker-compose.yml
 var defaultDockerComposeYml []byte
-
-// DefaultSuperadminPassword is the password for the first superadmin created with initial data.
-const DefaultSuperadminPassword = "superadmin"
 
 const (
 	// SetupHelp contains the short help text for the command.
@@ -37,6 +32,15 @@ const (
 	SetupHelpExtra = `This command creates a YAML file. It also creates the required secrets and
 directories for volumes containing persistent database and SSL certs. Everything
 is created in the given directory.`
+
+	// SecretsDirName is the name of the directory for Docker Secrets.
+	SecretsDirName = "secrets"
+
+	// SuperadminFileName is the name of the secrets file containing the superadmin password.
+	SuperadminFileName = "superadmin"
+
+	// DefaultSuperadminPassword is the password for the first superadmin created with initial data.
+	DefaultSuperadminPassword = "superadmin"
 )
 
 // Cmd returns the setup subcommand.
@@ -89,7 +93,7 @@ func Setup(dir string, force bool, tpl []byte) error {
 	}
 
 	// Create secrets directory
-	secrDir := path.Join(dir, secretsDirName)
+	secrDir := path.Join(dir, SecretsDirName)
 	if err := os.MkdirAll(secrDir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating secrets directory at %q: %w", dir, err)
 	}
@@ -113,7 +117,7 @@ func Setup(dir string, force bool, tpl []byte) error {
 	}
 
 	// Create supereadmin file
-	if err := createFile(secrDir, force, superadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
+	if err := createFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
 

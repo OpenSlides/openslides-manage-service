@@ -25,10 +25,11 @@ func TestCmd(t *testing.T) {
 			t.Fatalf("executing setup subcommand: %v", err)
 		}
 
+		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testKeyFile(t, testDir, "secrets/auth_token_key")
-		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -45,10 +46,11 @@ func TestCmd(t *testing.T) {
 			t.Fatalf("executing setup subcommand: %v", err)
 		}
 
+		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testKeyFile(t, testDir, "secrets/auth_token_key")
-		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -76,10 +78,11 @@ func TestCmd(t *testing.T) {
 			t.Fatalf("executing setup subcommand: %v", err)
 		}
 
+		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", customTpl)
-		testKeyFile(t, testDir, "secrets/auth_token_key")
-		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -96,10 +99,11 @@ func TestSetupCommon(t *testing.T) {
 		if err := setup.Setup(testDir, false, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
+		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testKeyFile(t, testDir, "secrets/auth_token_key")
-		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -117,10 +121,11 @@ func TestSetupCommon(t *testing.T) {
 		if err := setup.Setup(testDir, false, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
+		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
-		testKeyFile(t, testDir, "secrets/auth_token_key")
-		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 
@@ -128,10 +133,11 @@ func TestSetupCommon(t *testing.T) {
 		if err := setup.Setup(testDir, true, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
+		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
-		testKeyFile(t, testDir, "secrets/auth_token_key")
-		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 }
@@ -148,10 +154,11 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 		if err := setup.Setup(dir, false, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
+		secDir := path.Join(dir, setup.SecretsDirName)
 		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
-		testKeyFile(t, dir, "secrets/auth_token_key")
-		testKeyFile(t, dir, "secrets/auth_cookie_key")
-		testContentFile(t, dir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, dir, "db-data")
 	})
 }
@@ -168,10 +175,11 @@ func TestSetupExternalTemplate(t *testing.T) {
 		if err := setup.Setup(testDir, false, []byte(tplText)); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
+		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", tplText)
-		testKeyFile(t, testDir, "secrets/auth_token_key")
-		testKeyFile(t, testDir, "secrets/auth_cookie_key")
-		testContentFile(t, testDir, "secrets/superadmin", setup.DefaultSuperadminPassword)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
 }

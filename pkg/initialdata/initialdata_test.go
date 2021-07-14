@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 )
@@ -81,7 +83,6 @@ func (m *mockDatastore) Exists(collection string, id int) (bool, error) {
 }
 
 func (m *mockDatastore) Create(fqid string, fields map[string]json.RawMessage) error {
-
 	ss := strings.Split(fqid, "/")
 	collection := ss[0]
 	id, _ := strconv.Atoi(ss[1])
@@ -114,12 +115,35 @@ func (m *mockAuth) Hash(password string) (string, error) {
 
 func TestInitialDataServerAll(t *testing.T) {
 	md := new(mockDatastore)
+	ma := new(mockAuth)
 	ctx := context.Background()
 	in := &proto.InitialDataRequest{
 		Data: initialdata.DefaultInitialData,
 	}
+
+	// Prepare superadmin secret
+	testDir, err := os.MkdirTemp("", "openslides-manage-service-run-")
+	if err != nil {
+		t.Fatalf("generating temporary directory failed: %v", err)
+	}
+	defer os.RemoveAll(testDir)
+	secDir := path.Join(testDir, setup.SecretsDirName)
+	if err := os.Mkdir(secDir, os.ModePerm); err != nil {
+		t.Fatalf("generating temporary subdirectory failed: %v", err)
+	}
+	superadminPassword := "my_superadmin_password_aijooP4EeC"
+	f, err := os.Create(path.Join(secDir, setup.SuperadminFileName))
+	if err != nil {
+		t.Fatalf("creating temporary file for superadmin password: %v", err)
+	}
+	f.WriteString(superadminPassword)
+	if err := f.Close(); err != nil {
+		t.Fatalf("closing temporary file for superadmin password: %v", err)
+	}
+
+	// Run tests
 	t.Run("running the first time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(ctx, in, md)
+		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
@@ -127,16 +151,25 @@ func TestInitialDataServerAll(t *testing.T) {
 			t.Fatalf("running InitialData() should return a truthy result, got falsy")
 		}
 
-		// TODO: Check superadmin password here.
-
+		expected := fmt.Sprintf("%q", "hash:"+superadminPassword)
+		got := string(md.content["user/1/password"])
+		if expected != got {
+			t.Fatalf("wrong superadmin password, expected %q, got %q", expected, got)
+		}
 	})
 	t.Run("running the second time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(ctx, in, md)
+		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
 		if resp.Initialized {
 			t.Fatalf("running InitialData() should return a falsy result, got truthy")
+		}
+
+		expected := fmt.Sprintf("%q", "hash:"+superadminPassword)
+		got := string(md.content["user/1/password"])
+		if expected != got {
+			t.Fatalf("wrong superadmin password, expected %q, got %q", expected, got)
 		}
 	})
 }
@@ -173,7 +206,7 @@ func TestInitialDataServer(t *testing.T) {
 	t.Run("setting superadmin password", func(t *testing.T) {
 		ma := new(mockAuth)
 
-		superadminPassword := "my_superadmin_password"
+		superadminPassword := "my_superadmin_password_Do7aeRaing"
 		f, err := os.CreateTemp("", "openslides-superadmin-secret")
 		if err != nil {
 			t.Fatalf("creating temporary file for superadmin password: %v", err)
@@ -188,8 +221,8 @@ func TestInitialDataServer(t *testing.T) {
 			t.Fatalf("setting superadmin password failed: %v", err)
 		}
 		key := "user/1/password"
-		got := string(md.content[key])
 		expected := fmt.Sprintf("%q", "hash:"+superadminPassword)
+		got := string(md.content[key])
 		if expected != got {
 			t.Fatalf("wrong superadmin password, expected %q, got %q", expected, got)
 		}
