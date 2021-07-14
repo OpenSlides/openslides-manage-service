@@ -1,9 +1,7 @@
 package client
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
@@ -12,11 +10,7 @@ import (
 
 // RunClient is the entrypoint for the client tool of this service. It starts the root command.
 func RunClient() error {
-	timeout := 20 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	if err := RootCmd().ExecuteContext(ctx); err != nil {
+	if err := RootCmd().Execute(); err != nil {
 		return fmt.Errorf("executing root command: %w", err)
 	}
 	return nil

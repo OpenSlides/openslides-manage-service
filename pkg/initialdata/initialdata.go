@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -38,15 +39,20 @@ func Cmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 	}
 	dataFile := cmd.Flags().StringP("file", "f", "", "custom JSON file with initial data")
-	addr := cmd.Flags().StringP("address", "a", "localhost:9008", "Address of the OpenSlides manage service")
+	addr := cmd.Flags().StringP("address", "a", "localhost:9008", "address of the OpenSlides manage service")
+	timeout := cmd.Flags().DurationP("timeout", "t", 5*time.Second, "time to wait for the command's response")
+
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		c, close, err := connection.Dial(cmd.Context(), *addr)
+		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
+		defer cancel()
+
+		cl, close, err := connection.Dial(ctx, *addr)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}
 		defer close()
 
-		if err := Run(cmd.Context(), c, *dataFile); err != nil {
+		if err := Run(ctx, cl, *dataFile); err != nil {
 			return fmt.Errorf("setting initial data: %w", err)
 		}
 
