@@ -9,9 +9,7 @@ import (
 )
 
 // Dial creates a gRPC connection to the server.
-func Dial(ctx context.Context) (proto.ManageClient, func() error, error) {
-	address := "localhost:9006"
-
+func Dial(ctx context.Context, address string) (proto.ManageClient, func() error, error) {
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating gRPC client connection with grpc.DialContect(): %w", err)

@@ -38,8 +38,9 @@ func Cmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 	}
 	dataFile := cmd.Flags().StringP("file", "f", "", "custom JSON file with initial data")
+	addr := cmd.Flags().StringP("address", "a", "localhost:9008", "Address of the OpenSlides manage service")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		c, close, err := connection.Dial(cmd.Context())
+		c, close, err := connection.Dial(cmd.Context(), *addr)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

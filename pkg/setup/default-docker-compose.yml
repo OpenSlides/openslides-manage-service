@@ -181,7 +181,7 @@ services:
       - frontend
       - backend
     secrets:
-      - admin
+      - superadmin
     ports:
       - 127.0.0.1:9008:9008
 
@@ -205,5 +205,5 @@ secrets:
     file: ./secrets/auth_token_key
   auth_cookie_key:
     file: ./secrets/auth_cookie_key
-  admin:
-    file: ./secrets/admin
+  superadmin:
+    file: ./secrets/superadmin

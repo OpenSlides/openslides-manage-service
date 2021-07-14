@@ -56,7 +56,7 @@ func newServer(cfg *Config) *srv {
 }
 
 func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
-	return nil, nil
+	return nil, fmt.Errorf("currently not implemented")
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
@@ -67,23 +67,19 @@ func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*p
 }
 
 func (s *srv) CreateUser(context.Context, *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
-	return nil, nil
+	return nil, fmt.Errorf("currently not implemented")
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	// services := struct {
-	// }{}
-	// 	Auth: auth.New(ctx, s.config.authURL()),
-	// }
-	//return setpassword.SetPassword(ctx, in, services)
-	return nil, nil
+	return nil, fmt.Errorf("currently not implemented")
 }
 
 func (s *srv) Config(context.Context, *proto.ConfigRequest) (*proto.ConfigResponse, error) {
-	return nil, nil
+	return nil, fmt.Errorf("currently not implemented")
 }
+
 func (s *srv) Tunnel(proto.Manage_TunnelServer) error {
-	return nil
+	return fmt.Errorf("currently not implemented")
 }
 
 // Config holds config data for the server.
