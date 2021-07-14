@@ -106,8 +106,28 @@ func (d *Conn) Create(fqid string, fields map[string]json.RawMessage) error {
 	return nil
 }
 
-// Set ... TODO
+// Set sends an update event to the datastore to set a FQField. The value has to be JSON.
 func (d *Conn) Set(fqfield string, value json.RawMessage) error {
+	parts := strings.Split(fqfield, "/")
+	if len(parts) != 3 {
+		return fmt.Errorf("invalid FQField %s, expected two `/`", fqfield)
+	}
+
+	reqBody := fmt.Sprintf(
+		`{
+			"user_id": 0,
+			"information": {},
+			"locked_fields":{}, "events":[
+				{"type":"update","fqid":"%s/%s","fields":{"%s":%s}}
+			]
+		}`,
+		parts[0], parts[1], parts[2], value,
+	)
+
+	if err := sendWriteRequest(d.ctx, d.writerURL, reqBody); err != nil {
+		return fmt.Errorf("sending write request to datastore: %w", err)
+	}
+
 	return nil
 }
 
