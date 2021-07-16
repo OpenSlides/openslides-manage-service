@@ -27,13 +27,15 @@ func TestCmd(t *testing.T) {
 	})
 }
 
-// Client tests.
+// Client tests
 
 type mockInitialdataClient struct {
 	expected []byte
+	called   bool
 }
 
 func (m *mockInitialdataClient) InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error) {
+	m.called = true
 	if bytes.Compare(m.expected, in.Data) != 0 {
 		return nil, fmt.Errorf("wrong initial data, expected %q, got %q", m.expected, in.Data)
 	}
@@ -46,7 +48,10 @@ func TestInitialdata(t *testing.T) {
 		mc.expected = []byte(initialdata.DefaultInitialData)
 		ctx := context.Background()
 		if err := initialdata.Run(ctx, mc, ""); err != nil {
-			t.Fatalf("running Initialdata() failed with error: %v", err)
+			t.Fatalf("running initialdata.Run() failed with error: %v", err)
+		}
+		if !mc.called {
+			t.Fatalf("gRPC client was not called")
 		}
 	})
 	t.Run("custom initial data", func(t *testing.T) {
@@ -65,12 +70,12 @@ func TestInitialdata(t *testing.T) {
 		mc.expected = []byte(customIniD)
 		ctx := context.Background()
 		if err := initialdata.Run(ctx, mc, f.Name()); err != nil {
-			t.Fatalf("running Initialdata() failed with error: %v", err)
+			t.Fatalf("running initialdata.Run() failed with error: %v", err)
 		}
 	})
 }
 
-// Server tests.
+// Server tests
 
 type mockDatastore struct {
 	content map[string]json.RawMessage

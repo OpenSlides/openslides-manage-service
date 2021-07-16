@@ -8,6 +8,7 @@ import (
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/client"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 )
 
@@ -26,7 +27,8 @@ func TestCmdHelpTexts(t *testing.T) {
 	}{
 		{name: "root command", input: []string{}, outputStartsWith: []byte(client.RootHelp)},
 		{name: "setup command", input: []string{"setup", "--help"}, outputStartsWith: []byte(setup.SetupHelp)},
-		{name: "initial data command", input: []string{"initial-data", "--help"}, outputStartsWith: []byte(initialdata.InitialDataHelp)},
+		{name: "initial-data command", input: []string{"initial-data", "--help"}, outputStartsWith: []byte(initialdata.InitialDataHelp)},
+		{name: "set-password command", input: []string{"set-password", "--help"}, outputStartsWith: []byte(setpassword.SetPasswordHelp)},
 	}
 
 	for _, tt := range cmdTests {

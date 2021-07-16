@@ -1,13 +1,53 @@
 package setpassword_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/proto"
+	"google.golang.org/grpc"
 )
+
+// Client tests.
+
+type mockSetpasswordClient struct {
+	expected struct {
+		UserID   int64
+		Password string
+	}
+	called bool
+}
+
+func (m *mockSetpasswordClient) SetPassword(ctx context.Context, in *proto.SetPasswordRequest, opts ...grpc.CallOption) (*proto.SetPasswordResponse, error) {
+	m.called = true
+	if m.expected.UserID != in.UserID {
+		return nil, fmt.Errorf("wrong user ID, expected %d, got %d", m.expected.UserID, in.UserID)
+	}
+	if m.expected.Password != in.Password {
+		return nil, fmt.Errorf("wrong password, expected %q, got %q", m.expected.Password, in.Password)
+	}
+	return &proto.SetPasswordResponse{}, nil
+}
+
+func TestSetPassword(t *testing.T) {
+	t.Run("set password of some user", func(t *testing.T) {
+		mc := new(mockSetpasswordClient)
+		mc.expected.UserID = int64(6268132) // some random user ID
+		mc.expected.Password = "my_expected_password_vie2aiFoo3"
+		ctx := context.Background()
+		if err := setpassword.Run(ctx, mc, mc.expected.UserID, mc.expected.Password); err != nil {
+			t.Fatalf("running setpassword.Run() failed with error: %v", err)
+		}
+		if !mc.called {
+			t.Fatalf("gRPC client was not called")
+		}
+	})
+}
+
+// Server tests
 
 type mockAuth struct{}
 

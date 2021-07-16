@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -38,9 +37,10 @@ func Cmd() *cobra.Command {
 		Long:  InitialDataHelp + "\n\n" + InitialDataHelpExtra,
 		Args:  cobra.NoArgs,
 	}
+
 	dataFile := cmd.Flags().StringP("file", "f", "", "custom JSON file with initial data")
-	addr := cmd.Flags().StringP("address", "a", "localhost:9008", "address of the OpenSlides manage service")
-	timeout := cmd.Flags().DurationP("timeout", "t", 5*time.Second, "time to wait for the command's response")
+	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
+	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
@@ -60,6 +60,8 @@ func Cmd() *cobra.Command {
 	}
 	return cmd
 }
+
+// Client
 
 type gRPCClient interface {
 	InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error)
@@ -93,6 +95,8 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 
 	return nil
 }
+
+// Server
 
 type datastore interface {
 	Exists(collection string, id int) (bool, error)

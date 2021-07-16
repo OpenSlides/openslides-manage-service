@@ -242,6 +242,10 @@ x-default-environment: &default-environment
   DATASTORE_WRITER_HOST: datastore-writer
   DATASTORE_WRITER_PORT: 9011
   DATASTORE_DATABASE_HOST: postgres
+  DATASTORE_DATABASE_PORT: 5432
+  DATASTORE_DATABASE_NAME: openslides
+  DATASTORE_DATABASE_USER: openslides
+  DATASTORE_DATABASE_PASSWORD: openslides
 
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: 9012
@@ -296,11 +300,13 @@ services:
       - datastore-reader
       - datastore-writer
       - auth
+      - postgres
     environment:
       << : *default-environment
     networks:
       - frontend
       - backend
+      - postgres
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -413,7 +419,7 @@ services:
       - frontend
       - backend
     secrets:
-      - admin
+      - superadmin
     ports:
       - 127.0.0.1:9008:9008
 
@@ -437,8 +443,8 @@ secrets:
     file: ./secrets/auth_token_key
   auth_cookie_key:
     file: ./secrets/auth_cookie_key
-  admin:
-    file: ./secrets/admin
+  superadmin:
+    file: ./secrets/superadmin
 `
 
 func TestSetupNoDirectory(t *testing.T) {
