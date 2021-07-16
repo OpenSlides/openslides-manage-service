@@ -6,6 +6,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
+	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +34,7 @@ func RootCmd() *cobra.Command {
 		setup.Cmd(),
 		initialdata.Cmd(),
 		setpassword.Cmd(),
+		tunnel.Cmd(),
 	)
 
 	return cmd

@@ -55,7 +55,6 @@ func Cmd() *cobra.Command {
 		if err := Run(ctx, cl, *dataFile); err != nil {
 			return fmt.Errorf("setting initial data: %w", err)
 		}
-
 		return nil
 	}
 	return cmd

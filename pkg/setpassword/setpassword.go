@@ -48,7 +48,6 @@ func Cmd() *cobra.Command {
 		if err := Run(ctx, cl, *userID, *password); err != nil {
 			return fmt.Errorf("setting password: %w", err)
 		}
-
 		return nil
 	}
 	return cmd
