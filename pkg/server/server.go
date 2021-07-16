@@ -74,10 +74,6 @@ func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*p
 	return nil, fmt.Errorf("currently not implemented")
 }
 
-func (s *srv) Config(context.Context, *proto.ConfigRequest) (*proto.ConfigResponse, error) {
-	return nil, fmt.Errorf("currently not implemented")
-}
-
 func (s *srv) Tunnel(proto.Manage_TunnelServer) error {
 	return fmt.Errorf("currently not implemented")
 }
