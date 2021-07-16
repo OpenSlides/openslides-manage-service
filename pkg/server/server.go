@@ -14,6 +14,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/auth"
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 )
@@ -62,7 +63,7 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
 	ds := datastore.New(ctx, s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
 	auth := auth.New(ctx, s.config.authURL())
-	return initialdata.InitialData(ctx, in, runDir, ds, auth)
+	return initialdata.InitialData(in, runDir, ds, auth)
 
 }
 
@@ -71,7 +72,9 @@ func (s *srv) CreateUser(context.Context, *proto.CreateUserRequest) (*proto.Crea
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	return nil, fmt.Errorf("currently not implemented")
+	ds := datastore.New(ctx, s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
+	auth := auth.New(ctx, s.config.authURL())
+	return setpassword.SetPassword(in, ds, auth)
 }
 
 func (s *srv) Tunnel(proto.Manage_TunnelServer) error {

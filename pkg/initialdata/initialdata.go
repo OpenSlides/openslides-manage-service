@@ -109,7 +109,7 @@ type auth interface {
 }
 
 // InitialData sets initial data in the datastore.
-func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, ds datastore, auth auth) (*proto.InitialDataResponse, error) {
+func InitialData(in *proto.InitialDataRequest, runPath string, ds datastore, auth auth) (*proto.InitialDataResponse, error) {
 	exists, err := CheckDatastore(ds)
 	if err != nil {
 		return nil, fmt.Errorf("checking existance in datastore: %w", err)

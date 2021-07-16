@@ -121,7 +121,6 @@ func (m *mockAuth) Hash(password string) (string, error) {
 func TestInitialDataServerAll(t *testing.T) {
 	md := new(mockDatastore)
 	ma := new(mockAuth)
-	ctx := context.Background()
 	in := &proto.InitialDataRequest{
 		Data: initialdata.DefaultInitialData,
 	}
@@ -148,7 +147,7 @@ func TestInitialDataServerAll(t *testing.T) {
 
 	// Run tests
 	t.Run("running the first time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
+		resp, err := initialdata.InitialData(in, testDir, md, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
@@ -163,7 +162,7 @@ func TestInitialDataServerAll(t *testing.T) {
 		}
 	})
 	t.Run("running the second time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
+		resp, err := initialdata.InitialData(in, testDir, md, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
