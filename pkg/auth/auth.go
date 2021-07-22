@@ -14,24 +14,22 @@ const authHashPath = "/internal/auth/hash"
 
 // Conn holds a connection to the auth service.
 type Conn struct {
-	ctx     context.Context
 	authURL *url.URL
 }
 
 // New returns a new connection to the auth service.
-func New(ctx context.Context, authURL *url.URL) *Conn {
+func New(authURL *url.URL) *Conn {
 	a := new(Conn)
-	a.ctx = ctx
 	a.authURL = authURL
 	return a
 }
 
 // Hash returns the hashed form of password as JSON.
-func (a *Conn) Hash(password string) (string, error) {
+func (a *Conn) Hash(ctx context.Context, password string) (string, error) {
 	url := a.authURL
 	url.Path = authHashPath
 	reqBody := fmt.Sprintf(`{"toHash": "%s"}`, password)
-	req, err := http.NewRequestWithContext(a.ctx, "POST", url.String(), strings.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), strings.NewReader(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("creating request to auth service: %w", err)
 	}

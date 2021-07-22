@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -197,7 +196,7 @@ func testContentFile(t testing.TB, dir, name, expected string) {
 	}
 
 	got := string(content)
-	if !reflect.DeepEqual(got, expected) {
+	if got != expected {
 		t.Fatalf("wrong content of file %q, got %q, expected %q", p, got, expected)
 	}
 }
@@ -253,16 +252,21 @@ x-default-environment: &default-environment
   AUTH_HOST: auth
   AUTH_PORT: 9004
 
-  CACHE_HOST: cache
+  CACHE_HOST: redis
   CACHE_PORT: 6379
 
-  MESSAGE_BUS_HOST: message-bus
+  MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: 6379
 
   MEDIA_HOST: media
   MEDIA_PORT: 9006
   MEDIA_DATABASE_HOST: postgres
   MEDIA_DATABASE_NAME: openslides
+
+  ICC_HOST: icc
+  ICC_PORT: 9013
+  ICC_REDIS_HOST: redis
+  ICC_REDIS_PORT: 6379
 
   MANAGE_HOST: manage
   MANAGE_PORT: 9008
@@ -276,6 +280,7 @@ services:
       - autoupdate
       - auth
       - media
+      - icc
     environment:
       << : *default-environment
     networks:
@@ -289,6 +294,9 @@ services:
     depends_on:
       - backend
       - autoupdate
+      - auth
+      - media
+      - icc
     environment:
       << : *default-environment
     networks:
@@ -305,7 +313,8 @@ services:
       << : *default-environment
     networks:
       - frontend
-      - backend
+      - datastore-reader
+      - datastore-writer
       - postgres
     secrets:
       - auth_token_key
@@ -319,7 +328,6 @@ services:
       << : *default-environment
       NUM_WORKERS: 8
     networks:
-      - backend
       - datastore-reader
       - postgres
 
@@ -327,13 +335,14 @@ services:
     image: ghcr.io/openslides/openslides/openslides-datastore-writer:4.0.0-dev
     depends_on:
       - postgres
-      - message-bus
+      - redis
     environment:
       << : *default-environment
     networks:
-      - backend
+      - datastore-reader
+      - datastore-writer
       - postgres
-      - message-bus
+      - redis
 
   postgres:
     image: postgres:11
@@ -352,13 +361,15 @@ services:
     image: ghcr.io/openslides/openslides/openslides-autoupdate:4.0.0-dev
     depends_on:
       - datastore-reader
-      - message-bus
+      - redis
     environment:
       << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
     networks:
       - frontend
       - datastore-reader
-      - message-bus
+      - redis
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -367,32 +378,23 @@ services:
     image: ghcr.io/openslides/openslides/openslides-auth:4.0.0-dev
     depends_on:
       - datastore-reader
-      - message-bus
-      - cache
+      - redis
     environment:
       << : *default-environment
     networks:
       - frontend
       - datastore-reader
-      - message-bus
-      - cache
+      - redis
     secrets:
       - auth_token_key
       - auth_cookie_key
 
-  cache:
+  redis:
     image: redis:latest
     environment:
       << : *default-environment
     networks:
-      - cache
-
-  message-bus:
-    image: redis:latest
-    environment:
-      << : *default-environment
-    networks:
-      - message-bus
+      - redis
 
   media:
     image: ghcr.io/openslides/openslides/openslides-media:4.0.0-dev
@@ -403,8 +405,25 @@ services:
       << : *default-environment
     networks:
       - frontend
-      - backend
+      - datastore-reader
+      - datastore-writer
       - postgres
+
+  icc:
+    image: ghcr.io/openslides/openslides/openslides-icc:4.0.0-dev
+    depends_on:
+      - datastore-reader
+      - postgres
+      - redis
+    environment:
+      << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
+    networks:
+      - frontend
+      - datastore-reader
+      - postgres
+      - redis
 
   manage:
     image: ghcr.io/openslides/openslides/openslides-manage:4.0.0-dev
@@ -415,9 +434,11 @@ services:
     environment:
       << : *default-environment
     networks:
-      - uplink
       - frontend
-      - backend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+      - redis
     secrets:
       - superadmin
     ports:
@@ -427,15 +448,13 @@ networks:
   uplink:
   frontend:
     internal: true
-  backend:
+  datastore-reader:
+    internal: true
+  datastore-writer:
     internal: true
   postgres:
     internal: true
-  datastore-reader:
-    internal: true
-  message-bus:
-    internal: true
-  cache:
+  redis:
     internal: true
 
 secrets:

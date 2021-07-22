@@ -38,9 +38,9 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 
 
 # Productive build (client) tool.
-FROM scratch as manage-tool-productive
+FROM scratch as client
 COPY --from=builder /root/openslides .
-ENTRYPOINT ["/manage"]
+ENTRYPOINT ["/openslides"]
 
 
 # Productive build server.

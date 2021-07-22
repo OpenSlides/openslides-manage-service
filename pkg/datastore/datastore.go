@@ -17,22 +17,20 @@ const (
 
 // Conn holds a connection to the datastore service (reader and writer).
 type Conn struct {
-	ctx       context.Context
 	readerURL *url.URL
 	writerURL *url.URL
 }
 
 // New returns a new connection to the datastore.
-func New(ctx context.Context, readerURL *url.URL, writerURL *url.URL) *Conn {
+func New(readerURL *url.URL, writerURL *url.URL) *Conn {
 	d := new(Conn)
-	d.ctx = ctx
 	d.readerURL = readerURL
 	d.writerURL = writerURL
 	return d
 }
 
 // Exists does check if a collection object with given id exists.
-func (d *Conn) Exists(collection string, id int) (bool, error) {
+func (d *Conn) Exists(ctx context.Context, collection string, id int) (bool, error) {
 	reqBody := fmt.Sprintf(
 		`{
 			"collection": "%s",
@@ -46,7 +44,7 @@ func (d *Conn) Exists(collection string, id int) (bool, error) {
 	)
 	addr := d.readerURL.String() + existsSubpath
 
-	req, err := http.NewRequestWithContext(d.ctx, "POST", addr, strings.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", addr, strings.NewReader(reqBody))
 	if err != nil {
 		return false, fmt.Errorf("creating request to datastore: %w", err)
 	}
@@ -82,7 +80,7 @@ func (d *Conn) Exists(collection string, id int) (bool, error) {
 }
 
 // Create sends a create event to the datastore.
-func (d *Conn) Create(fqid string, fields map[string]json.RawMessage) error {
+func (d *Conn) Create(ctx context.Context, fqid string, fields map[string]json.RawMessage) error {
 	f, err := json.Marshal(fields)
 	if err != nil {
 		return fmt.Errorf("marshalling fields: %w", err)
@@ -99,7 +97,7 @@ func (d *Conn) Create(fqid string, fields map[string]json.RawMessage) error {
 		fqid, string(f),
 	)
 
-	if err := sendWriteRequest(d.ctx, d.writerURL, reqBody); err != nil {
+	if err := sendWriteRequest(ctx, d.writerURL, reqBody); err != nil {
 		return fmt.Errorf("sending write request to datastore: %w", err)
 	}
 
@@ -107,7 +105,7 @@ func (d *Conn) Create(fqid string, fields map[string]json.RawMessage) error {
 }
 
 // Set sends an update event to the datastore to set a FQField. The value has to be JSON.
-func (d *Conn) Set(fqfield string, value json.RawMessage) error {
+func (d *Conn) Set(ctx context.Context, fqfield string, value json.RawMessage) error {
 	parts := strings.Split(fqfield, "/")
 	if len(parts) != 3 {
 		return fmt.Errorf("invalid FQField %s, expected two `/`", fqfield)
@@ -124,7 +122,7 @@ func (d *Conn) Set(fqfield string, value json.RawMessage) error {
 		parts[0], parts[1], parts[2], value,
 	)
 
-	if err := sendWriteRequest(d.ctx, d.writerURL, reqBody); err != nil {
+	if err := sendWriteRequest(ctx, d.writerURL, reqBody); err != nil {
 		return fmt.Errorf("sending write request to datastore: %w", err)
 	}
 

@@ -81,18 +81,18 @@ type mockDatastore struct {
 	content map[string]json.RawMessage
 }
 
-func (m *mockDatastore) Exists(collection string, id int) (bool, error) {
+func (m *mockDatastore) Exists(ctx context.Context, collection string, id int) (bool, error) {
 	k := fmt.Sprintf("%s/%d/id", collection, id)
 	_, ok := m.content[k]
 	return ok, nil
 }
 
-func (m *mockDatastore) Create(fqid string, fields map[string]json.RawMessage) error {
+func (m *mockDatastore) Create(ctx context.Context, fqid string, fields map[string]json.RawMessage) error {
 	ss := strings.Split(fqid, "/")
 	collection := ss[0]
 	id, _ := strconv.Atoi(ss[1])
 
-	if exists, _ := m.Exists(collection, id); exists {
+	if exists, _ := m.Exists(ctx, collection, id); exists {
 		return fmt.Errorf("object %q already exists", fqid)
 	}
 	if m.content == nil {
@@ -104,7 +104,7 @@ func (m *mockDatastore) Create(fqid string, fields map[string]json.RawMessage) e
 	return nil
 }
 
-func (m *mockDatastore) Set(fqfield string, value json.RawMessage) error {
+func (m *mockDatastore) Set(ctx context.Context, fqfield string, value json.RawMessage) error {
 	if m.content == nil {
 		m.content = make(map[string]json.RawMessage)
 	}
@@ -114,11 +114,14 @@ func (m *mockDatastore) Set(fqfield string, value json.RawMessage) error {
 
 type mockAuth struct{}
 
-func (m *mockAuth) Hash(password string) (string, error) {
+func (m *mockAuth) Hash(ctx context.Context, password string) (string, error) {
 	return "hash:" + password, nil
 }
 
 func TestInitialDataServerAll(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	md := new(mockDatastore)
 	ma := new(mockAuth)
 	in := &proto.InitialDataRequest{
@@ -147,7 +150,7 @@ func TestInitialDataServerAll(t *testing.T) {
 
 	// Run tests
 	t.Run("running the first time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(in, testDir, md, ma)
+		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
@@ -162,7 +165,7 @@ func TestInitialDataServerAll(t *testing.T) {
 		}
 	})
 	t.Run("running the second time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(in, testDir, md, ma)
+		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
@@ -182,7 +185,7 @@ func TestInitialDataServer(t *testing.T) {
 	md := new(mockDatastore)
 
 	t.Run("checking datastore existance", func(t *testing.T) {
-		exists, err := initialdata.CheckDatastore(md)
+		exists, err := initialdata.CheckDatastore(context.Background(), md)
 		if err != nil {
 			t.Fatalf("checking if data in datastore exist failed: %v", err)
 		}
@@ -192,13 +195,13 @@ func TestInitialDataServer(t *testing.T) {
 	})
 
 	t.Run("adding initial data", func(t *testing.T) {
-		if err := initialdata.InsertIntoDatastore(md, initialdata.DefaultInitialData); err != nil {
+		if err := initialdata.InsertIntoDatastore(context.Background(), md, initialdata.DefaultInitialData); err != nil {
 			t.Fatalf("inserting initial data into datastore failed: %v", err)
 		}
 	})
 
 	t.Run("checking datastore again", func(t *testing.T) {
-		exists, err := initialdata.CheckDatastore(md)
+		exists, err := initialdata.CheckDatastore(context.Background(), md)
 		if err != nil {
 			t.Fatalf("checking if data in datastore exist failed: %v", err)
 		}
@@ -221,7 +224,7 @@ func TestInitialDataServer(t *testing.T) {
 			t.Fatalf("closing temporary file for superadmin password: %v", err)
 		}
 
-		if err := initialdata.SetSuperadminPassword(f.Name(), md, ma); err != nil {
+		if err := initialdata.SetSuperadminPassword(context.Background(), f.Name(), md, ma); err != nil {
 			t.Fatalf("setting superadmin password failed: %v", err)
 		}
 		key := "user/1/password"

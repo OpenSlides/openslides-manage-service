@@ -98,18 +98,18 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 // Server
 
 type datastore interface {
-	Exists(collection string, id int) (bool, error)
-	Create(fqid string, fields map[string]json.RawMessage) error
-	Set(fqfield string, value json.RawMessage) error
+	Exists(ctx context.Context, collection string, id int) (bool, error)
+	Create(ctx context.Context, fqid string, fields map[string]json.RawMessage) error
+	Set(ctx context.Context, fqfield string, value json.RawMessage) error
 }
 
 type auth interface {
-	Hash(password string) (string, error)
+	Hash(ctx context.Context, password string) (string, error)
 }
 
 // InitialData sets initial data in the datastore.
-func InitialData(in *proto.InitialDataRequest, runPath string, ds datastore, auth auth) (*proto.InitialDataResponse, error) {
-	exists, err := CheckDatastore(ds)
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, ds datastore, auth auth) (*proto.InitialDataResponse, error) {
+	exists, err := CheckDatastore(ctx, ds)
 	if err != nil {
 		return nil, fmt.Errorf("checking existance in datastore: %w", err)
 	}
@@ -117,12 +117,12 @@ func InitialData(in *proto.InitialDataRequest, runPath string, ds datastore, aut
 		return &proto.InitialDataResponse{Initialized: false}, nil
 	}
 
-	if err := InsertIntoDatastore(ds, in.Data); err != nil {
+	if err := InsertIntoDatastore(ctx, ds, in.Data); err != nil {
 		return nil, fmt.Errorf("inserting initial data into datastore: %w", err)
 	}
 
 	p := path.Join(runPath, setup.SecretsDirName, setup.SuperadminFileName)
-	if err := SetSuperadminPassword(p, ds, auth); err != nil {
+	if err := SetSuperadminPassword(ctx, p, ds, auth); err != nil {
 		return nil, fmt.Errorf("setting superadmin password: %w", err)
 	}
 
@@ -130,8 +130,8 @@ func InitialData(in *proto.InitialDataRequest, runPath string, ds datastore, aut
 }
 
 // CheckDatastore checks if the object organization/1 exists in the datastore.
-func CheckDatastore(ds datastore) (bool, error) {
-	exists, err := ds.Exists("organization", 1)
+func CheckDatastore(ctx context.Context, ds datastore) (bool, error) {
+	exists, err := ds.Exists(ctx, "organization", 1)
 	if err != nil {
 		return false, fmt.Errorf("checking existance in datastore: %w", err)
 	}
@@ -139,7 +139,7 @@ func CheckDatastore(ds datastore) (bool, error) {
 }
 
 // InsertIntoDatastore inserts the given JSON data into datastore with write requests.
-func InsertIntoDatastore(ds datastore, data []byte) error {
+func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
 	var parsedData map[string]map[string]map[string]json.RawMessage
 	if err := json.Unmarshal(data, &parsedData); err != nil {
 		return fmt.Errorf("unmarshaling JSON: %w", err)
@@ -148,7 +148,7 @@ func InsertIntoDatastore(ds datastore, data []byte) error {
 	for collection, elements := range parsedData {
 		for id, fields := range elements {
 			fqid := fmt.Sprintf("%s/%s", collection, id)
-			if err := ds.Create(fqid, fields); err != nil {
+			if err := ds.Create(ctx, fqid, fields); err != nil {
 				return fmt.Errorf("creating datastore object %q: %w", fqid, err)
 			}
 		}
@@ -158,7 +158,7 @@ func InsertIntoDatastore(ds datastore, data []byte) error {
 }
 
 // SetSuperadminPassword sets the first password for the superadmin according to respective secret.
-func SetSuperadminPassword(superadminSecretFile string, ds datastore, auth auth) error {
+func SetSuperadminPassword(ctx context.Context, superadminSecretFile string, ds datastore, auth auth) error {
 	sapw, err := os.ReadFile(superadminSecretFile)
 	if err != nil {
 		return fmt.Errorf("reading file %q: %w", superadminSecretFile, err)
@@ -168,7 +168,7 @@ func SetSuperadminPassword(superadminSecretFile string, ds datastore, auth auth)
 		UserID:   1,
 		Password: string(sapw),
 	}
-	if _, err := setpassword.SetPassword(in, ds, auth); err != nil {
+	if _, err := setpassword.SetPassword(ctx, in, ds, auth); err != nil {
 		return fmt.Errorf("setting superadmin password: %w", err)
 	}
 	return nil
