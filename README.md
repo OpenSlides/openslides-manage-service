@@ -66,4 +66,4 @@ To build the manage service server use:
 To build the client e. g. for use as one shot container with customized command
 use:
 
-    $ docker build --target manage-tool-productive .
+    $ docker build --target client .
