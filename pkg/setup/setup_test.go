@@ -424,6 +424,9 @@ services:
       - datastore-reader
       - postgres
       - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
 
   manage:
     image: ghcr.io/openslides/openslides/openslides-manage:4.0.0-dev
@@ -434,6 +437,7 @@ services:
     environment:
       << : *default-environment
     networks:
+      - uplink
       - frontend
       - datastore-reader
       - datastore-writer

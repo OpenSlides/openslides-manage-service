@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -140,12 +141,20 @@ func CheckDatastore(ctx context.Context, ds datastore) (bool, error) {
 
 // InsertIntoDatastore inserts the given JSON data into datastore with write requests.
 func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
-	var parsedData map[string]map[string]map[string]json.RawMessage
-	if err := json.Unmarshal(data, &parsedData); err != nil {
+	var d map[string]json.RawMessage
+	if err := json.Unmarshal(data, &d); err != nil {
 		return fmt.Errorf("unmarshaling JSON: %w", err)
 	}
 
-	for collection, elements := range parsedData {
+	for collection, value := range d {
+		if strings.HasPrefix(collection, "_") {
+			// The collection is not really a collection but something like "_migration_index". Skip it.
+			continue
+		}
+		var elements map[string]map[string]json.RawMessage
+		if err := json.Unmarshal(value, &elements); err != nil {
+			return fmt.Errorf("unmarshaling JSON: %w", err)
+		}
 		for id, fields := range elements {
 			fqid := fmt.Sprintf("%s/%s", collection, id)
 			if err := ds.Create(ctx, fqid, fields); err != nil {
