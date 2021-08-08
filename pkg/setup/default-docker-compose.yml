@@ -1,0 +1,235 @@
+---
+x-default-environment: &default-environment
+  ACTION_HOST: backend
+  ACTION_PORT: 9002
+  PRESENTER_HOST: backend
+  PRESENTER_PORT: 9003
+
+  DATASTORE_READER_HOST: datastore-reader
+  DATASTORE_READER_PORT: 9010
+  DATASTORE_WRITER_HOST: datastore-writer
+  DATASTORE_WRITER_PORT: 9011
+  DATASTORE_DATABASE_HOST: postgres
+  DATASTORE_DATABASE_PORT: 5432
+  DATASTORE_DATABASE_NAME: openslides
+  DATASTORE_DATABASE_USER: openslides
+  DATASTORE_DATABASE_PASSWORD: openslides
+
+  AUTOUPDATE_HOST: autoupdate
+  AUTOUPDATE_PORT: 9012
+
+  AUTH_HOST: auth
+  AUTH_PORT: 9004
+
+  CACHE_HOST: redis
+  CACHE_PORT: 6379
+
+  MESSAGE_BUS_HOST: redis
+  MESSAGE_BUS_PORT: 6379
+
+  MEDIA_HOST: media
+  MEDIA_PORT: 9006
+  MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_NAME: openslides
+
+  ICC_HOST: icc
+  ICC_PORT: 9013
+  ICC_REDIS_HOST: redis
+  ICC_REDIS_PORT: 6379
+
+  MANAGE_HOST: manage
+  MANAGE_PORT: 9008
+
+services:
+  proxy:
+    image: ghcr.io/openslides/openslides/openslides-proxy:4.0.0-dev
+    depends_on:
+      - client
+      - backend
+      - autoupdate
+      - auth
+      - media
+      - icc
+    environment:
+      << : *default-environment
+    networks:
+      - uplink
+      - frontend
+    ports:
+      - 127.0.0.1:8000:8000
+
+  client:
+    image: ghcr.io/openslides/openslides/openslides-client:4.0.0-dev
+    depends_on:
+      - backend
+      - autoupdate
+      - auth
+      - media
+      - icc
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+
+  backend:
+    image: ghcr.io/openslides/openslides/openslides-backend:4.0.0-dev
+    depends_on:
+      - datastore-reader
+      - datastore-writer
+      - auth
+      - postgres
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+
+  datastore-reader:
+    image: ghcr.io/openslides/openslides/openslides-datastore-reader:4.0.0-dev
+    depends_on:
+      - postgres
+    environment:
+      << : *default-environment
+      NUM_WORKERS: 8
+    networks:
+      - datastore-reader
+      - postgres
+
+  datastore-writer:
+    image: ghcr.io/openslides/openslides/openslides-datastore-writer:4.0.0-dev
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      << : *default-environment
+    networks:
+      - datastore-reader
+      - datastore-writer
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:11
+    environment:
+      << : *default-environment
+      POSTGRES_USER: openslides
+      POSTGRES_PASSWORD: openslides
+      POSTGRES_DB: openslides
+      PGDATA: /var/lib/postgresql/data/pgdata
+    networks:
+      - postgres
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+
+  autoupdate:
+    image: ghcr.io/openslides/openslides/openslides-autoupdate:4.0.0-dev
+    depends_on:
+      - datastore-reader
+      - redis
+    environment:
+      << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
+    networks:
+      - frontend
+      - datastore-reader
+      - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+
+  auth:
+    image: ghcr.io/openslides/openslides/openslides-auth:4.0.0-dev
+    depends_on:
+      - datastore-reader
+      - redis
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - datastore-reader
+      - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+
+  redis:
+    image: redis:latest
+    environment:
+      << : *default-environment
+    networks:
+      - redis
+
+  media:
+    image: ghcr.io/openslides/openslides/openslides-media:4.0.0-dev
+    depends_on:
+      - backend
+      - postgres
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+
+  icc:
+    image: ghcr.io/openslides/openslides/openslides-icc:4.0.0-dev
+    depends_on:
+      - datastore-reader
+      - postgres
+      - redis
+    environment:
+      << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
+    networks:
+      - frontend
+      - datastore-reader
+      - postgres
+      - redis
+
+  manage:
+    image: ghcr.io/openslides/openslides/openslides-manage:4.0.0-dev
+    depends_on:
+      - datastore-reader
+      - datastore-writer
+      - auth
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+      - redis
+    secrets:
+      - superadmin
+    ports:
+      - 127.0.0.1:9008:9008
+
+networks:
+  uplink:
+  frontend:
+    internal: true
+  datastore-reader:
+    internal: true
+  datastore-writer:
+    internal: true
+  postgres:
+    internal: true
+  redis:
+    internal: true
+
+secrets:
+  auth_token_key:
+    file: ./secrets/auth_token_key
+  auth_cookie_key:
+    file: ./secrets/auth_cookie_key
+  superadmin:
+    file: ./secrets/superadmin

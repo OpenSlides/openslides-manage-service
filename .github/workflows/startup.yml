@@ -1,0 +1,44 @@
+name: Check building and Makefile
+on: [pull_request]
+jobs:
+  startup:
+    name: Building of Go binaries and Docker images and test some Makefile targets
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2.1.3
+      with:
+        go-version: 1.16.3
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Build and start server with golang
+      run: |
+        go build ./cmd/server
+        timeout --preserve-status --signal SIGINT 2s ./server
+
+    - name: Build and start manage with golang
+      run: |
+        go build ./cmd/openslides
+        ./openslides
+
+    - name: Build and start server with Docker
+      run: |
+        docker build . --tag openslides-manage
+        timeout --preserve-status --signal SIGINT 2s docker run openslides-manage
+      env:
+        DOCKER_BUILDKIT: 1
+
+    - name: Start development version of server with Makefile
+      run: |
+        make build-dev
+        timeout --preserve-status --signal SIGINT 2s docker run openslides-manage-dev
+      env:
+        DOCKER_BUILDKIT: 1
+
+    - name: Run tests with Makefile
+      run: make run-tests
+      env:
+        DOCKER_BUILDKIT: 1

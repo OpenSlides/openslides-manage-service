@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option go_package = "github.com/OpenSlides/openslides-manage-service/proto";
+
+service Manage {
+    rpc CheckServer(CheckServerRequest) returns (CheckServerResponse);
+    rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+    rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
+    rpc Tunnel(stream TunnelData) returns (stream TunnelData);
+}
+
+message CheckServerRequest {
+    bool skipClient = 1;
+}
+
+message CheckServerResponse {}
+
+message InitialDataRequest {
+    bytes data = 1;
+}
+
+message InitialDataResponse {
+    bool initialized = 1;
+}
+
+message CreateUserRequest {
+    string username = 1;
+    string password = 2;
+    string organization_management_level = 3;
+}
+
+message CreateUserResponse {
+    int64 userID = 1;
+}
+
+message SetPasswordRequest {
+    int64 userID = 1;
+    string password = 2;
+}
+
+message SetPasswordResponse {}
+
+message TunnelData {
+    bytes data = 1;
+}
