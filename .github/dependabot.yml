@@ -1,0 +1,19 @@
+# Please see the documentation for all configuration options:
+# https://docs.github.com/en/code-security/supply-chain-security/configuration-options-for-dependency-updates
+---
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      intervale: daily
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      intervale: daily
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      intervale: daily
