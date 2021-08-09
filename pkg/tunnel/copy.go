@@ -29,7 +29,7 @@ func copyStream(ctx context.Context, sr sendReceiver, rw io.ReadWriter) error {
 	// Create channels to send errors from the goroutines. The channels have to
 	// be buffered. If an error in one goroutine happens this function exists.
 	// If this happens, the other goroutine still runs. If an error happens, it
-	// is wirtten to the channel. An unblocked channel would block forever.
+	// is writen to the channel. An unblocked channel would block forever.
 	fromGRPC := make(chan error, 1)
 	fromRW := make(chan error, 1)
 	ctx, cancel := context.WithCancel(ctx)
@@ -71,7 +71,7 @@ func receiverToWriter(ctx context.Context, w io.Writer, r receiver) error {
 	done := make(chan error, 1)
 	go func() {
 		defer close(done)
-		for ctx.Err() != nil {
+		for ctx.Err() == nil {
 			c, err := r.Recv()
 			if err != nil {
 				if err == io.EOF {
@@ -104,7 +104,7 @@ func readerToSender(ctx context.Context, s sender, r io.Reader) error {
 		defer close(done)
 
 		buff := make([]byte, 1<<20) // 1 MB buffer
-		for ctx.Err() != nil {
+		for ctx.Err() == nil {
 			n, err := r.Read(buff)
 			if err != nil {
 				if err == io.EOF {

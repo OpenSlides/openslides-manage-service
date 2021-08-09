@@ -110,7 +110,7 @@ func Cmd() *cobra.Command {
 // In only listens on os.Interrupt. If the signal is received two times,
 // os.Exit(1) is called.
 func contextWithInterrupt(ctx context.Context) (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(ctx)
+	newCtx, cancel := context.WithCancel(ctx)
 	go func() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt)
@@ -129,7 +129,7 @@ func contextWithInterrupt(ctx context.Context) (context.Context, context.CancelF
 		}
 		os.Exit(1)
 	}()
-	return ctx, cancel
+	return newCtx, cancel
 }
 
 // Client
