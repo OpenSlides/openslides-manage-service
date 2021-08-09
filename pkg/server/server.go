@@ -161,7 +161,7 @@ func (c *Config) datastoreWriterURL() *url.URL {
 	return &u
 }
 
-// waitForShutdown blocks until the service exists.
+// waitForShutdown blocks until the service exits.
 //
 // It listens on SIGINT and SIGTERM. If the signal is received for a second
 // time, the process is killed with statuscode 1.
@@ -175,3 +175,33 @@ func waitForShutdown() {
 		os.Exit(1)
 	}()
 }
+
+// // waitForService checks that all services at the given addresses are available.
+// //
+// // Blocks until a connection to every service can be established or the
+// // context is canceled.
+// func waitForService(ctx context.Context, addrs ...string) {
+// 	d := net.Dialer{}
+
+// 	var wg sync.WaitGroup
+// 	for _, addr := range addrs {
+// 		wg.Add(1)
+// 		go func(addr string) {
+// 			defer wg.Done()
+
+// 			con, err := d.DialContext(ctx, "tcp", addr)
+// 			for err != nil {
+// 				if ctx.Err() != nil {
+// 					// Time is up, dont try again.
+// 					return
+// 				}
+
+// 				time.Sleep(100 * time.Millisecond)
+// 				con, err = d.DialContext(ctx, "tcp", addr)
+// 			}
+// 			con.Close()
+
+// 		}(addr)
+// 	}
+// 	wg.Wait()
+// }
