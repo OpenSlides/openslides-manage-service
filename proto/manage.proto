@@ -7,7 +7,6 @@ service Manage {
     rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
-    rpc Config(ConfigRequest) returns (ConfigResponse);
     rpc Tunnel(stream TunnelData) returns (stream TunnelData);
 }
 
@@ -42,18 +41,6 @@ message SetPasswordRequest {
 
 message SetPasswordResponse {}
 
-message ConfigRequest {
-    enum Field {
-        ELECTRONIC_VOTING = 0;
-    }
-    Field field = 1;
-    string newValue = 2;
-}
-
-message ConfigResponse {
-    string value = 1;
-}
-
 message TunnelData {
-    bytes data = 3;
+    bytes data = 1;
 }

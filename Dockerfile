@@ -16,8 +16,8 @@ COPY Makefile Makefile
 # Build service in seperate stage.
 FROM base as builder
 
+RUN CGO_ENABLED=0 go build ./cmd/openslides
 RUN CGO_ENABLED=0 go build ./cmd/server
-RUN CGO_ENABLED=0 go build ./cmd/manage
 
 
 # Test build.
@@ -37,10 +37,10 @@ EXPOSE 9008
 CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
 
 
-# Productive build manage tool.
-FROM scratch as manage
-COPY --from=builder /root/manage .
-ENTRYPOINT ["/manage"]
+# Productive build (client) tool.
+FROM scratch as client
+COPY --from=builder /root/openslides .
+ENTRYPOINT ["/openslides"]
 
 
 # Productive build server.

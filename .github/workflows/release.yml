@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Build binaries
-      run: go build ./cmd/manage
+      run: go build ./cmd/openslides
 
     - name: Create release
       uses: marvinpinto/action-automatic-releases@latest
@@ -26,4 +26,4 @@ jobs:
         prerelease: true
         title: "Development Build"
         files: |
-          manage
+          openslides

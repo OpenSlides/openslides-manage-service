@@ -11,7 +11,7 @@ Download current initial-data.json from GitHub and run this script:
 import json
 
 INPUT_FILE = "initial-data.json"
-OUTPUT_FILE = "../pkg/manage/default-initial-data.json"
+OUTPUT_FILE = "../pkg/initialdata/default-initial-data.json"
 
 
 def main():
@@ -27,9 +27,11 @@ def main():
         output_file.write("\n")
 
 
-def parse_collection(collection, objs):
+def parse_collection(collection, value):
+    if collection.startswith("_"):
+        return value
     result = {}
-    for obj in objs:
+    for obj in value:
         if collection == "user":
             obj["password"] = ""
         result[obj["id"]] = obj
