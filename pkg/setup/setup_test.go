@@ -95,7 +95,7 @@ func TestSetupCommon(t *testing.T) {
 	defer os.RemoveAll(testDir)
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
-		if err := setup.Setup(testDir, false, nil); err != nil {
+		if err := setup.Setup(testDir, false, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -117,7 +117,7 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("writing to file %q: %v", p, err)
 		}
 
-		if err := setup.Setup(testDir, false, nil); err != nil {
+		if err := setup.Setup(testDir, false, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -129,7 +129,7 @@ func TestSetupCommon(t *testing.T) {
 	})
 
 	t.Run("running setup.Setup() with force flag with changing existant files", func(t *testing.T) {
-		if err := setup.Setup(testDir, true, nil); err != nil {
+		if err := setup.Setup(testDir, true, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -150,7 +150,7 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 
 	t.Run("running setup.Setup() and give a previously not existing subdirectory", func(t *testing.T) {
 		dir := path.Join(testDir, "new_directory")
-		if err := setup.Setup(dir, false, nil); err != nil {
+		if err := setup.Setup(dir, false, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(dir, setup.SecretsDirName)
@@ -171,11 +171,40 @@ func TestSetupExternalTemplate(t *testing.T) {
 
 	t.Run("running setup.Setup() and give an external template", func(t *testing.T) {
 		tplText := "test-from-external-template"
-		if err := setup.Setup(testDir, false, []byte(tplText)); err != nil {
+		if err := setup.Setup(testDir, false, []byte(tplText), nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
 		testContentFile(t, testDir, "docker-compose.yml", tplText)
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+}
+
+func TestSetupCommonWithConfig(t *testing.T) {
+	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+	if err != nil {
+		t.Fatalf("generating temporary directory failed: %v", err)
+	}
+	defer os.RemoveAll(testDir)
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using a custom config", func(t *testing.T) {
+		customConfig := `---
+    all:
+      containerRegistry: example.com/test_Waetai0ohf
+    services:
+      proxy:
+        tag: 2.0.0
+    `
+
+		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		secDir := path.Join(testDir, setup.SecretsDirName)
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Waetai0ohf/openslides-client:4.0.0-dev")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -198,6 +227,22 @@ func testContentFile(t testing.TB, dir, name, expected string) {
 	got := string(content)
 	if got != expected {
 		t.Fatalf("wrong content of file %q, got %q, expected %q", p, got, expected)
+	}
+}
+
+func testFileContains(t testing.TB, dir, name, exp string) {
+	t.Helper()
+	p := path.Join(dir, name)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file %q does not exist, expected existance", p)
+	}
+	content, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("error reading file %q: %v", p, err)
+	}
+	got := string(content)
+	if !strings.Contains(got, exp) {
+		t.Fatalf("wrong content of file %q, which should contain %q", p, exp)
 	}
 }
 
@@ -472,7 +517,7 @@ secrets:
 
 func TestSetupNoDirectory(t *testing.T) {
 	hasErrMsg := "not a directory"
-	err := setup.Setup("setup_test.go", false, nil)
+	err := setup.Setup("setup_test.go", false, nil, nil)
 	if !strings.Contains(err.Error(), hasErrMsg) {
 		t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), hasErrMsg)
 	}

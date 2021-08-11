@@ -10,15 +10,19 @@ import (
 	"io"
 	"os"
 	"path"
+	"text/template"
 
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )
 
 const (
-	ymlFileName           = "docker-compose.yml"
-	authTokenKeyFileName  = "auth_token_key"
-	authCookieKeyFileName = "auth_cookie_key"
-	dbDirName             = "db-data"
+	ymlFileName              = "docker-compose.yml"
+	defaultContainerRegistry = "ghcr.io/openslides/openslides"
+	defaultTag               = "4.0.0-dev"
+	authTokenKeyFileName     = "auth_token_key"
+	authCookieKeyFileName    = "auth_cookie_key"
+	dbDirName                = "db-data"
 )
 
 //go:embed default-docker-compose.yml
@@ -67,7 +71,7 @@ func Cmd() *cobra.Command {
 			tpl = fc
 		}
 
-		if err := Setup(dir, *force, tpl); err != nil {
+		if err := Setup(dir, *force, tpl, nil); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -79,18 +83,15 @@ func Cmd() *cobra.Command {
 // directories for database and SSL certs volumes.
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
-// can be provided.
-func Setup(dir string, force bool, tpl []byte) error {
+// and a YAML config can be provided.
+func Setup(dir string, force bool, tplContent, cfgContent []byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
-	if tpl == nil {
-		tpl = defaultDockerComposeYml
-	}
-	if err := createFile(dir, force, ymlFileName, tpl); err != nil {
+	if err := createYmlFile(dir, ymlFileName, force, tplContent, cfgContent); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
@@ -126,6 +127,32 @@ func Setup(dir string, force bool, tpl []byte) error {
 	// Create database directory
 	if err := os.MkdirAll(path.Join(dir, dbDirName), os.ModePerm); err != nil {
 		return fmt.Errorf("creating database directory at %q: %w", dir, err)
+	}
+
+	return nil
+}
+
+func createYmlFile(dir, name string, force bool, tplContent, cfgContent []byte) error {
+	if tplContent == nil {
+		tplContent = defaultDockerComposeYml
+	}
+
+	cfg, err := newYmlConfig(cfgContent)
+	if err != nil {
+		return fmt.Errorf("creating new YML config object: %w", err)
+	}
+
+	tmpl, err := template.New("YAML File").Parse(string(tplContent))
+	if err != nil {
+		return fmt.Errorf("parsing template: %w", err)
+	}
+	var res bytes.Buffer
+	if err := tmpl.Execute(&res, cfg); err != nil {
+		return fmt.Errorf("executing template %v: %w", tmpl, err)
+	}
+
+	if err := createFile(dir, force, name, res.Bytes()); err != nil {
+		return fmt.Errorf("creating YAML file %q at %q: %w", name, dir, err)
 	}
 
 	return nil
@@ -178,4 +205,64 @@ func randomSecret() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+type ymlConfig struct {
+	All struct {
+		ContainerRegistry string `yaml:"containerRegistry"`
+		Tag               string `yaml:"tag"`
+	} `yaml:"all"`
+
+	DefaultEnvironment struct{} `yaml:"defaultEnvironment"`
+
+	Services map[string]service `yaml:"services"`
+}
+
+type service struct {
+	ContainerRegistry string `yaml:"containerRegistry"`
+	Tag               string `yaml:"tag"`
+}
+
+func newYmlConfig(data []byte) (*ymlConfig, error) {
+	// Unmarshal given YAML data
+	c := new(ymlConfig)
+	if err := yaml.Unmarshal(data, c); err != nil {
+		return nil, fmt.Errorf("unmarshaling YAML: %w", err)
+	}
+
+	// Fill defaults for c.All
+	if c.All.ContainerRegistry == "" {
+		c.All.ContainerRegistry = defaultContainerRegistry
+	}
+	if c.All.Tag == "" {
+		c.All.Tag = defaultTag
+	}
+
+	// Fill services
+	allServices := []string{
+		"proxy",
+		"client",
+	}
+	if len(c.Services) == 0 {
+		c.Services = make(map[string]service, len(allServices))
+	}
+
+	for _, name := range allServices {
+		_, ok := c.Services[name]
+		if !ok {
+			c.Services[name] = *new(service)
+		}
+		s := c.Services[name]
+
+		if s.ContainerRegistry == "" {
+			s.ContainerRegistry = c.All.ContainerRegistry
+		}
+		if s.Tag == "" {
+			s.Tag = c.All.Tag
+		}
+
+		c.Services[name] = s
+	}
+
+	return c, nil
 }
