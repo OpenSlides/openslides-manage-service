@@ -41,8 +41,9 @@ x-default-environment: &default-environment
   MANAGE_PORT: 9008
 
 services:
+  {{ with .Services.proxy -}}
   proxy:
-    image: ghcr.io/openslides/openslides/openslides-proxy:latest
+    image: {{ .ContainerRegistry }}/openslides-proxy:{{ .Tag }}
     depends_on:
       - client
       - backend
@@ -57,7 +58,9 @@ services:
       - frontend
     ports:
       - 127.0.0.1:8000:8000
+  {{- end }}
 
+  {{ with .Services.client -}}
   client:
     image: ghcr.io/openslides/openslides/openslides-client:latest
     depends_on:
@@ -70,6 +73,7 @@ services:
       << : *default-environment
     networks:
       - frontend
+  {{- end }}
 
   backend:
     image: ghcr.io/openslides/openslides/openslides-backend:latest
