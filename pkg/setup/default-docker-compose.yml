@@ -89,6 +89,25 @@ services:
       - auth_token_key
       - auth_cookie_key
 
+  backend-setup:
+    image: ghcr.io/openslides/openslides/openslides-backend:4.0.0-dev
+    entrypoint: "./entrypoint-setup.sh"
+    depends_on:
+      - datastore-reader
+      - datastore-writer
+      - auth
+      - postgres
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+
   datastore-reader:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:4.0.0-dev
     depends_on:
