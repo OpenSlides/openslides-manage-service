@@ -87,19 +87,22 @@ func (m *mockDatastore) Exists(ctx context.Context, collection string, id int) (
 	return ok, nil
 }
 
-func (m *mockDatastore) Create(ctx context.Context, fqid string, fields map[string]json.RawMessage) error {
-	ss := strings.Split(fqid, "/")
-	collection := ss[0]
-	id, _ := strconv.Atoi(ss[1])
+func (m *mockDatastore) Create(ctx context.Context, creatables []func() (string, map[string]json.RawMessage), migrationIndex int) error {
+	for _, c := range creatables {
+		fqid, fields := c()
+		ss := strings.Split(fqid, "/")
+		collection := ss[0]
+		id, _ := strconv.Atoi(ss[1])
 
-	if exists, _ := m.Exists(ctx, collection, id); exists {
-		return fmt.Errorf("object %q already exists", fqid)
-	}
-	if m.content == nil {
-		m.content = make(map[string]json.RawMessage)
-	}
-	for field, value := range fields {
-		m.content[fqid+"/"+field] = value
+		if exists, _ := m.Exists(ctx, collection, id); exists {
+			return fmt.Errorf("object %q already exists", fqid)
+		}
+		if m.content == nil {
+			m.content = make(map[string]json.RawMessage)
+		}
+		for field, value := range fields {
+			m.content[fqid+"/"+field] = value
+		}
 	}
 	return nil
 }
