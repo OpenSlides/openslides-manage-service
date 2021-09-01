@@ -169,11 +169,6 @@ func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
 
 	}
 
-	// for _, c := range creatables {
-	// 	a, b := c()
-	// 	fmt.Printf("%s -> %v\n", a, b)
-	// }
-
 	if err := ds.Create(ctx, creatables, migrationIndex); err != nil {
 		return fmt.Errorf("creating datastore objects: %w", err)
 	}
