@@ -79,22 +79,31 @@ func (d *Conn) Exists(ctx context.Context, collection string, id int) (bool, err
 	return respData.Exists, nil
 }
 
-// Create sends a create event to the datastore.
-func (d *Conn) Create(ctx context.Context, fqid string, fields map[string]json.RawMessage) error {
-	f, err := json.Marshal(fields)
-	if err != nil {
-		return fmt.Errorf("marshalling fields: %w", err)
+// Create sends multiple create events to the datastore.
+func (d *Conn) Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error {
+	events := ""
+	for fqid, fields := range creatables {
+		decodedFields, err := json.Marshal(fields)
+		if err != nil {
+			return fmt.Errorf("marshalling fields: %w", err)
+		}
+		events += fmt.Sprintf(
+			`{"type":"create","fqid":"%s","fields":%s},`,
+			fqid, decodedFields,
+		)
+
 	}
+	events = strings.TrimSuffix(events, ",")
 
 	reqBody := fmt.Sprintf(
 		`{
 			"user_id": 0,
 			"information": {},
-			"locked_fields":{}, "events":[
-				{"type":"create","fqid":"%s","fields":%s}
-			]
+			"locked_fields": {},
+			"events":[%s],
+			"migration_index": %d
 		}`,
-		fqid, string(f),
+		events, migrationIndex,
 	)
 
 	if err := sendWriteRequest(ctx, d.writerURL, reqBody); err != nil {
