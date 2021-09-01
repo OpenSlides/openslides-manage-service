@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -100,7 +99,7 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 
 type datastore interface {
 	Exists(ctx context.Context, collection string, id int) (bool, error)
-	Create(ctx context.Context, fqid string, fields map[string]json.RawMessage) error
+	Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error
 	Set(ctx context.Context, fqfield string, value json.RawMessage) error
 }
 
@@ -140,15 +139,23 @@ func CheckDatastore(ctx context.Context, ds datastore) (bool, error) {
 }
 
 // InsertIntoDatastore inserts the given JSON data into datastore with write requests.
+//
+// The given data should be formatted like this: '{"collection_a": {"1": {"field_a": "foo", "field_b": "bar"}}}'
+// but the datastore.Create expected a map with FQId like this: '{"collection_a/1": {"field_a": "foo", "field_b": "bar"}}'
+// so this function also transforms the data into correct format.
 func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
 	var d map[string]json.RawMessage
 	if err := json.Unmarshal(data, &d); err != nil {
 		return fmt.Errorf("unmarshaling JSON: %w", err)
 	}
 
+	creatables := make(map[string]map[string]json.RawMessage)
+	migrationIndex := -1
 	for collection, value := range d {
-		if strings.HasPrefix(collection, "_") {
-			// The collection is not really a collection but something like "_migration_index". Skip it.
+		if collection == "_migration_index" {
+			if err := json.Unmarshal(value, &migrationIndex); err != nil {
+				return fmt.Errorf("unmarshaling JSON: %w", err)
+			}
 			continue
 		}
 		var elements map[string]map[string]json.RawMessage
@@ -157,10 +164,13 @@ func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
 		}
 		for id, fields := range elements {
 			fqid := fmt.Sprintf("%s/%s", collection, id)
-			if err := ds.Create(ctx, fqid, fields); err != nil {
-				return fmt.Errorf("creating datastore object %q: %w", fqid, err)
-			}
+			creatables[fqid] = fields
 		}
+
+	}
+
+	if err := ds.Create(ctx, creatables, migrationIndex); err != nil {
+		return fmt.Errorf("creating datastore objects: %w", err)
 	}
 
 	return nil
