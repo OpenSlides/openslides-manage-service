@@ -80,23 +80,21 @@ func (d *Conn) Exists(ctx context.Context, collection string, id int) (bool, err
 }
 
 // Create sends multiple create events to the datastore.
-func (d *Conn) Create(ctx context.Context, creatables []func() (string, map[string]json.RawMessage), migrationIndex int) error {
+func (d *Conn) Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error {
 	events := ""
-	for i, c := range creatables {
-		fqid, fields := c()
+	for fqid, fields := range creatables {
 		decodedFields, err := json.Marshal(fields)
 		if err != nil {
 			return fmt.Errorf("marshalling fields: %w", err)
 		}
-		if i != 0 {
-			events += ","
-		}
 		events += fmt.Sprintf(
-			`{"type":"create","fqid":"%s","fields":%s}`,
+			`{"type":"create","fqid":"%s","fields":%s},`,
 			fqid, decodedFields,
 		)
 
 	}
+	events = strings.TrimSuffix(events, ",")
+
 	reqBody := fmt.Sprintf(
 		`{
 			"user_id": 0,

@@ -87,9 +87,8 @@ func (m *mockDatastore) Exists(ctx context.Context, collection string, id int) (
 	return ok, nil
 }
 
-func (m *mockDatastore) Create(ctx context.Context, creatables []func() (string, map[string]json.RawMessage), migrationIndex int) error {
-	for _, c := range creatables {
-		fqid, fields := c()
+func (m *mockDatastore) Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error {
+	for fqid, fields := range creatables {
 		ss := strings.Split(fqid, "/")
 		collection := ss[0]
 		id, _ := strconv.Atoi(ss[1])

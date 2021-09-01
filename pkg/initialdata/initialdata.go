@@ -99,7 +99,7 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 
 type datastore interface {
 	Exists(ctx context.Context, collection string, id int) (bool, error)
-	Create(ctx context.Context, creatables []func() (string, map[string]json.RawMessage), migrationIndex int) error
+	Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error
 	Set(ctx context.Context, fqfield string, value json.RawMessage) error
 }
 
@@ -139,13 +139,17 @@ func CheckDatastore(ctx context.Context, ds datastore) (bool, error) {
 }
 
 // InsertIntoDatastore inserts the given JSON data into datastore with write requests.
+//
+// The given data should be formatted like this: '{"collection_a": {"1": {"field_a": "foo", "field_b": "bar"}}}'
+// but the datastore.Create expected a map with FQId like this: '{"collection_a/1": {"field_a": "foo", "field_b": "bar"}}'
+// so this function also transforms the data into correct format.
 func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
 	var d map[string]json.RawMessage
 	if err := json.Unmarshal(data, &d); err != nil {
 		return fmt.Errorf("unmarshaling JSON: %w", err)
 	}
 
-	var creatables []func() (fqid string, fields map[string]json.RawMessage)
+	creatables := make(map[string]map[string]json.RawMessage)
 	migrationIndex := -1
 	for collection, value := range d {
 		if collection == "_migration_index" {
@@ -159,13 +163,16 @@ func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
 			return fmt.Errorf("unmarshaling JSON: %w", err)
 		}
 		for id, fields := range elements {
-			f := func() (string, map[string]json.RawMessage) {
-				return fmt.Sprintf("%s/%s", collection, id), fields
-			}
-			creatables = append(creatables, f)
+			fqid := fmt.Sprintf("%s/%s", collection, id)
+			creatables[fqid] = fields
 		}
 
 	}
+
+	// for _, c := range creatables {
+	// 	a, b := c()
+	// 	fmt.Printf("%s -> %v\n", a, b)
+	// }
 
 	if err := ds.Create(ctx, creatables, migrationIndex); err != nil {
 		return fmt.Errorf("creating datastore objects: %w", err)
