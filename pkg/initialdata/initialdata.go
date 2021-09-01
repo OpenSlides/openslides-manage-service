@@ -144,14 +144,14 @@ func CheckDatastore(ctx context.Context, ds datastore) (bool, error) {
 // but the datastore.Create expected a map with FQId like this: '{"collection_a/1": {"field_a": "foo", "field_b": "bar"}}'
 // so this function also transforms the data into correct format.
 func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
-	var d map[string]json.RawMessage
-	if err := json.Unmarshal(data, &d); err != nil {
+	var decodedData map[string]json.RawMessage
+	if err := json.Unmarshal(data, &decodedData); err != nil {
 		return fmt.Errorf("unmarshaling JSON: %w", err)
 	}
 
 	creatables := make(map[string]map[string]json.RawMessage)
 	migrationIndex := -1
-	for collection, value := range d {
+	for collection, value := range decodedData {
 		if collection == "_migration_index" {
 			if err := json.Unmarshal(value, &migrationIndex); err != nil {
 				return fmt.Errorf("unmarshaling JSON: %w", err)
@@ -166,7 +166,6 @@ func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
 			fqid := fmt.Sprintf("%s/%s", collection, id)
 			creatables[fqid] = fields
 		}
-
 	}
 
 	if err := ds.Create(ctx, creatables, migrationIndex); err != nil {
