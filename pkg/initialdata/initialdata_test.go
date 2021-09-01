@@ -91,9 +91,16 @@ func (m *mockDatastore) Create(ctx context.Context, creatables map[string]map[st
 	for fqid, fields := range creatables {
 		ss := strings.Split(fqid, "/")
 		collection := ss[0]
-		id, _ := strconv.Atoi(ss[1])
+		id, err := strconv.Atoi(ss[1])
+		if err != nil {
+			return fmt.Errorf("converting string to int: %w", err)
+		}
 
-		if exists, _ := m.Exists(ctx, collection, id); exists {
+		exists, err := m.Exists(ctx, collection, id)
+		if err != nil {
+			return fmt.Errorf("checking existance: %w", err)
+		}
+		if exists {
 			return fmt.Errorf("object %q already exists", fqid)
 		}
 		if m.content == nil {
