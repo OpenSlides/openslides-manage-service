@@ -2,7 +2,7 @@
 Download current initial-data.json from GitHub and run this script:
 
     $ cd dev
-    $ wget https://raw.githubusercontent.com/OpenSlides/OpenSlides/openslides4-dev/docker/initial-data.json
+    $ wget https://raw.githubusercontent.com/OpenSlides/OpenSlides/master/docker/initial-data.json
     $ python initial-data-converter.py
     $ rm initial-data.json
     $ cd ..
