@@ -1,0 +1,54 @@
+---
+defaults:
+  containerRegistry: ghcr.io/openslides/openslides
+  tag: 4.0.0-dev
+
+defaultEnvironment:
+  ACTION_HOST: backend
+  ACTION_PORT: 9002
+  PRESENTER_HOST: backend
+  PRESENTER_PORT: 9003
+
+  DATASTORE_READER_HOST: datastore-reader
+  DATASTORE_READER_PORT: 9010
+  DATASTORE_WRITER_HOST: datastore-writer
+  DATASTORE_WRITER_PORT: 9011
+  DATASTORE_DATABASE_HOST: postgres
+  DATASTORE_DATABASE_PORT: 5432
+  DATASTORE_DATABASE_NAME: openslides
+  DATASTORE_DATABASE_USER: openslides
+  DATASTORE_DATABASE_PASSWORD: openslides
+
+  AUTOUPDATE_HOST: autoupdate
+  AUTOUPDATE_PORT: 9012
+
+  AUTH_HOST: auth
+  AUTH_PORT: 9004
+
+  CACHE_HOST: redis
+  CACHE_PORT: 6379
+
+  MESSAGE_BUS_HOST: redis
+  MESSAGE_BUS_PORT: 6379
+
+  MEDIA_HOST: media
+  MEDIA_PORT: 9006
+  MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_NAME: openslides
+
+  ICC_HOST: icc
+  ICC_PORT: 9013
+  ICC_REDIS_HOST: redis
+  ICC_REDIS_PORT: 6379
+
+  MANAGE_HOST: manage
+  MANAGE_PORT: 9008
+
+# You can customize single services using the services property. All
+# properties from the "defaults" section are available here.
+#
+# services:
+#   datastoreReader:
+#     tag: my-tag
+#   autoupdate:
+#     containerRegistry: example.com/my-registry

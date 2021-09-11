@@ -85,6 +85,45 @@ func TestCmd(t *testing.T) {
 		testDirectory(t, testDir, "db-data")
 	})
 
+	t.Run("executing setup.Cmd() with new directory with --config flag", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		customConfigFileName := path.Join(testDir, "custom-config.yml")
+		f, err := os.OpenFile(customConfigFileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			t.Fatalf("creating custom template file: %v", err)
+		}
+		defer f.Close()
+		customTpl := `---
+defaults:
+  containerRegistry: example.com/test_fahNae5i
+services:
+  backend:
+    tag: 2.0.1
+`
+		if _, err := f.WriteString(customTpl); err != nil {
+			t.Fatalf("writing custom template to file %q: %v", customConfigFileName, err)
+		}
+
+		cmd := setup.Cmd()
+		cmd.SetArgs([]string{testDir, "--config", customConfigFileName})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing setup subcommand: %v", err)
+		}
+
+		secDir := path.Join(testDir, setup.SecretsDirName)
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-proxy:4.0.0-dev")
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-backend:2.0.1")
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+
 }
 
 func TestSetupCommon(t *testing.T) {
@@ -192,12 +231,12 @@ func TestSetupCommonWithConfig(t *testing.T) {
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory using a custom config", func(t *testing.T) {
 		customConfig := `---
-    all:
-      containerRegistry: example.com/test_Waetai0ohf
-    services:
-      proxy:
-        tag: 2.0.0
-    `
+defaults:
+  containerRegistry: example.com/test_Waetai0ohf
+services:
+  proxy:
+    tag: 2.0.0
+`
 
 		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)

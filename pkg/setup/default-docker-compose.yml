@@ -1,44 +1,46 @@
 ---
 x-default-environment: &default-environment
-  ACTION_HOST: backend
-  ACTION_PORT: 9002
-  PRESENTER_HOST: backend
-  PRESENTER_PORT: 9003
+  {{ with .DefaultEnvironment -}}
+  ACTION_HOST: {{ .ACTION_HOST }}
+  ACTION_PORT: {{ .ACTION_PORT }}
+  PRESENTER_HOST: {{ .PRESENTER_HOST }}
+  PRESENTER_PORT: {{ .PRESENTER_PORT }}
 
-  DATASTORE_READER_HOST: datastore-reader
-  DATASTORE_READER_PORT: 9010
-  DATASTORE_WRITER_HOST: datastore-writer
-  DATASTORE_WRITER_PORT: 9011
-  DATASTORE_DATABASE_HOST: postgres
-  DATASTORE_DATABASE_PORT: 5432
-  DATASTORE_DATABASE_NAME: openslides
-  DATASTORE_DATABASE_USER: openslides
-  DATASTORE_DATABASE_PASSWORD: openslides
+  DATASTORE_READER_HOST: {{ .DATASTORE_READER_HOST }}
+  DATASTORE_READER_PORT: {{ .DATASTORE_READER_PORT }}
+  DATASTORE_WRITER_HOST: {{ .DATASTORE_WRITER_HOST }}
+  DATASTORE_WRITER_PORT: {{ .DATASTORE_WRITER_PORT }}
+  DATASTORE_DATABASE_HOST: {{ .DATASTORE_DATABASE_HOST }}
+  DATASTORE_DATABASE_PORT: {{ .DATASTORE_DATABASE_PORT}}
+  DATASTORE_DATABASE_NAME: {{ .DATASTORE_DATABASE_NAME }}
+  DATASTORE_DATABASE_USER: {{ .DATASTORE_DATABASE_USER }}
+  DATASTORE_DATABASE_PASSWORD: {{ .DATASTORE_DATABASE_PASSWORD }}
 
-  AUTOUPDATE_HOST: autoupdate
-  AUTOUPDATE_PORT: 9012
+  AUTOUPDATE_HOST: {{ .AUTOUPDATE_HOST }}
+  AUTOUPDATE_PORT: {{ .AUTOUPDATE_PORT }}
 
-  AUTH_HOST: auth
-  AUTH_PORT: 9004
+  AUTH_HOST: {{ .AUTH_HOST }}
+  AUTH_PORT: {{ .AUTH_PORT }}
 
-  CACHE_HOST: redis
-  CACHE_PORT: 6379
+  CACHE_HOST: {{ .CACHE_HOST }}
+  CACHE_PORT: {{ .CACHE_PORT }}
 
-  MESSAGE_BUS_HOST: redis
-  MESSAGE_BUS_PORT: 6379
+  MESSAGE_BUS_HOST: {{ .MESSAGE_BUS_HOST }}
+  MESSAGE_BUS_PORT: {{ .MESSAGE_BUS_PORT }}
 
-  MEDIA_HOST: media
-  MEDIA_PORT: 9006
-  MEDIA_DATABASE_HOST: postgres
-  MEDIA_DATABASE_NAME: openslides
+  MEDIA_HOST: {{ .MEDIA_HOST }}
+  MEDIA_PORT: {{ .MEDIA_PORT }}
+  MEDIA_DATABASE_HOST: {{ .MEDIA_DATABASE_HOST }}
+  MEDIA_DATABASE_NAME: {{ .MEDIA_DATABASE_NAME }}
 
-  ICC_HOST: icc
-  ICC_PORT: 9013
-  ICC_REDIS_HOST: redis
-  ICC_REDIS_PORT: 6379
+  ICC_HOST: {{ .ICC_HOST }}
+  ICC_PORT: {{ .ICC_PORT }}
+  ICC_REDIS_HOST: {{ .ICC_REDIS_HOST }}
+  ICC_REDIS_PORT: {{ .ICC_REDIS_PORT }}
 
-  MANAGE_HOST: manage
-  MANAGE_PORT: 9008
+  MANAGE_HOST: {{ .MANAGE_HOST }}
+  MANAGE_PORT: {{ .MANAGE_PORT }}
+  {{- end}}
 
 services:
   {{ with .Services.proxy -}}
@@ -62,7 +64,7 @@ services:
 
   {{ with .Services.client -}}
   client:
-    image: ghcr.io/openslides/openslides/openslides-client:latest
+    image: {{ .ContainerRegistry }}/openslides-client:{{ .Tag }}
     depends_on:
       - backend
       - autoupdate
@@ -75,8 +77,9 @@ services:
       - frontend
   {{- end }}
 
+  {{ with .Services.backend -}}
   backend:
-    image: ghcr.io/openslides/openslides/openslides-backend:latest
+    image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -92,9 +95,11 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+  {{- end }}
 
+  {{ with .Services.datastoreReader -}}
   datastore-reader:
-    image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
+    image: {{ .ContainerRegistry }}/openslides-datastore-reader:{{ .Tag }}
     depends_on:
       - postgres
     environment:
@@ -103,9 +108,11 @@ services:
     networks:
       - datastore-reader
       - postgres
+  {{- end }}
 
+  {{ with .Services.datastoreWriter -}}
   datastore-writer:
-    image: ghcr.io/openslides/openslides/openslides-datastore-writer:latest
+    image: {{ .ContainerRegistry }}/openslides-datastore-writer:{{ .Tag }}
     depends_on:
       - postgres
       - redis
@@ -116,7 +123,9 @@ services:
       - datastore-writer
       - postgres
       - redis
+  {{- end }}
 
+  {{ with .Services.postgres -}}
   postgres:
     image: postgres:11
     environment:
@@ -129,9 +138,11 @@ services:
       - postgres
     volumes:
       - ./db-data:/var/lib/postgresql/data
+  {{- end }}
 
+  {{ with .Services.autoupdate -}}
   autoupdate:
-    image: ghcr.io/openslides/openslides/openslides-autoupdate:latest
+    image: {{ .ContainerRegistry }}/openslides-autoupdate:{{ .Tag }}
     depends_on:
       - datastore-reader
       - redis
@@ -146,9 +157,11 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+  {{- end }}
 
+  {{ with .Services.auth -}}
   auth:
-    image: ghcr.io/openslides/openslides/openslides-auth:latest
+    image: {{ .ContainerRegistry }}/openslides-auth:{{ .Tag }}
     depends_on:
       - datastore-reader
       - redis
@@ -161,16 +174,20 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+  {{- end }}
 
+  {{ with .Services.redis -}}
   redis:
     image: redis:latest
     environment:
       << : *default-environment
     networks:
       - redis
+  {{- end }}
 
+  {{ with .Services.media -}}
   media:
-    image: ghcr.io/openslides/openslides/openslides-media:latest
+    image: {{ .ContainerRegistry }}/openslides-media:{{ .Tag }}
     depends_on:
       - backend
       - postgres
@@ -181,9 +198,11 @@ services:
       - datastore-reader
       - datastore-writer
       - postgres
+  {{- end }}
 
+  {{ with .Services.icc -}}
   icc:
-    image: ghcr.io/openslides/openslides/openslides-icc:latest
+    image: {{ .ContainerRegistry }}/openslides-icc:{{ .Tag }}
     depends_on:
       - datastore-reader
       - postgres
@@ -200,9 +219,11 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+  {{- end }}
 
+  {{ with .Services.manage -}}
   manage:
-    image: ghcr.io/openslides/openslides/openslides-manage:latest
+    image: {{ .ContainerRegistry }}/openslides-manage:{{ .Tag }}
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -220,6 +241,7 @@ services:
       - superadmin
     ports:
       - 127.0.0.1:9008:9008
+  {{- end }}
 
 networks:
   uplink:
