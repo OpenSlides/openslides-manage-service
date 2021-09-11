@@ -13,20 +13,22 @@ import (
 	"text/template"
 
 	"github.com/ghodss/yaml"
+	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 )
 
 const (
-	ymlFileName              = "docker-compose.yml"
-	defaultContainerRegistry = "ghcr.io/openslides/openslides"
-	defaultTag               = "4.0.0-dev"
-	authTokenKeyFileName     = "auth_token_key"
-	authCookieKeyFileName    = "auth_cookie_key"
-	dbDirName                = "db-data"
+	ymlFileName           = "docker-compose.yml"
+	authTokenKeyFileName  = "auth_token_key"
+	authCookieKeyFileName = "auth_cookie_key"
+	dbDirName             = "db-data"
 )
 
 //go:embed default-docker-compose.yml
 var defaultDockerComposeYml []byte
+
+//go:embed default-config.yml
+var defaultConfig []byte
 
 const (
 	// SetupHelp contains the short help text for the command.
@@ -58,6 +60,7 @@ func Cmd() *cobra.Command {
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
 	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
+	configFile := cmd.Flags().StringP("config", "c", "", "custom YAML config file")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
@@ -71,7 +74,16 @@ func Cmd() *cobra.Command {
 			tpl = fc
 		}
 
-		if err := Setup(dir, *force, tpl, nil); err != nil {
+		var config []byte
+		if *configFile != "" {
+			fc, err := os.ReadFile(*configFile)
+			if err != nil {
+				return fmt.Errorf("reading file %q: %w", *configFile, err)
+			}
+			config = fc
+		}
+
+		if err := Setup(dir, *force, tpl, config); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -142,7 +154,7 @@ func createYmlFile(dir, name string, force bool, tplContent, cfgContent []byte) 
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	tmpl, err := template.New("YAML File").Parse(string(tplContent))
+	tmpl, err := template.New("YAML File").Option("missingkey=error").Parse(string(tplContent))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
@@ -208,12 +220,12 @@ func randomSecret() ([]byte, error) {
 }
 
 type ymlConfig struct {
-	All struct {
+	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
 		Tag               string `yaml:"tag"`
-	} `yaml:"all"`
+	} `yaml:"defaults"`
 
-	DefaultEnvironment struct{} `yaml:"defaultEnvironment"`
+	DefaultEnvironment map[string]string `yaml:"defaultEnvironment"`
 
 	Services map[string]service `yaml:"services"`
 }
@@ -225,44 +237,57 @@ type service struct {
 
 func newYmlConfig(data []byte) (*ymlConfig, error) {
 	// Unmarshal given YAML data
-	c := new(ymlConfig)
-	if err := yaml.Unmarshal(data, c); err != nil {
+	c1 := new(ymlConfig)
+	if err := yaml.Unmarshal(data, c1); err != nil {
 		return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 	}
 
-	// Fill defaults for c.All
-	if c.All.ContainerRegistry == "" {
-		c.All.ContainerRegistry = defaultContainerRegistry
+	// Unmarshal default YAML data
+	c2 := new(ymlConfig)
+	if err := yaml.Unmarshal(defaultConfig, c2); err != nil {
+		return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 	}
-	if c.All.Tag == "" {
-		c.All.Tag = defaultTag
+
+	// Merge default
+	if err := mergo.Merge(c1, c2); err != nil {
+		return nil, fmt.Errorf("merging default config into given data: %w", err)
 	}
 
 	// Fill services
 	allServices := []string{
 		"proxy",
 		"client",
+		"backend",
+		"datastoreReader",
+		"datastoreWriter",
+		"postgres", // TODO: Remove me
+		"autoupdate",
+		"auth",
+		"redis", // TODO: Remove me
+		"media",
+		"icc",
+		"manage",
 	}
-	if len(c.Services) == 0 {
-		c.Services = make(map[string]service, len(allServices))
+	if len(c1.Services) == 0 {
+		c1.Services = make(map[string]service, len(allServices))
 	}
 
 	for _, name := range allServices {
-		_, ok := c.Services[name]
+		_, ok := c1.Services[name]
 		if !ok {
-			c.Services[name] = *new(service)
+			c1.Services[name] = *new(service)
 		}
-		s := c.Services[name]
+		s := c1.Services[name]
 
 		if s.ContainerRegistry == "" {
-			s.ContainerRegistry = c.All.ContainerRegistry
+			s.ContainerRegistry = c1.Defaults.ContainerRegistry
 		}
 		if s.Tag == "" {
-			s.Tag = c.All.Tag
+			s.Tag = c1.Defaults.Tag
 		}
 
-		c.Services[name] = s
+		c1.Services[name] = s
 	}
 
-	return c, nil
+	return c1, nil
 }
