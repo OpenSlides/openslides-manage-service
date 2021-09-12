@@ -81,32 +81,44 @@ func (d *Conn) Exists(ctx context.Context, collection string, id int) (bool, err
 
 // Create sends multiple create events to the datastore.
 func (d *Conn) Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error {
-	events := ""
+	var events []json.RawMessage
 	for fqid, fields := range creatables {
-		decodedFields, err := json.Marshal(fields)
+		encodedFields, err := json.Marshal(fields)
 		if err != nil {
 			return fmt.Errorf("marshalling fields: %w", err)
 		}
-		events += fmt.Sprintf(
-			`{"type":"create","fqid":"%s","fields":%s},`,
-			fqid, decodedFields,
+		event := fmt.Sprintf(
+			`{"type":"create","fqid":"%s","fields":%s}`,
+			fqid, encodedFields,
 		)
+		encodedEvent, err := json.Marshal(event)
+		if err != nil {
+			return fmt.Errorf("marshalling create event: %w", err)
+		}
+		events = append(events, encodedEvent)
 
 	}
-	events = strings.TrimSuffix(events, ",")
 
-	reqBody := fmt.Sprintf(
-		`{
-			"user_id": 0,
-			"information": {},
-			"locked_fields": {},
-			"events":[%s],
-			"migration_index": %d
-		}`,
-		events, migrationIndex,
-	)
+	reqBody := struct {
+		UserID         int               `json:"user_id"`
+		Information    map[string]string `json:"information"`
+		LockedFields   map[string]string `json:"locked_fields"`
+		Events         []json.RawMessage `json:"events"`
+		MigrationIndex int               `json:"migration_index"`
+	}{
+		0,
+		map[string]string{},
+		map[string]string{},
+		events,
+		migrationIndex,
+	}
+	encodedReqBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("marshalling write request: %w", err)
 
-	if err := sendWriteRequest(ctx, d.writerURL, reqBody); err != nil {
+	}
+
+	if err := sendWriteRequest(ctx, d.writerURL, string(encodedReqBody)); err != nil {
 		return fmt.Errorf("sending write request to datastore: %w", err)
 	}
 
