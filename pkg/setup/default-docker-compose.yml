@@ -58,8 +58,12 @@ services:
     networks:
       - uplink
       - frontend
+    {{- range $i, $e := .Ports }}
+    {{- if eq $i 0 }}
     ports:
-      - 127.0.0.1:8000:8000
+    {{- end }}
+      - {{ $e }}
+    {{- end }}
   {{- end }}
 
   {{ with .Services.client -}}
@@ -95,6 +99,9 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+    {{- with .Deploy }}
+    deploy: {{ jsonMarshal . }}
+    {{- end}}
   {{- end }}
 
   {{ with .Services.datastoreReader -}}
@@ -239,8 +246,12 @@ services:
       - redis
     secrets:
       - superadmin
+    {{- range $i, $e := .Ports }}
+    {{- if eq $i 0 }}
     ports:
-      - 127.0.0.1:9008:9008
+    {{- end }}
+      - {{ $e }}
+    {{- end }}
   {{- end }}
 
 networks:

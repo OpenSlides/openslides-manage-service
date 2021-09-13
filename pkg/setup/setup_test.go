@@ -236,6 +236,8 @@ defaults:
 services:
   proxy:
     tag: 2.0.0
+    ports:
+      - 127.0.0.1:8001:8000
 `
 
 		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
@@ -244,6 +246,7 @@ services:
 		secDir := path.Join(testDir, setup.SecretsDirName)
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Waetai0ohf/openslides-client:4.0.0-dev")
+		testFileContains(t, testDir, "docker-compose.yml", "ports:\n      - 127.0.0.1:8001:8000")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
