@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	_ "embed" // Blank import required to use go directive.
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -154,7 +155,17 @@ func createYmlFile(dir, name string, force bool, tplContent, cfgContent []byte) 
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	tmpl, err := template.New("YAML File").Option("missingkey=error").Parse(string(tplContent))
+	jsonMarshalFunc := func(v interface{}) (string, error) {
+		j, err := json.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+		return string(j), nil
+	}
+	funcMap := template.FuncMap{}
+	funcMap["jsonMarshal"] = jsonMarshalFunc
+
+	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplContent))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
@@ -231,8 +242,10 @@ type ymlConfig struct {
 }
 
 type service struct {
-	ContainerRegistry string `yaml:"containerRegistry"`
-	Tag               string `yaml:"tag"`
+	ContainerRegistry string          `yaml:"containerRegistry"`
+	Tag               string          `yaml:"tag"`
+	Ports             []string        `yaml:"ports"`
+	Deploy            json.RawMessage `yaml:"deploy"`
 }
 
 func newYmlConfig(data []byte) (*ymlConfig, error) {

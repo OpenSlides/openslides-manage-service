@@ -47,8 +47,21 @@ defaultEnvironment:
 # You can customize single services using the services property. All
 # properties from the "defaults" section are available here.
 #
+# Example:
+#
 # services:
 #   datastoreReader:
 #     tag: my-tag
 #   autoupdate:
 #     containerRegistry: example.com/my-registry
+#
+# Additionally you can define the content of "ports" for proxy and manage
+# service.
+
+services:
+  proxy:
+    ports:
+      - 127.0.0.1:8000:8000
+  manage:
+    ports:
+      - 127.0.0.1:9008:9008
