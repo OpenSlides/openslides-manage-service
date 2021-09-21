@@ -83,20 +83,20 @@ func (d *Conn) Exists(ctx context.Context, collection string, id int) (bool, err
 func (d *Conn) Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error {
 	var events []json.RawMessage
 	for fqid, fields := range creatables {
-		encodedFields, err := json.Marshal(fields)
-		if err != nil {
-			return fmt.Errorf("marshalling fields: %w", err)
+		event := struct {
+			Type   string                     `json:"type"`
+			Fqid   string                     `json:"fqid"`
+			Fields map[string]json.RawMessage `json:"fields"`
+		}{
+			Type:   "create",
+			Fqid:   fqid,
+			Fields: fields,
 		}
-		event := fmt.Sprintf(
-			`{"type":"create","fqid":"%s","fields":%s}`,
-			fqid, encodedFields,
-		)
 		encodedEvent, err := json.Marshal(event)
 		if err != nil {
 			return fmt.Errorf("marshalling create event: %w", err)
 		}
 		events = append(events, encodedEvent)
-
 	}
 
 	reqBody := struct {
