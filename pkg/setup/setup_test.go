@@ -273,7 +273,7 @@ x-default-environment: &default-environment
 
 services:
   proxy:
-    image: ghcr.io/openslides/openslides/openslides-proxy:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-proxy:latest
     depends_on:
       - client
       - backend
@@ -290,7 +290,7 @@ services:
       - 127.0.0.1:8000:8000
 
   client:
-    image: ghcr.io/openslides/openslides/openslides-client:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-client:latest
     depends_on:
       - backend
       - autoupdate
@@ -303,7 +303,7 @@ services:
       - frontend
 
   backend:
-    image: ghcr.io/openslides/openslides/openslides-backend:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -321,7 +321,7 @@ services:
       - auth_cookie_key
 
   datastore-reader:
-    image: ghcr.io/openslides/openslides/openslides-datastore-reader:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
     depends_on:
       - postgres
     environment:
@@ -332,7 +332,7 @@ services:
       - postgres
 
   datastore-writer:
-    image: ghcr.io/openslides/openslides/openslides-datastore-writer:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-datastore-writer:latest
     depends_on:
       - postgres
       - redis
@@ -358,7 +358,7 @@ services:
       - ./db-data:/var/lib/postgresql/data
 
   autoupdate:
-    image: ghcr.io/openslides/openslides/openslides-autoupdate:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-autoupdate:latest
     depends_on:
       - datastore-reader
       - redis
@@ -375,7 +375,7 @@ services:
       - auth_cookie_key
 
   auth:
-    image: ghcr.io/openslides/openslides/openslides-auth:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-auth:latest
     depends_on:
       - datastore-reader
       - redis
@@ -397,7 +397,7 @@ services:
       - redis
 
   media:
-    image: ghcr.io/openslides/openslides/openslides-media:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-media:latest
     depends_on:
       - backend
       - postgres
@@ -410,7 +410,7 @@ services:
       - postgres
 
   icc:
-    image: ghcr.io/openslides/openslides/openslides-icc:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-icc:latest
     depends_on:
       - datastore-reader
       - postgres
@@ -429,7 +429,7 @@ services:
       - auth_cookie_key
 
   manage:
-    image: ghcr.io/openslides/openslides/openslides-manage:4.0.0-dev
+    image: ghcr.io/openslides/openslides/openslides-manage:latest
     depends_on:
       - datastore-reader
       - datastore-writer
