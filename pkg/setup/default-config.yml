@@ -2,6 +2,15 @@
 # Name of the generated YAML file.
 filename: docker-compose.yml
 
+# The OpenSlides proxy service listens on this address.
+host: 127.0.0.1
+port: 8000
+
+# TODO: Remove these options after manage service is routed through the proxy.
+manageHost: 127.0.0.1
+managePort: 9008
+# TODO end ###############
+
 # Defaults for all OpenSlides services.
 defaults:
   containerRegistry: ghcr.io/openslides/openslides
@@ -51,7 +60,8 @@ defaultEnvironment:
   MANAGE_PORT: 9008
 
 # You can customize single services using the services property. All
-# properties from the "defaults" section are available here.
+# properties from the "defaults" section are available here. Service names
+# are written in camelCase.
 #
 # Example:
 #
@@ -61,13 +71,13 @@ defaultEnvironment:
 #   autoupdate:
 #     containerRegistry: example.com/my-registry
 #
-# Additionally you can define the content of "ports" for proxy and manage
-# service and the content of "deploy" for all services.
-
-services:
-  proxy:
-    ports:
-      - 127.0.0.1:8000:8000
-  manage:
-    ports:
-      - 127.0.0.1:9008:9008
+# You can also define some additional content for all services. This will just add the
+# object to the respective service blob.
+#
+# Example:
+#
+# services:
+#   autoupdate:
+#     additionalContent:
+#       deploy:
+#         replicas: 4

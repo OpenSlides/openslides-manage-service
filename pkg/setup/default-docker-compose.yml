@@ -58,12 +58,9 @@ services:
     networks:
       - uplink
       - frontend
-    {{- range $i, $entry := .Ports }}
-    {{- if eq $i 0 }}
     ports:
-    {{- end }}
-      - {{ $entry }}
-    {{- end }}
+      - {{ $.Host }}:{{ $.Port }}:8000
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.client -}}
@@ -79,6 +76,7 @@ services:
       << : *default-environment
     networks:
       - frontend
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.backend -}}
@@ -99,9 +97,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .Deploy }}
-    deploy: {{ jsonMarshal . }}
-    {{- end}}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.datastoreReader -}}
@@ -115,6 +111,7 @@ services:
     networks:
       - datastore-reader
       - postgres
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.datastoreWriter -}}
@@ -130,6 +127,7 @@ services:
       - datastore-writer
       - postgres
       - redis
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.postgres -}}
@@ -145,6 +143,7 @@ services:
       - postgres
     volumes:
       - ./db-data:/var/lib/postgresql/data
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.autoupdate -}}
@@ -164,6 +163,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.auth -}}
@@ -181,6 +181,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.redis -}}
@@ -190,6 +191,7 @@ services:
       << : *default-environment
     networks:
       - redis
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.media -}}
@@ -205,6 +207,7 @@ services:
       - datastore-reader
       - datastore-writer
       - postgres
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.icc -}}
@@ -226,6 +229,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
   {{ with .Services.manage -}}
@@ -246,12 +250,9 @@ services:
       - redis
     secrets:
       - superadmin
-    {{- range $i, $entry := .Ports }}
-    {{- if eq $i 0 }}
     ports:
-    {{- end }}
-      - {{ $entry }}
-    {{- end }}
+      - {{ $.ManageHost }}:{{ $.ManagePort }}:9008
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
 networks:
