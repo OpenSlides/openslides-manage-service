@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/ghodss/yaml"
@@ -154,20 +155,28 @@ func createYmlFile(dir string, force bool, tplContent, cfgContent []byte) error 
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	jsonMarshalFunc := func(v interface{}) (string, error) {
-		j, err := json.Marshal(v)
+	marshalContentFunc := func(v interface{}) (string, error) {
+		y, err := yaml.Marshal(v)
 		if err != nil {
 			return "", err
 		}
-		return string(j), nil
+		result := "\n"
+		for _, line := range strings.Split(string(y), "\n") {
+			if len(line) != 0 {
+				result += fmt.Sprintf("    %s\n", line)
+			}
+		}
+		result = strings.TrimRight(result, "\n")
+		return result, nil
 	}
 	funcMap := template.FuncMap{}
-	funcMap["jsonMarshal"] = jsonMarshalFunc
+	funcMap["marshalContent"] = marshalContentFunc
 
 	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplContent))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
+
 	var res bytes.Buffer
 	if err := tmpl.Execute(&res, cfg); err != nil {
 		return fmt.Errorf("executing template %v: %w", tmpl, err)
@@ -230,7 +239,14 @@ func randomSecret() ([]byte, error) {
 }
 
 type ymlConfig struct {
-	Filename string
+	Filename string `yaml:"filename"`
+
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+
+	// TODO: Remove these two fields.
+	ManageHost string `yaml:"manageHost"`
+	ManagePort string `yaml:"managePort"`
 
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
@@ -245,8 +261,7 @@ type ymlConfig struct {
 type service struct {
 	ContainerRegistry string          `yaml:"containerRegistry"`
 	Tag               string          `yaml:"tag"`
-	Ports             []string        `yaml:"ports"`
-	Deploy            json.RawMessage `yaml:"deploy"`
+	AdditionalContent json.RawMessage `yaml:"additionalContent"`
 }
 
 func newYmlConfig(data []byte) (*ymlConfig, error) {
@@ -289,7 +304,7 @@ func newYmlConfig(data []byte) (*ymlConfig, error) {
 	for _, name := range allServices {
 		_, ok := c1.Services[name]
 		if !ok {
-			c1.Services[name] = *new(service)
+			c1.Services[name] = service{}
 		}
 		s := c1.Services[name]
 

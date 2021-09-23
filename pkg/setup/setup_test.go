@@ -232,13 +232,12 @@ func TestSetupCommonWithConfig(t *testing.T) {
 	t.Run("running setup.Setup() and create all stuff in tmp directory using a custom config", func(t *testing.T) {
 		customConfig := `---
 filename: my-filename-ooph1OhShi.yml
+port: 8001
 defaults:
   containerRegistry: example.com/test_Waetai0ohf
 services:
   proxy:
     tag: 2.0.0
-    ports:
-      - 127.0.0.1:8001:8000
 `
 
 		myFileName := "my-filename-ooph1OhShi.yml"
