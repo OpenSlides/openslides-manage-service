@@ -116,7 +116,7 @@ services:
 		}
 
 		secDir := path.Join(testDir, setup.SecretsDirName)
-		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-proxy:4.0.0-dev")
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-proxy:latest")
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-backend:2.0.1")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
@@ -231,6 +231,7 @@ func TestSetupCommonWithConfig(t *testing.T) {
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory using a custom config", func(t *testing.T) {
 		customConfig := `---
+filename: my-filename-ooph1OhShi.yml
 defaults:
   containerRegistry: example.com/test_Waetai0ohf
 services:
@@ -240,13 +241,14 @@ services:
       - 127.0.0.1:8001:8000
 `
 
+		myFileName := "my-filename-ooph1OhShi.yml"
 		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
-		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
-		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Waetai0ohf/openslides-client:4.0.0-dev")
-		testFileContains(t, testDir, "docker-compose.yml", "ports:\n      - 127.0.0.1:8001:8000")
+		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
+		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-client:latest")
+		testFileContains(t, testDir, myFileName, "ports:\n      - 127.0.0.1:8001:8000")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)

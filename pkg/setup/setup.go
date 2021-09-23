@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	ymlFileName           = "docker-compose.yml"
 	authTokenKeyFileName  = "auth_token_key"
 	authCookieKeyFileName = "auth_cookie_key"
 	dbDirName             = "db-data"
@@ -104,7 +103,7 @@ func Setup(dir string, force bool, tplContent, cfgContent []byte) error {
 	}
 
 	// Create YAML file
-	if err := createYmlFile(dir, ymlFileName, force, tplContent, cfgContent); err != nil {
+	if err := createYmlFile(dir, force, tplContent, cfgContent); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
@@ -145,7 +144,7 @@ func Setup(dir string, force bool, tplContent, cfgContent []byte) error {
 	return nil
 }
 
-func createYmlFile(dir, name string, force bool, tplContent, cfgContent []byte) error {
+func createYmlFile(dir string, force bool, tplContent, cfgContent []byte) error {
 	if tplContent == nil {
 		tplContent = defaultDockerComposeYml
 	}
@@ -174,8 +173,8 @@ func createYmlFile(dir, name string, force bool, tplContent, cfgContent []byte) 
 		return fmt.Errorf("executing template %v: %w", tmpl, err)
 	}
 
-	if err := createFile(dir, force, name, res.Bytes()); err != nil {
-		return fmt.Errorf("creating YAML file %q at %q: %w", name, dir, err)
+	if err := createFile(dir, force, cfg.Filename, res.Bytes()); err != nil {
+		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
 	return nil
@@ -231,6 +230,8 @@ func randomSecret() ([]byte, error) {
 }
 
 type ymlConfig struct {
+	Filename string
+
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
 		Tag               string `yaml:"tag"`
