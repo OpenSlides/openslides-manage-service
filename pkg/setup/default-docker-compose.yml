@@ -58,11 +58,11 @@ services:
     networks:
       - uplink
       - frontend
-    {{- range $i, $e := .Ports }}
+    {{- range $i, $entry := .Ports }}
     {{- if eq $i 0 }}
     ports:
     {{- end }}
-      - {{ $e }}
+      - {{ $entry }}
     {{- end }}
   {{- end }}
 
@@ -246,11 +246,11 @@ services:
       - redis
     secrets:
       - superadmin
-    {{- range $i, $e := .Ports }}
+    {{- range $i, $entry := .Ports }}
     {{- if eq $i 0 }}
     ports:
     {{- end }}
-      - {{ $e }}
+      - {{ $entry }}
     {{- end }}
   {{- end }}
 

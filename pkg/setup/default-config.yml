@@ -1,7 +1,9 @@
 ---
+filename: docker-compose.yml
+
 defaults:
   containerRegistry: ghcr.io/openslides/openslides
-  tag: 4.0.0-dev
+  tag: latest
 
 defaultEnvironment:
   ACTION_HOST: backend
