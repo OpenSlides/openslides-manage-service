@@ -1,10 +1,14 @@
 ---
+# Name of the generated YAML file.
 filename: docker-compose.yml
 
+# Defaults for all OpenSlides services.
 defaults:
   containerRegistry: ghcr.io/openslides/openslides
   tag: latest
 
+# These environment variables are injected into every OpenSlides service
+# via YAML merge type (https://yaml.org/type/merge.html).
 defaultEnvironment:
   ACTION_HOST: backend
   ACTION_PORT: 9002
@@ -58,7 +62,7 @@ defaultEnvironment:
 #     containerRegistry: example.com/my-registry
 #
 # Additionally you can define the content of "ports" for proxy and manage
-# service.
+# service and the content of "deploy" for all services.
 
 services:
   proxy:
