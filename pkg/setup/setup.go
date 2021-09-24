@@ -5,17 +5,21 @@ import (
 	"crypto/rand"
 	_ "embed" // Blank import required to use go directive.
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
+	"strings"
+	"text/template"
 
+	"github.com/ghodss/yaml"
+	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 )
 
 const (
-	ymlFileName           = "docker-compose.yml"
 	authTokenKeyFileName  = "auth_token_key"
 	authCookieKeyFileName = "auth_cookie_key"
 	dbDirName             = "db-data"
@@ -23,6 +27,9 @@ const (
 
 //go:embed default-docker-compose.yml
 var defaultDockerComposeYml []byte
+
+//go:embed default-config.yml
+var defaultConfig []byte
 
 const (
 	// SetupHelp contains the short help text for the command.
@@ -54,6 +61,7 @@ func Cmd() *cobra.Command {
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
 	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
+	configFile := cmd.Flags().StringP("config", "c", "", "custom YAML config file")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
@@ -67,7 +75,16 @@ func Cmd() *cobra.Command {
 			tpl = fc
 		}
 
-		if err := Setup(dir, *force, tpl); err != nil {
+		var config []byte
+		if *configFile != "" {
+			fc, err := os.ReadFile(*configFile)
+			if err != nil {
+				return fmt.Errorf("reading file %q: %w", *configFile, err)
+			}
+			config = fc
+		}
+
+		if err := Setup(dir, *force, tpl, config); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -79,18 +96,15 @@ func Cmd() *cobra.Command {
 // directories for database and SSL certs volumes.
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
-// can be provided.
-func Setup(dir string, force bool, tpl []byte) error {
+// and a YAML config can be provided.
+func Setup(dir string, force bool, tplContent, cfgContent []byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
-	if tpl == nil {
-		tpl = defaultDockerComposeYml
-	}
-	if err := createFile(dir, force, ymlFileName, tpl); err != nil {
+	if err := createYmlFile(dir, force, tplContent, cfgContent); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
@@ -126,6 +140,50 @@ func Setup(dir string, force bool, tpl []byte) error {
 	// Create database directory
 	if err := os.MkdirAll(path.Join(dir, dbDirName), os.ModePerm); err != nil {
 		return fmt.Errorf("creating database directory at %q: %w", dir, err)
+	}
+
+	return nil
+}
+
+func createYmlFile(dir string, force bool, tplContent, cfgContent []byte) error {
+	if tplContent == nil {
+		tplContent = defaultDockerComposeYml
+	}
+
+	cfg, err := newYmlConfig(cfgContent)
+	if err != nil {
+		return fmt.Errorf("creating new YML config object: %w", err)
+	}
+
+	marshalContentFunc := func(v interface{}) (string, error) {
+		y, err := yaml.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+		result := "\n"
+		for _, line := range strings.Split(string(y), "\n") {
+			if len(line) != 0 {
+				result += fmt.Sprintf("    %s\n", line)
+			}
+		}
+		result = strings.TrimRight(result, "\n")
+		return result, nil
+	}
+	funcMap := template.FuncMap{}
+	funcMap["marshalContent"] = marshalContentFunc
+
+	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplContent))
+	if err != nil {
+		return fmt.Errorf("parsing template: %w", err)
+	}
+
+	var res bytes.Buffer
+	if err := tmpl.Execute(&res, cfg); err != nil {
+		return fmt.Errorf("executing template %v: %w", tmpl, err)
+	}
+
+	if err := createFile(dir, force, cfg.Filename, res.Bytes()); err != nil {
+		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
 	return nil
@@ -178,4 +236,87 @@ func randomSecret() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+type ymlConfig struct {
+	Filename string `yaml:"filename"`
+
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+
+	// TODO: Remove these two fields.
+	ManageHost string `yaml:"manageHost"`
+	ManagePort string `yaml:"managePort"`
+
+	Defaults struct {
+		ContainerRegistry string `yaml:"containerRegistry"`
+		Tag               string `yaml:"tag"`
+	} `yaml:"defaults"`
+
+	DefaultEnvironment map[string]string `yaml:"defaultEnvironment"`
+
+	Services map[string]service `yaml:"services"`
+}
+
+type service struct {
+	ContainerRegistry string          `yaml:"containerRegistry"`
+	Tag               string          `yaml:"tag"`
+	AdditionalContent json.RawMessage `yaml:"additionalContent"`
+}
+
+func newYmlConfig(data []byte) (*ymlConfig, error) {
+	// Unmarshal given YAML data
+	c1 := new(ymlConfig)
+	if err := yaml.Unmarshal(data, c1); err != nil {
+		return nil, fmt.Errorf("unmarshaling YAML: %w", err)
+	}
+
+	// Unmarshal default YAML data
+	c2 := new(ymlConfig)
+	if err := yaml.Unmarshal(defaultConfig, c2); err != nil {
+		return nil, fmt.Errorf("unmarshaling YAML: %w", err)
+	}
+
+	// Merge default
+	if err := mergo.Merge(c1, c2); err != nil {
+		return nil, fmt.Errorf("merging default config into given data: %w", err)
+	}
+
+	// Fill services
+	allServices := []string{
+		"proxy",
+		"client",
+		"backend",
+		"datastoreReader",
+		"datastoreWriter",
+		"postgres", // TODO: Remove me
+		"autoupdate",
+		"auth",
+		"redis", // TODO: Remove me
+		"media",
+		"icc",
+		"manage",
+	}
+	if len(c1.Services) == 0 {
+		c1.Services = make(map[string]service, len(allServices))
+	}
+
+	for _, name := range allServices {
+		_, ok := c1.Services[name]
+		if !ok {
+			c1.Services[name] = service{}
+		}
+		s := c1.Services[name]
+
+		if s.ContainerRegistry == "" {
+			s.ContainerRegistry = c1.Defaults.ContainerRegistry
+		}
+		if s.Tag == "" {
+			s.Tag = c1.Defaults.Tag
+		}
+
+		c1.Services[name] = s
+	}
+
+	return c1, nil
 }

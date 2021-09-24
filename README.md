@@ -37,6 +37,16 @@ To remove all containers run:
     $ docker-compose rm
 
 
+## Configuration of the generated YAML file
+
+The setup command generates also a YAML file (default filename: `docker-compose.yml`).
+This step can be configured with a YAML formated config file. E. g. run:
+
+    $ ./openslides setup --config my-config.yml .
+
+See [pkg/setup/default-config.yml] for syntax and defaults.
+
+
 ## Development
 
 For development you need [Go](https://golang.org/) and the [Protocol Buffer
