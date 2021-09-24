@@ -239,7 +239,6 @@ services:
   proxy:
     tag: 2.0.0
 `
-
 		myFileName := "my-filename-ooph1OhShi.yml"
 		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
@@ -248,10 +247,25 @@ services:
 		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
 		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-client:latest")
 		testFileContains(t, testDir, myFileName, "ports:\n      - 127.0.0.1:8001:8000")
+		testFileContains(t, testDir, myFileName, "image: postgres:11")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
+	})
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using another custom config", func(t *testing.T) {
+		customConfig := `---
+filename: my-filename-eab7iv8Oom.yml
+services:
+  postgres:
+    disabled: true
+`
+		myFileName := "my-filename-eab7iv8Oom.yml"
+		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testFileNotContains(t, testDir, myFileName, "image: postgres:11")
 	})
 }
 
@@ -286,6 +300,22 @@ func testFileContains(t testing.TB, dir, name, exp string) {
 	got := string(content)
 	if !strings.Contains(got, exp) {
 		t.Fatalf("wrong content of file %q, which should contain %q", p, exp)
+	}
+}
+
+func testFileNotContains(t testing.TB, dir, name, exp string) {
+	t.Helper()
+	p := path.Join(dir, name)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file %q does not exist, expected existance", p)
+	}
+	content, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("error reading file %q: %v", p, err)
+	}
+	got := string(content)
+	if strings.Contains(got, exp) {
+		t.Fatalf("wrong content of file %q, which should not contain %q", p, exp)
 	}
 }
 
@@ -349,7 +379,11 @@ x-default-environment: &default-environment
   MEDIA_HOST: media
   MEDIA_PORT: 9006
   MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
+  MEDIA_DATABASE_USER: openslides
+  MEDIA_DATABASE_PASSWORD: openslides
+  MEDIA_DATABASE_TABLE: mediafile_data
 
   ICC_HOST: icc
   ICC_PORT: 9013
@@ -491,6 +525,10 @@ services:
       - postgres
     environment:
       << : *default-environment
+      # CHECK_REQUEST_URL:server:8000/check-media/
+      CACHE_SIZE: 10
+      CACHE_DATA_MIN_SIZE_KB: 0
+      CACHE_DATA_MAX_SIZE_KB: 10240
     networks:
       - frontend
       - datastore-reader

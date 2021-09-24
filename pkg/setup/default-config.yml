@@ -49,7 +49,11 @@ defaultEnvironment:
   MEDIA_HOST: media
   MEDIA_PORT: 9006
   MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
+  MEDIA_DATABASE_USER: openslides
+  MEDIA_DATABASE_PASSWORD: openslides
+  MEDIA_DATABASE_TABLE: mediafile_data
 
   ICC_HOST: icc
   ICC_PORT: 9013
