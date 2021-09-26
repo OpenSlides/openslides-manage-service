@@ -85,3 +85,9 @@ defaultEnvironment:
 #     additionalContent:
 #       deploy:
 #         replicas: 4
+#
+# If you want to disable the postgres service, use the respective property.
+#
+# Example:
+#
+# disablePostgres: true

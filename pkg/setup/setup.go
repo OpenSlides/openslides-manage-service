@@ -248,6 +248,8 @@ type ymlConfig struct {
 	ManageHost string `yaml:"manageHost"`
 	ManagePort string `yaml:"managePort"`
 
+	DisablePostgres bool `yaml:"disablePostgres"`
+
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
 		Tag               string `yaml:"tag"`
@@ -289,10 +291,10 @@ func newYmlConfig(data []byte) (*ymlConfig, error) {
 		"backend",
 		"datastoreReader",
 		"datastoreWriter",
-		"postgres", // TODO: Remove me
+		"postgres",
 		"autoupdate",
 		"auth",
-		"redis", // TODO: Remove me
+		"redis",
 		"media",
 		"icc",
 		"manage",

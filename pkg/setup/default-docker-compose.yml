@@ -134,7 +134,7 @@ services:
     {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
-  {{ with .Services.postgres -}}
+{{ if .DisablePostgres }}{{ else }}  {{ with .Services.postgres -}}
   postgres:
     image: postgres:11
     environment:
@@ -148,7 +148,8 @@ services:
     volumes:
       - ./db-data:/var/lib/postgresql/data
     {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
-  {{- end }}
+  {{- end -}}
+{{ end }}
 
   {{ with .Services.autoupdate -}}
   autoupdate:

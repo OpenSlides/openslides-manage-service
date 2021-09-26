@@ -257,9 +257,7 @@ services:
 	t.Run("running setup.Setup() and create all stuff in tmp directory using another custom config", func(t *testing.T) {
 		customConfig := `---
 filename: my-filename-eab7iv8Oom.yml
-services:
-  postgres:
-    disabled: true
+disablePostgres: true
 `
 		myFileName := "my-filename-eab7iv8Oom.yml"
 		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
