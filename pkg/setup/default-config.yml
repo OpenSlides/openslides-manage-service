@@ -11,6 +11,10 @@ manageHost: 127.0.0.1
 managePort: 9008
 # TODO end ###############
 
+# Two options to disable the postgres service or the depends_on section in every service.
+disablePostgres: false
+disableDependsOn: false
+
 # Defaults for all OpenSlides services.
 defaults:
   containerRegistry: ghcr.io/openslides/openslides
@@ -85,9 +89,3 @@ defaultEnvironment:
 #     additionalContent:
 #       deploy:
 #         replicas: 4
-#
-# If you want to disable the postgres service, use the respective property.
-#
-# Example:
-#
-# disablePostgres: true

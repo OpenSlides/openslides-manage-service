@@ -265,6 +265,18 @@ disablePostgres: true
 		}
 		testFileNotContains(t, testDir, myFileName, "image: postgres:11")
 	})
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using yet another custom config", func(t *testing.T) {
+		customConfig := `---
+filename: my-filename-Koo0eidifg.yml
+disableDependsOn: true
+`
+		myFileName := "my-filename-Koo0eidifg.yml"
+		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testFileNotContains(t, testDir, myFileName, "depends_on")
+	})
 }
 
 func testContentFile(t testing.TB, dir, name, expected string) {

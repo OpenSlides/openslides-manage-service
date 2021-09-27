@@ -1,6 +1,6 @@
 ---
 x-default-environment: &default-environment
-  {{ with .DefaultEnvironment -}}
+  {{- with .DefaultEnvironment }}
   ACTION_HOST: {{ .ACTION_HOST }}
   ACTION_PORT: {{ .ACTION_PORT }}
   PRESENTER_HOST: {{ .PRESENTER_HOST }}
@@ -47,9 +47,11 @@ x-default-environment: &default-environment
   {{- end}}
 
 services:
-  {{ with .Services.proxy -}}
+
+  {{- with .Services.proxy }}
   proxy:
     image: {{ .ContainerRegistry }}/openslides-proxy:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - client
       - backend
@@ -57,6 +59,7 @@ services:
       - auth
       - media
       - icc
+    {{- end }}
     environment:
       << : *default-environment
     networks:
@@ -64,18 +67,22 @@ services:
       - frontend
     ports:
       - {{ $.Host }}:{{ $.Port }}:8000
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.client -}}
+
+  {{- with .Services.client }}
+
   client:
     image: {{ .ContainerRegistry }}/openslides-client:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - backend
       - autoupdate
       - auth
       - media
       - icc
+    {{- end }}
     environment:
       << : *default-environment
     networks:
@@ -83,14 +90,18 @@ services:
     {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
   {{- end }}
 
-  {{ with .Services.backend -}}
+
+  {{- with .Services.backend }}
+
   backend:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - datastore-writer
       - auth
       - postgres
+    {{- end }}
     environment:
       << : *default-environment
     networks:
@@ -101,29 +112,37 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.datastoreReader -}}
+
+  {{- with .Services.datastoreReader }}
+
   datastore-reader:
     image: {{ .ContainerRegistry }}/openslides-datastore-reader:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - postgres
+    {{- end }}
     environment:
       << : *default-environment
       NUM_WORKERS: 8
     networks:
       - datastore-reader
       - postgres
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.datastoreWriter -}}
+
+  {{- with .Services.datastoreWriter }}
+
   datastore-writer:
     image: {{ .ContainerRegistry }}/openslides-datastore-writer:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - postgres
       - redis
+    {{- end }}
     environment:
       << : *default-environment
     networks:
@@ -131,10 +150,12 @@ services:
       - datastore-writer
       - postgres
       - redis
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-{{ if .DisablePostgres }}{{ else }}  {{ with .Services.postgres -}}
+
+  {{- if .DisablePostgres }}{{ else }}{{- with .Services.postgres }}
+
   postgres:
     image: postgres:11
     environment:
@@ -147,16 +168,19 @@ services:
       - postgres
     volumes:
       - ./db-data:/var/lib/postgresql/data
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
-  {{- end -}}
-{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}{{- end }}
 
-  {{ with .Services.autoupdate -}}
+
+  {{- with .Services.autoupdate }}
+
   autoupdate:
     image: {{ .ContainerRegistry }}/openslides-autoupdate:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - redis
+    {{- end }}
     environment:
       << : *default-environment
       MESSAGING: redis
@@ -168,15 +192,19 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.auth -}}
+
+  {{- with .Services.auth }}
+
   auth:
     image: {{ .ContainerRegistry }}/openslides-auth:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - redis
+    {{- end }}
     environment:
       << : *default-environment
     networks:
@@ -186,25 +214,31 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.redis -}}
+
+  {{- with .Services.redis }}
+
   redis:
     image: redis:latest
     environment:
       << : *default-environment
     networks:
       - redis
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.media -}}
+
+  {{- with .Services.media }}
+
   media:
     image: {{ .ContainerRegistry }}/openslides-media:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - backend
       - postgres
+    {{- end }}
     environment:
       << : *default-environment
       # CHECK_REQUEST_URL:server:8000/check-media/
@@ -216,16 +250,20 @@ services:
       - datastore-reader
       - datastore-writer
       - postgres
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.icc -}}
+
+  {{- with .Services.icc }}
+
   icc:
     image: {{ .ContainerRegistry }}/openslides-icc:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - postgres
       - redis
+    {{- end }}
     environment:
       << : *default-environment
       MESSAGING: redis
@@ -238,16 +276,20 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
-  {{ with .Services.manage -}}
+
+  {{- with .Services.manage }}
+
   manage:
     image: {{ .ContainerRegistry }}/openslides-manage:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - datastore-writer
       - auth
+    {{- end }}
     environment:
       << : *default-environment
     networks:
@@ -261,7 +303,7 @@ services:
       - superadmin
     ports:
       - {{ $.ManageHost }}:{{ $.ManagePort }}:9008
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
 networks:

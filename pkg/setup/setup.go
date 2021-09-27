@@ -248,7 +248,8 @@ type ymlConfig struct {
 	ManageHost string `yaml:"manageHost"`
 	ManagePort string `yaml:"managePort"`
 
-	DisablePostgres bool `yaml:"disablePostgres"`
+	DisablePostgres  bool `yaml:"disablePostgres"`
+	DisableDependsOn bool `yaml:"disableDependsOn"`
 
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
