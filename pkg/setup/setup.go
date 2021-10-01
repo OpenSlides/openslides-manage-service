@@ -3,19 +3,14 @@ package setup
 import (
 	"bytes"
 	"crypto/rand"
-	_ "embed" // Blank import required to use go directive.
 	"encoding/base64"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
-	"strings"
-	"text/template"
 
-	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
+	"github.com/OpenSlides/openslides-manage-service/pkg/config"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -24,12 +19,6 @@ const (
 	authCookieKeyFileName = "auth_cookie_key"
 	dbDirName             = "db-data"
 )
-
-//go:embed default-docker-compose.yml
-var defaultDockerComposeYml []byte
-
-//go:embed default-config.yml
-var defaultConfig []byte
 
 const (
 	// SetupHelp contains the short help text for the command.
@@ -61,7 +50,7 @@ func Cmd() *cobra.Command {
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
 	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
-	configFiles := cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file")
+	configFiles := cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file, can be use more then once")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
@@ -98,7 +87,7 @@ func Cmd() *cobra.Command {
 // directories for database and SSL certs volumes.
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
-// and a YAML config can be provided.
+// and YAML configs can be provided.
 func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -106,7 +95,7 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	}
 
 	// Create YAML file
-	if err := createYmlFile(dir, force, tplContent, cfgContent); err != nil {
+	if err := config.CreateYmlFile(dir, force, tplContent, cfgContent); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
@@ -121,7 +110,7 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	if err != nil {
 		return fmt.Errorf("creating random key for auth token: %w", err)
 	}
-	if err := createFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
+	if err := shared.CreateFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
 		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
 	}
 
@@ -130,12 +119,12 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	if err != nil {
 		return fmt.Errorf("creating random key for auth cookie: %w", err)
 	}
-	if err := createFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
+	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
 		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
 	}
 
 	// Create supereadmin file
-	if err := createFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
+	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
 
@@ -145,87 +134,6 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	}
 
 	return nil
-}
-
-func createYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byte) error {
-	if tplContent == nil {
-		tplContent = defaultDockerComposeYml
-	}
-
-	cfg, err := newYmlConfig(cfgContent)
-	if err != nil {
-		return fmt.Errorf("creating new YML config object: %w", err)
-	}
-
-	marshalContentFunc := func(v interface{}) (string, error) {
-		y, err := yaml.Marshal(v)
-		if err != nil {
-			return "", err
-		}
-		result := "\n"
-		for _, line := range strings.Split(string(y), "\n") {
-			if len(line) != 0 {
-				result += fmt.Sprintf("    %s\n", line)
-			}
-		}
-		result = strings.TrimRight(result, "\n")
-		return result, nil
-	}
-	funcMap := template.FuncMap{}
-	funcMap["marshalContent"] = marshalContentFunc
-
-	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplContent))
-	if err != nil {
-		return fmt.Errorf("parsing template: %w", err)
-	}
-
-	var res bytes.Buffer
-	if err := tmpl.Execute(&res, cfg); err != nil {
-		return fmt.Errorf("executing template %v: %w", tmpl, err)
-	}
-
-	if err := createFile(dir, force, cfg.Filename, res.Bytes()); err != nil {
-		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
-	}
-
-	return nil
-}
-
-func createFile(dir string, force bool, name string, content []byte) error {
-	p := path.Join(dir, name)
-
-	pExists, err := fileExists(p)
-	if err != nil {
-		return fmt.Errorf("checking file existance: %w", err)
-	}
-	if !force && pExists {
-		// No force-mode and file already exists, so skip this file.
-		return nil
-	}
-
-	w, err := os.Create(p)
-	if err != nil {
-		return fmt.Errorf("creating file %q: %w", p, err)
-	}
-	defer w.Close()
-
-	if _, err := w.Write(content); err != nil {
-		return fmt.Errorf("writing content to file %q: %w", p, err)
-	}
-	return nil
-}
-
-// fileExists is a small helper function to check if a file already exists. It is not
-// save in concurrent usage.
-func fileExists(p string) (bool, error) {
-	_, err := os.Stat(p)
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	}
-	return false, fmt.Errorf("checking existance of file %s: %w", p, err)
 }
 
 func randomSecret() ([]byte, error) {
@@ -238,88 +146,4 @@ func randomSecret() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-type ymlConfig struct {
-	Filename string `yaml:"filename"`
-
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
-
-	// TODO: Remove these two fields.
-	ManageHost string `yaml:"manageHost"`
-	ManagePort string `yaml:"managePort"`
-
-	DisablePostgres  bool `yaml:"disablePostgres"`
-	DisableDependsOn bool `yaml:"disableDependsOn"`
-
-	Defaults struct {
-		ContainerRegistry string `yaml:"containerRegistry"`
-		Tag               string `yaml:"tag"`
-	} `yaml:"defaults"`
-
-	DefaultEnvironment map[string]string `yaml:"defaultEnvironment"`
-
-	Services map[string]service `yaml:"services"`
-}
-
-type service struct {
-	ContainerRegistry string          `yaml:"containerRegistry"`
-	Tag               string          `yaml:"tag"`
-	AdditionalContent json.RawMessage `yaml:"additionalContent"`
-}
-
-func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
-	// Append default config
-	configFiles = append(configFiles, defaultConfig)
-
-	// Unmarshal and merge them all
-	config := new(ymlConfig)
-	for _, configFile := range configFiles {
-		c := new(ymlConfig)
-		if err := yaml.Unmarshal(configFile, c); err != nil {
-			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
-		}
-		if err := mergo.Merge(config, c); err != nil {
-			return nil, fmt.Errorf("merging config files: %w", err)
-		}
-	}
-
-	// Fill services
-	allServices := []string{
-		"proxy",
-		"client",
-		"backend",
-		"datastoreReader",
-		"datastoreWriter",
-		"postgres",
-		"autoupdate",
-		"auth",
-		"redis",
-		"media",
-		"icc",
-		"manage",
-	}
-	if len(config.Services) == 0 {
-		config.Services = make(map[string]service, len(allServices))
-	}
-
-	for _, name := range allServices {
-		_, ok := config.Services[name]
-		if !ok {
-			config.Services[name] = service{}
-		}
-		s := config.Services[name]
-
-		if s.ContainerRegistry == "" {
-			s.ContainerRegistry = config.Defaults.ContainerRegistry
-		}
-		if s.Tag == "" {
-			s.Tag = config.Defaults.Tag
-		}
-
-		config.Services[name] = s
-	}
-
-	return config, nil
 }
