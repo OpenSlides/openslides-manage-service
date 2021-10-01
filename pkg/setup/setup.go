@@ -61,7 +61,7 @@ func Cmd() *cobra.Command {
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
 	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
-	configFile := cmd.Flags().StringP("config", "c", "", "custom YAML config file")
+	configFiles := cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
@@ -75,13 +75,15 @@ func Cmd() *cobra.Command {
 			tpl = fc
 		}
 
-		var config []byte
-		if *configFile != "" {
-			fc, err := os.ReadFile(*configFile)
-			if err != nil {
-				return fmt.Errorf("reading file %q: %w", *configFile, err)
+		var config [][]byte
+		if len(*configFiles) > 0 {
+			for _, configFile := range *configFiles {
+				fc, err := os.ReadFile(configFile)
+				if err != nil {
+					return fmt.Errorf("reading file %q: %w", configFile, err)
+				}
+				config = append(config, fc)
 			}
-			config = fc
 		}
 
 		if err := Setup(dir, *force, tpl, config); err != nil {
@@ -97,7 +99,7 @@ func Cmd() *cobra.Command {
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
 // and a YAML config can be provided.
-func Setup(dir string, force bool, tplContent, cfgContent []byte) error {
+func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
@@ -145,7 +147,7 @@ func Setup(dir string, force bool, tplContent, cfgContent []byte) error {
 	return nil
 }
 
-func createYmlFile(dir string, force bool, tplContent, cfgContent []byte) error {
+func createYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byte) error {
 	if tplContent == nil {
 		tplContent = defaultDockerComposeYml
 	}
@@ -267,22 +269,20 @@ type service struct {
 	AdditionalContent json.RawMessage `yaml:"additionalContent"`
 }
 
-func newYmlConfig(data []byte) (*ymlConfig, error) {
-	// Unmarshal given YAML data
-	c1 := new(ymlConfig)
-	if err := yaml.Unmarshal(data, c1); err != nil {
-		return nil, fmt.Errorf("unmarshaling YAML: %w", err)
-	}
+func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
+	// Append default config
+	configFiles = append(configFiles, defaultConfig)
 
-	// Unmarshal default YAML data
-	c2 := new(ymlConfig)
-	if err := yaml.Unmarshal(defaultConfig, c2); err != nil {
-		return nil, fmt.Errorf("unmarshaling YAML: %w", err)
-	}
-
-	// Merge default
-	if err := mergo.Merge(c1, c2); err != nil {
-		return nil, fmt.Errorf("merging default config into given data: %w", err)
+	// Unmarshal and merge them all
+	config := new(ymlConfig)
+	for _, configFile := range configFiles {
+		c := new(ymlConfig)
+		if err := yaml.Unmarshal(configFile, c); err != nil {
+			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
+		}
+		if err := mergo.Merge(config, c); err != nil {
+			return nil, fmt.Errorf("merging config files: %w", err)
+		}
 	}
 
 	// Fill services
@@ -300,26 +300,26 @@ func newYmlConfig(data []byte) (*ymlConfig, error) {
 		"icc",
 		"manage",
 	}
-	if len(c1.Services) == 0 {
-		c1.Services = make(map[string]service, len(allServices))
+	if len(config.Services) == 0 {
+		config.Services = make(map[string]service, len(allServices))
 	}
 
 	for _, name := range allServices {
-		_, ok := c1.Services[name]
+		_, ok := config.Services[name]
 		if !ok {
-			c1.Services[name] = service{}
+			config.Services[name] = service{}
 		}
-		s := c1.Services[name]
+		s := config.Services[name]
 
 		if s.ContainerRegistry == "" {
-			s.ContainerRegistry = c1.Defaults.ContainerRegistry
+			s.ContainerRegistry = config.Defaults.ContainerRegistry
 		}
 		if s.Tag == "" {
-			s.Tag = c1.Defaults.Tag
+			s.Tag = config.Defaults.Tag
 		}
 
-		c1.Services[name] = s
+		config.Services[name] = s
 	}
 
-	return c1, nil
+	return config, nil
 }

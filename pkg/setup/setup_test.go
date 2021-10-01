@@ -95,18 +95,18 @@ func TestCmd(t *testing.T) {
 		customConfigFileName := path.Join(testDir, "custom-config.yml")
 		f, err := os.OpenFile(customConfigFileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
 		if err != nil {
-			t.Fatalf("creating custom template file: %v", err)
+			t.Fatalf("creating custom config file: %v", err)
 		}
 		defer f.Close()
-		customTpl := `---
+		customConfigContent := `---
 defaults:
   containerRegistry: example.com/test_fahNae5i
 services:
   backend:
     tag: 2.0.1
 `
-		if _, err := f.WriteString(customTpl); err != nil {
-			t.Fatalf("writing custom template to file %q: %v", customConfigFileName, err)
+		if _, err := f.WriteString(customConfigContent); err != nil {
+			t.Fatalf("writing custom config to file %q: %v", customConfigFileName, err)
 		}
 
 		cmd := setup.Cmd()
@@ -118,6 +118,55 @@ services:
 		secDir := path.Join(testDir, setup.SecretsDirName)
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-proxy:latest")
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-backend:2.0.1")
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+
+	t.Run("executing setup.Cmd() with new directory with --config flag twice", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		customConfigFileName := path.Join(testDir, "custom-config.yml")
+		f, err := os.OpenFile(customConfigFileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			t.Fatalf("creating custom config file: %v", err)
+		}
+		defer f.Close()
+		customConfigContent := `---
+defaults:
+  containerRegistry: example.com/test_Ohm7uafo
+`
+		if _, err := f.WriteString(customConfigContent); err != nil {
+			t.Fatalf("writing custom config to file %q: %v", customConfigFileName, err)
+		}
+
+		customConfigFileName2 := path.Join(testDir, "custom-config-2.yml")
+		f2, err := os.OpenFile(customConfigFileName2, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			t.Fatalf("creating custom config file: %v", err)
+		}
+		defer f2.Close()
+		customConfigContent2 := `---
+defaults:
+  tag: test_Ra9va3ie
+`
+		if _, err := f2.WriteString(customConfigContent2); err != nil {
+			t.Fatalf("writing custom config to file %q: %v", customConfigFileName2, err)
+		}
+
+		cmd := setup.Cmd()
+		cmd.SetArgs([]string{testDir, "--config", customConfigFileName, "--config", customConfigFileName2})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing setup subcommand: %v", err)
+		}
+
+		secDir := path.Join(testDir, setup.SecretsDirName)
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Ohm7uafo/openslides-proxy:test_Ra9va3ie")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -240,7 +289,9 @@ services:
     tag: 2.0.0
 `
 		myFileName := "my-filename-ooph1OhShi.yml"
-		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
+		c := make([][]byte, 2)
+		c = append(c, []byte(customConfig))
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -260,7 +311,9 @@ filename: my-filename-eab7iv8Oom.yml
 disablePostgres: true
 `
 		myFileName := "my-filename-eab7iv8Oom.yml"
-		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
+		c := make([][]byte, 2)
+		c = append(c, []byte(customConfig))
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, myFileName, "image: postgres:11")
@@ -272,7 +325,9 @@ filename: my-filename-Koo0eidifg.yml
 disableDependsOn: true
 `
 		myFileName := "my-filename-Koo0eidifg.yml"
-		if err := setup.Setup(testDir, false, nil, []byte(customConfig)); err != nil {
+		c := make([][]byte, 2)
+		c = append(c, []byte(customConfig))
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, myFileName, "depends_on")
