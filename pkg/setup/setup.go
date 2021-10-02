@@ -49,8 +49,8 @@ func Cmd() *cobra.Command {
 	}
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
-	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
-	configFiles := cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file, can be use more then once")
+	tplFile := config.FlagTpl(cmd)
+	configFiles := config.FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]

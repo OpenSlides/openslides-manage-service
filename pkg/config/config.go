@@ -38,8 +38,8 @@ func Cmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 	}
 
-	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
-	configFiles := cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file, can be use more then once")
+	tplFile := FlagTpl(cmd)
+	configFiles := FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
@@ -70,6 +70,16 @@ func Cmd() *cobra.Command {
 		return nil
 	}
 	return cmd
+}
+
+// FlagTpl setups the template flag to the given cobra command.
+func FlagTpl(cmd *cobra.Command) *string {
+	return cmd.Flags().StringP("template", "t", "", "custom YAML template file")
+}
+
+// FlagConfig setups the config flag to the given cobra command.
+func FlagConfig(cmd *cobra.Command) *[]string {
+	return cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file, can be use more then once, ordering is important")
 }
 
 // Config rebuilds the YAML file for using Docker Compose or Docker Swarm.

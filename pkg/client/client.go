@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
@@ -32,6 +33,7 @@ func RootCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		setup.Cmd(),
+		config.Cmd(),
 		initialdata.Cmd(),
 		setpassword.Cmd(),
 		tunnel.Cmd(),
