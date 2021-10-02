@@ -181,12 +181,7 @@ func SetSuperadminPassword(ctx context.Context, superadminSecretFile string, ds 
 	if err != nil {
 		return fmt.Errorf("reading file %q: %w", superadminSecretFile, err)
 	}
-
-	in := &proto.SetPasswordRequest{
-		UserID:   1,
-		Password: string(sapw),
-	}
-	if _, err := setpassword.SetPassword(ctx, in, ds, auth); err != nil {
+	if err := setpassword.Execute(ctx, 1, string(sapw), ds, auth); err != nil {
 		return fmt.Errorf("setting superadmin password: %w", err)
 	}
 	return nil
