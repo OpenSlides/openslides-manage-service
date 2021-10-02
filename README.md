@@ -28,7 +28,7 @@ Then run:
     $ docker-compose up --detach
     $ ./openslides initial-data
 
-Now open https://localhost:8000, login and have fun. Afterwars run:
+Now open https://localhost:8000, login and have fun (TODO: HTTPS-support is still missing). Afterwars run:
 
     $ docker-compose stop
 
@@ -36,15 +36,19 @@ To remove all containers run:
 
     $ docker-compose rm
 
+It is also possible to use Docker Swarm instead of Docker Compose for bigger
+setups. Let us know if this is interesting for you.
+
 
 ## Configuration of the generated YAML file
 
-The setup command generates also a YAML file (default filename: `docker-compose.yml`).
-This step can be configured with a YAML formated config file. E. g. run:
+The setup command generates also a YAML file (default filename: `docker-compose.yml`)
+with the container configuration for all services. This step can be configured with
+a YAML formated config file. E. g. to get a customized YAML file run:
 
     $ ./openslides setup --config my-config.yml .
 
-See [pkg/setup/default-config.yml] for syntax and defaults.
+See the [default config](pkg/setup/default-config.yml) for syntax and defaults.
 
 
 ## Development
