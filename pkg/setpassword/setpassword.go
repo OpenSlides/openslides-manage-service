@@ -82,17 +82,26 @@ type auth interface {
 }
 
 // SetPassword gets the hash and sets the password for the given user.
+// This function is the server side entrypoint for this package.
 func SetPassword(ctx context.Context, in *proto.SetPasswordRequest, ds datastore, auth auth) (*proto.SetPasswordResponse, error) {
-	hash, err := auth.Hash(ctx, in.Password)
+	if err := Execute(ctx, in.UserID, in.Password, ds, auth); err != nil {
+		return nil, fmt.Errorf("setting password for user %d: %w", in.UserID, err)
+	}
+	return &proto.SetPasswordResponse{}, nil
+}
+
+// Execute gets the hash and sets the password for the given user.
+func Execute(ctx context.Context, userID int64, password string, ds datastore, auth auth) error {
+	hash, err := auth.Hash(ctx, password)
 	if err != nil {
-		return nil, fmt.Errorf("hashing passwort: %w", err)
+		return fmt.Errorf("hashing passwort: %w", err)
 	}
 
-	key := fmt.Sprintf("user/%d/password", in.UserID)
+	key := fmt.Sprintf("user/%d/password", userID)
 	value := []byte(`"` + hash + `"`)
 	if err := ds.Set(ctx, key, value); err != nil {
-		return nil, fmt.Errorf("writing key %q to datastore: %w", key, err)
+		return fmt.Errorf("writing key %q to datastore: %w", key, err)
 	}
 
-	return &proto.SetPasswordResponse{}, nil
+	return nil
 }
