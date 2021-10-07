@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 
@@ -15,9 +16,10 @@ import (
 )
 
 const (
-	authTokenKeyFileName  = "auth_token_key"
-	authCookieKeyFileName = "auth_cookie_key"
-	dbDirName             = "db-data"
+	subDirPerms           fs.FileMode = 0770
+	authTokenKeyFileName              = "auth_token_key"
+	authCookieKeyFileName             = "auth_cookie_key"
+	dbDirName                         = "db-data"
 )
 
 const (
@@ -101,7 +103,7 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 
 	// Create secrets directory
 	secrDir := path.Join(dir, SecretsDirName)
-	if err := os.MkdirAll(secrDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(secrDir, subDirPerms); err != nil {
 		return fmt.Errorf("creating secrets directory at %q: %w", dir, err)
 	}
 
@@ -110,7 +112,7 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	if err != nil {
 		return fmt.Errorf("creating random key for auth token: %w", err)
 	}
-	if err := shared.CreateFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
+	if err := shared.CreateFile(secrDir, force, authTokenKeyFileName, secrToken, true); err != nil {
 		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
 	}
 
@@ -119,17 +121,17 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	if err != nil {
 		return fmt.Errorf("creating random key for auth cookie: %w", err)
 	}
-	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
+	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie, true); err != nil {
 		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
 	}
 
 	// Create supereadmin file
-	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
+	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword), true); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
 
 	// Create database directory
-	if err := os.MkdirAll(path.Join(dir, dbDirName), os.ModePerm); err != nil {
+	if err := os.MkdirAll(path.Join(dir, dbDirName), subDirPerms); err != nil {
 		return fmt.Errorf("creating database directory at %q: %w", dir, err)
 	}
 
