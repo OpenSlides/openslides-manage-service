@@ -459,6 +459,7 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_NAME: openslides
   DATASTORE_DATABASE_USER: openslides
   DATASTORE_DATABASE_PASSWORD: openslides
+  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/datastore_postgres_password
 
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: 9012
@@ -479,6 +480,7 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_NAME: openslides
   MEDIA_DATABASE_USER: openslides
   MEDIA_DATABASE_PASSWORD: openslides
+  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/media_postgres_password
   MEDIA_DATABASE_TABLE: mediafile_data
   MEDIA_CACHE_SIZE: 10
   MEDIA_CACHE_DATA_MIN_SIZE_KB: 0

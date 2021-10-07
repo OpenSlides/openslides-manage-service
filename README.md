@@ -25,7 +25,10 @@ running. Check if you have to run docker as local user or as root.
 Then run:
 
     $ ./openslides setup .
-    $ docker-compose up --detach
+    $ docker-compose up
+
+Wait until all services are available. Then run in a second terminal:
+
     $ ./openslides initial-data
 
 Now open https://localhost:8000, login and have fun (TODO: HTTPS-support is still missing). Afterwars run:
