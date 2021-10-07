@@ -16,10 +16,12 @@ import (
 )
 
 const (
-	subDirPerms           fs.FileMode = 0770
-	authTokenKeyFileName              = "auth_token_key"
-	authCookieKeyFileName             = "auth_cookie_key"
-	dbDirName                         = "db-data"
+	subDirPerms                       fs.FileMode = 0770
+	authTokenKeyFileName                          = "auth_token_key"
+	authCookieKeyFileName                         = "auth_cookie_key"
+	datastorePostgresPasswordFileName             = "datastore_postgres_password"
+	mediaPostgresPasswordFileName                 = "media_postgres_password"
+	dbDirName                                     = "db-data"
 )
 
 const (
@@ -123,6 +125,15 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	}
 	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie, true); err != nil {
 		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
+	}
+
+	// Create postgres password files
+	postgresPassword := []byte("openslides")
+	if err := shared.CreateFile(secrDir, force, datastorePostgresPasswordFileName, postgresPassword, true); err != nil {
+		return fmt.Errorf("creating secret datastore postgres password file at %q: %w", dir, err)
+	}
+	if err := shared.CreateFile(secrDir, force, mediaPostgresPasswordFileName, postgresPassword, true); err != nil {
+		return fmt.Errorf("creating secret media postgres password file at %q: %w", dir, err)
 	}
 
 	// Create supereadmin file
