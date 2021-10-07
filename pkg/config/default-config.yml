@@ -1,0 +1,94 @@
+---
+# Name of the generated YAML file.
+filename: docker-compose.yml
+
+# The OpenSlides proxy service listens on this address.
+host: 127.0.0.1
+port: 8000
+
+# TODO: Remove these options after manage service is routed through the proxy.
+manageHost: 127.0.0.1
+managePort: 9008
+# TODO end ###############
+
+# Two options to disable the postgres service or the depends_on section in every service.
+disablePostgres: false
+disableDependsOn: false
+
+# Defaults for all OpenSlides services.
+defaults:
+  containerRegistry: ghcr.io/openslides/openslides
+  tag: latest
+
+# These environment variables are injected into every OpenSlides service
+# via YAML merge type (https://yaml.org/type/merge.html).
+defaultEnvironment:
+  ACTION_HOST: backend
+  ACTION_PORT: 9002
+  PRESENTER_HOST: backend
+  PRESENTER_PORT: 9003
+
+  DATASTORE_READER_HOST: datastore-reader
+  DATASTORE_READER_PORT: 9010
+  DATASTORE_WRITER_HOST: datastore-writer
+  DATASTORE_WRITER_PORT: 9011
+  DATASTORE_DATABASE_HOST: postgres
+  DATASTORE_DATABASE_PORT: 5432
+  DATASTORE_DATABASE_NAME: openslides
+  DATASTORE_DATABASE_USER: openslides
+  DATASTORE_DATABASE_PASSWORD: openslides
+
+  AUTOUPDATE_HOST: autoupdate
+  AUTOUPDATE_PORT: 9012
+
+  AUTH_HOST: auth
+  AUTH_PORT: 9004
+
+  CACHE_HOST: redis
+  CACHE_PORT: 6379
+
+  MESSAGE_BUS_HOST: redis
+  MESSAGE_BUS_PORT: 6379
+
+  MEDIA_HOST: media
+  MEDIA_PORT: 9006
+  MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_PORT: 5432
+  MEDIA_DATABASE_NAME: openslides
+  MEDIA_DATABASE_USER: openslides
+  MEDIA_DATABASE_PASSWORD: openslides
+  MEDIA_DATABASE_TABLE: mediafile_data
+  MEDIA_CACHE_SIZE: 10
+  MEDIA_CACHE_DATA_MIN_SIZE_KB: 0
+  MEDIA_CACHE_DATA_MAX_SIZE_KB: 10240
+
+  ICC_HOST: icc
+  ICC_PORT: 9013
+  ICC_REDIS_HOST: redis
+  ICC_REDIS_PORT: 6379
+
+  MANAGE_HOST: manage
+  MANAGE_PORT: 9008
+
+# You can customize single services using the services property. All
+# properties from the "defaults" section are available here. Service names
+# are written in camelCase.
+#
+# Example:
+#
+# services:
+#   datastoreReader:
+#     tag: my-tag
+#   autoupdate:
+#     containerRegistry: example.com/my-registry
+#
+# You can also define some additional content for all services. This will just add the
+# object to the respective service blob.
+#
+# Example:
+#
+# services:
+#   autoupdate:
+#     additionalContent:
+#       deploy:
+#         replicas: 4

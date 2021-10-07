@@ -3,26 +3,22 @@ package setup
 import (
 	"bytes"
 	"crypto/rand"
-	_ "embed" // Blank import required to use go directive.
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/config"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/spf13/cobra"
 )
 
 const (
-	ymlFileName           = "docker-compose.yml"
 	authTokenKeyFileName  = "auth_token_key"
 	authCookieKeyFileName = "auth_cookie_key"
 	dbDirName             = "db-data"
 )
-
-//go:embed default-docker-compose.yml
-var defaultDockerComposeYml []byte
 
 const (
 	// SetupHelp contains the short help text for the command.
@@ -53,7 +49,8 @@ func Cmd() *cobra.Command {
 	}
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
-	tplFile := cmd.Flags().StringP("template", "t", "", "custom YAML template file")
+	tplFile := config.FlagTpl(cmd)
+	configFiles := config.FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
@@ -67,7 +64,18 @@ func Cmd() *cobra.Command {
 			tpl = fc
 		}
 
-		if err := Setup(dir, *force, tpl); err != nil {
+		var config [][]byte
+		if len(*configFiles) > 0 {
+			for _, configFile := range *configFiles {
+				fc, err := os.ReadFile(configFile)
+				if err != nil {
+					return fmt.Errorf("reading file %q: %w", configFile, err)
+				}
+				config = append(config, fc)
+			}
+		}
+
+		if err := Setup(dir, *force, tpl, config); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -79,18 +87,15 @@ func Cmd() *cobra.Command {
 // directories for database and SSL certs volumes.
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
-// can be provided.
-func Setup(dir string, force bool, tpl []byte) error {
+// and YAML configs can be provided.
+func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
-	if tpl == nil {
-		tpl = defaultDockerComposeYml
-	}
-	if err := createFile(dir, force, ymlFileName, tpl); err != nil {
+	if err := config.CreateYmlFile(dir, force, tplContent, cfgContent); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
@@ -105,7 +110,7 @@ func Setup(dir string, force bool, tpl []byte) error {
 	if err != nil {
 		return fmt.Errorf("creating random key for auth token: %w", err)
 	}
-	if err := createFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
+	if err := shared.CreateFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
 		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
 	}
 
@@ -114,12 +119,12 @@ func Setup(dir string, force bool, tpl []byte) error {
 	if err != nil {
 		return fmt.Errorf("creating random key for auth cookie: %w", err)
 	}
-	if err := createFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
+	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
 		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
 	}
 
 	// Create supereadmin file
-	if err := createFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
+	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
 
@@ -129,43 +134,6 @@ func Setup(dir string, force bool, tpl []byte) error {
 	}
 
 	return nil
-}
-
-func createFile(dir string, force bool, name string, content []byte) error {
-	p := path.Join(dir, name)
-
-	pExists, err := fileExists(p)
-	if err != nil {
-		return fmt.Errorf("checking file existance: %w", err)
-	}
-	if !force && pExists {
-		// No force-mode and file already exists, so skip this file.
-		return nil
-	}
-
-	w, err := os.Create(p)
-	if err != nil {
-		return fmt.Errorf("creating file %q: %w", p, err)
-	}
-	defer w.Close()
-
-	if _, err := w.Write(content); err != nil {
-		return fmt.Errorf("writing content to file %q: %w", p, err)
-	}
-	return nil
-}
-
-// fileExists is a small helper function to check if a file already exists. It is not
-// save in concurrent usage.
-func fileExists(p string) (bool, error) {
-	_, err := os.Stat(p)
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	}
-	return false, fmt.Errorf("checking existance of file %s: %w", p, err)
 }
 
 func randomSecret() ([]byte, error) {

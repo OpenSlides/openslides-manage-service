@@ -1,0 +1,328 @@
+---
+x-default-environment: &default-environment
+  {{- with .DefaultEnvironment }}
+  ACTION_HOST: {{ .ACTION_HOST }}
+  ACTION_PORT: {{ .ACTION_PORT }}
+  PRESENTER_HOST: {{ .PRESENTER_HOST }}
+  PRESENTER_PORT: {{ .PRESENTER_PORT }}
+
+  DATASTORE_READER_HOST: {{ .DATASTORE_READER_HOST }}
+  DATASTORE_READER_PORT: {{ .DATASTORE_READER_PORT }}
+  DATASTORE_WRITER_HOST: {{ .DATASTORE_WRITER_HOST }}
+  DATASTORE_WRITER_PORT: {{ .DATASTORE_WRITER_PORT }}
+  DATASTORE_DATABASE_HOST: {{ .DATASTORE_DATABASE_HOST }}
+  DATASTORE_DATABASE_PORT: {{ .DATASTORE_DATABASE_PORT}}
+  DATASTORE_DATABASE_NAME: {{ .DATASTORE_DATABASE_NAME }}
+  DATASTORE_DATABASE_USER: {{ .DATASTORE_DATABASE_USER }}
+  DATASTORE_DATABASE_PASSWORD: {{ .DATASTORE_DATABASE_PASSWORD }}
+
+  AUTOUPDATE_HOST: {{ .AUTOUPDATE_HOST }}
+  AUTOUPDATE_PORT: {{ .AUTOUPDATE_PORT }}
+
+  AUTH_HOST: {{ .AUTH_HOST }}
+  AUTH_PORT: {{ .AUTH_PORT }}
+
+  CACHE_HOST: {{ .CACHE_HOST }}
+  CACHE_PORT: {{ .CACHE_PORT }}
+
+  MESSAGE_BUS_HOST: {{ .MESSAGE_BUS_HOST }}
+  MESSAGE_BUS_PORT: {{ .MESSAGE_BUS_PORT }}
+
+  MEDIA_HOST: {{ .MEDIA_HOST }}
+  MEDIA_PORT: {{ .MEDIA_PORT }}
+  MEDIA_DATABASE_HOST: {{ .MEDIA_DATABASE_HOST }}
+  MEDIA_DATABASE_PORT: {{ .MEDIA_DATABASE_PORT }}
+  MEDIA_DATABASE_NAME: {{ .MEDIA_DATABASE_NAME }}
+  MEDIA_DATABASE_USER: {{ .MEDIA_DATABASE_USER }}
+  MEDIA_DATABASE_PASSWORD: {{ .MEDIA_DATABASE_PASSWORD }}
+  MEDIA_DATABASE_TABLE: {{ .MEDIA_DATABASE_TABLE }}
+  MEDIA_CACHE_SIZE: {{ .MEDIA_CACHE_SIZE }}
+  MEDIA_CACHE_DATA_MIN_SIZE_KB: {{ .MEDIA_CACHE_DATA_MIN_SIZE_KB }}
+  MEDIA_CACHE_DATA_MAX_SIZE_KB: {{ .MEDIA_CACHE_DATA_MAX_SIZE_KB }}
+
+  ICC_HOST: {{ .ICC_HOST }}
+  ICC_PORT: {{ .ICC_PORT }}
+  ICC_REDIS_HOST: {{ .ICC_REDIS_HOST }}
+  ICC_REDIS_PORT: {{ .ICC_REDIS_PORT }}
+
+  MANAGE_HOST: {{ .MANAGE_HOST }}
+  MANAGE_PORT: {{ .MANAGE_PORT }}
+  {{- end}}
+
+services:
+
+  {{- with .Services.proxy }}
+  proxy:
+    image: {{ .ContainerRegistry }}/openslides-proxy:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - client
+      - backend
+      - autoupdate
+      - auth
+      - media
+      - icc
+    {{- end }}
+    environment:
+      << : *default-environment
+    networks:
+      - uplink
+      - frontend
+    ports:
+      - {{ $.Host }}:{{ $.Port }}:8000
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.client }}
+
+  client:
+    image: {{ .ContainerRegistry }}/openslides-client:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - backend
+      - autoupdate
+      - auth
+      - media
+      - icc
+    {{- end }}
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+  {{- end }}
+
+
+  {{- with .Services.backend }}
+
+  backend:
+    image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - datastore-reader
+      - datastore-writer
+      - auth
+      - postgres
+    {{- end }}
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.datastoreReader }}
+
+  datastore-reader:
+    image: {{ .ContainerRegistry }}/openslides-datastore-reader:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - postgres
+    {{- end }}
+    environment:
+      << : *default-environment
+      NUM_WORKERS: 8
+    networks:
+      - datastore-reader
+      - postgres
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.datastoreWriter }}
+
+  datastore-writer:
+    image: {{ .ContainerRegistry }}/openslides-datastore-writer:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - postgres
+      - redis
+    {{- end }}
+    environment:
+      << : *default-environment
+    networks:
+      - datastore-reader
+      - datastore-writer
+      - postgres
+      - redis
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- if .DisablePostgres }}{{ else }}{{- with .Services.postgres }}
+
+  postgres:
+    image: postgres:11
+    environment:
+      << : *default-environment
+      POSTGRES_USER: openslides
+      POSTGRES_PASSWORD: openslides
+      POSTGRES_DB: openslides
+      PGDATA: /var/lib/postgresql/data/pgdata
+    networks:
+      - postgres
+    volumes:
+      - ./db-data:/var/lib/postgresql/data
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}{{- end }}
+
+
+  {{- with .Services.autoupdate }}
+
+  autoupdate:
+    image: {{ .ContainerRegistry }}/openslides-autoupdate:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - datastore-reader
+      - redis
+    {{- end }}
+    environment:
+      << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
+    networks:
+      - frontend
+      - datastore-reader
+      - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.auth }}
+
+  auth:
+    image: {{ .ContainerRegistry }}/openslides-auth:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - datastore-reader
+      - redis
+    {{- end }}
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - datastore-reader
+      - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.redis }}
+
+  redis:
+    image: redis:latest
+    environment:
+      << : *default-environment
+    networks:
+      - redis
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.media }}
+
+  media:
+    image: {{ .ContainerRegistry }}/openslides-media:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - backend
+      - postgres
+    {{- end }}
+    environment:
+      << : *default-environment
+      # CHECK_REQUEST_URL:server:8000/check-media/
+    networks:
+      - frontend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.icc }}
+
+  icc:
+    image: {{ .ContainerRegistry }}/openslides-icc:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - datastore-reader
+      - postgres
+      - redis
+    {{- end }}
+    environment:
+      << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
+    networks:
+      - frontend
+      - datastore-reader
+      - postgres
+      - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.manage }}
+
+  manage:
+    image: {{ .ContainerRegistry }}/openslides-manage:{{ .Tag }}
+    {{- if $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - datastore-reader
+      - datastore-writer
+      - auth
+    {{- end }}
+    environment:
+      << : *default-environment
+    networks:
+      - uplink
+      - frontend
+      - datastore-reader
+      - datastore-writer
+      - postgres
+      - redis
+    secrets:
+      - superadmin
+    ports:
+      - {{ $.ManageHost }}:{{ $.ManagePort }}:9008
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+networks:
+  uplink:
+  frontend:
+    internal: true
+  datastore-reader:
+    internal: true
+  datastore-writer:
+    internal: true
+  postgres:
+    internal: true
+  redis:
+    internal: true
+
+secrets:
+  auth_token_key:
+    file: ./secrets/auth_token_key
+  auth_cookie_key:
+    file: ./secrets/auth_cookie_key
+  superadmin:
+    file: ./secrets/superadmin

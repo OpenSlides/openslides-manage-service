@@ -85,6 +85,94 @@ func TestCmd(t *testing.T) {
 		testDirectory(t, testDir, "db-data")
 	})
 
+	t.Run("executing setup.Cmd() with new directory with --config flag", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		customConfigFileName := path.Join(testDir, "custom-config.yml")
+		f, err := os.OpenFile(customConfigFileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			t.Fatalf("creating custom config file: %v", err)
+		}
+		defer f.Close()
+		customConfigContent := `---
+defaults:
+  containerRegistry: example.com/test_fahNae5i
+services:
+  backend:
+    tag: 2.0.1
+`
+		if _, err := f.WriteString(customConfigContent); err != nil {
+			t.Fatalf("writing custom config to file %q: %v", customConfigFileName, err)
+		}
+
+		cmd := setup.Cmd()
+		cmd.SetArgs([]string{testDir, "--config", customConfigFileName})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing setup subcommand: %v", err)
+		}
+
+		secDir := path.Join(testDir, setup.SecretsDirName)
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-proxy:latest")
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-backend:2.0.1")
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+
+	t.Run("executing setup.Cmd() with new directory with --config flag twice", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		customConfigFileName := path.Join(testDir, "custom-config.yml")
+		f, err := os.OpenFile(customConfigFileName, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			t.Fatalf("creating custom config file: %v", err)
+		}
+		defer f.Close()
+		customConfigContent := `---
+defaults:
+  containerRegistry: example.com/test_Ohm7uafo
+`
+		if _, err := f.WriteString(customConfigContent); err != nil {
+			t.Fatalf("writing custom config to file %q: %v", customConfigFileName, err)
+		}
+
+		customConfigFileName2 := path.Join(testDir, "custom-config-2.yml")
+		f2, err := os.OpenFile(customConfigFileName2, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			t.Fatalf("creating custom config file: %v", err)
+		}
+		defer f2.Close()
+		customConfigContent2 := `---
+defaults:
+  tag: test_Ra9va3ie
+`
+		if _, err := f2.WriteString(customConfigContent2); err != nil {
+			t.Fatalf("writing custom config to file %q: %v", customConfigFileName2, err)
+		}
+
+		cmd := setup.Cmd()
+		cmd.SetArgs([]string{testDir, "--config", customConfigFileName, "--config", customConfigFileName2})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing setup subcommand: %v", err)
+		}
+
+		secDir := path.Join(testDir, setup.SecretsDirName)
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Ohm7uafo/openslides-proxy:test_Ra9va3ie")
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+
 }
 
 func TestSetupCommon(t *testing.T) {
@@ -95,7 +183,7 @@ func TestSetupCommon(t *testing.T) {
 	defer os.RemoveAll(testDir)
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
-		if err := setup.Setup(testDir, false, nil); err != nil {
+		if err := setup.Setup(testDir, false, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -117,7 +205,7 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("writing to file %q: %v", p, err)
 		}
 
-		if err := setup.Setup(testDir, false, nil); err != nil {
+		if err := setup.Setup(testDir, false, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -129,7 +217,7 @@ func TestSetupCommon(t *testing.T) {
 	})
 
 	t.Run("running setup.Setup() with force flag with changing existant files", func(t *testing.T) {
-		if err := setup.Setup(testDir, true, nil); err != nil {
+		if err := setup.Setup(testDir, true, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -150,7 +238,7 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 
 	t.Run("running setup.Setup() and give a previously not existing subdirectory", func(t *testing.T) {
 		dir := path.Join(testDir, "new_directory")
-		if err := setup.Setup(dir, false, nil); err != nil {
+		if err := setup.Setup(dir, false, nil, nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(dir, setup.SecretsDirName)
@@ -171,7 +259,7 @@ func TestSetupExternalTemplate(t *testing.T) {
 
 	t.Run("running setup.Setup() and give an external template", func(t *testing.T) {
 		tplText := "test-from-external-template"
-		if err := setup.Setup(testDir, false, []byte(tplText)); err != nil {
+		if err := setup.Setup(testDir, false, []byte(tplText), nil); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -180,6 +268,69 @@ func TestSetupExternalTemplate(t *testing.T) {
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
+	})
+}
+
+func TestSetupCommonWithConfig(t *testing.T) {
+	testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+	if err != nil {
+		t.Fatalf("generating temporary directory failed: %v", err)
+	}
+	defer os.RemoveAll(testDir)
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using a custom config", func(t *testing.T) {
+		customConfig := `---
+filename: my-filename-ooph1OhShi.yml
+port: 8001
+defaults:
+  containerRegistry: example.com/test_Waetai0ohf
+services:
+  proxy:
+    tag: 2.0.0
+`
+		myFileName := "my-filename-ooph1OhShi.yml"
+		c := make([][]byte, 2)
+		c = append(c, []byte(customConfig))
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		secDir := path.Join(testDir, setup.SecretsDirName)
+		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
+		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-client:latest")
+		testFileContains(t, testDir, myFileName, "ports:\n      - 127.0.0.1:8001:8000")
+		testFileContains(t, testDir, myFileName, "image: postgres:11")
+		testKeyFile(t, secDir, "auth_token_key")
+		testKeyFile(t, secDir, "auth_cookie_key")
+		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
+		testDirectory(t, testDir, "db-data")
+	})
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using another custom config", func(t *testing.T) {
+		customConfig := `---
+filename: my-filename-eab7iv8Oom.yml
+disablePostgres: true
+`
+		myFileName := "my-filename-eab7iv8Oom.yml"
+		c := make([][]byte, 2)
+		c = append(c, []byte(customConfig))
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testFileNotContains(t, testDir, myFileName, "image: postgres:11")
+	})
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using yet another custom config", func(t *testing.T) {
+		customConfig := `---
+filename: my-filename-Koo0eidifg.yml
+disableDependsOn: true
+`
+		myFileName := "my-filename-Koo0eidifg.yml"
+		c := make([][]byte, 2)
+		c = append(c, []byte(customConfig))
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testFileNotContains(t, testDir, myFileName, "depends_on")
 	})
 }
 
@@ -198,6 +349,38 @@ func testContentFile(t testing.TB, dir, name, expected string) {
 	got := string(content)
 	if got != expected {
 		t.Fatalf("wrong content of file %q, got %q, expected %q", p, got, expected)
+	}
+}
+
+func testFileContains(t testing.TB, dir, name, exp string) {
+	t.Helper()
+	p := path.Join(dir, name)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file %q does not exist, expected existance", p)
+	}
+	content, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("error reading file %q: %v", p, err)
+	}
+	got := string(content)
+	if !strings.Contains(got, exp) {
+		t.Fatalf("wrong content of file %q, which should contain %q", p, exp)
+	}
+}
+
+func testFileNotContains(t testing.TB, dir, name, exp string) {
+	t.Helper()
+	p := path.Join(dir, name)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file %q does not exist, expected existance", p)
+	}
+	content, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("error reading file %q: %v", p, err)
+	}
+	got := string(content)
+	if strings.Contains(got, exp) {
+		t.Fatalf("wrong content of file %q, which should not contain %q", p, exp)
 	}
 }
 
@@ -261,7 +444,14 @@ x-default-environment: &default-environment
   MEDIA_HOST: media
   MEDIA_PORT: 9006
   MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
+  MEDIA_DATABASE_USER: openslides
+  MEDIA_DATABASE_PASSWORD: openslides
+  MEDIA_DATABASE_TABLE: mediafile_data
+  MEDIA_CACHE_SIZE: 10
+  MEDIA_CACHE_DATA_MIN_SIZE_KB: 0
+  MEDIA_CACHE_DATA_MAX_SIZE_KB: 10240
 
   ICC_HOST: icc
   ICC_PORT: 9013
@@ -403,6 +593,7 @@ services:
       - postgres
     environment:
       << : *default-environment
+      # CHECK_REQUEST_URL:server:8000/check-media/
     networks:
       - frontend
       - datastore-reader
@@ -472,7 +663,7 @@ secrets:
 
 func TestSetupNoDirectory(t *testing.T) {
 	hasErrMsg := "not a directory"
-	err := setup.Setup("setup_test.go", false, nil)
+	err := setup.Setup("setup_test.go", false, nil, nil)
 	if !strings.Contains(err.Error(), hasErrMsg) {
 		t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), hasErrMsg)
 	}
