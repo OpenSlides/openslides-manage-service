@@ -18,6 +18,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 const runDir = "/run"
@@ -62,6 +63,7 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
+	fmt.Println(metadata.FromIncomingContext(ctx))
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
 	auth := auth.New(s.config.authURL())
 	return initialdata.InitialData(ctx, in, runDir, ds, auth)

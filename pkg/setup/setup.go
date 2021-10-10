@@ -142,7 +142,8 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	}
 
 	// Create database directory
-	if err := os.MkdirAll(path.Join(dir, dbDirName), subDirPerms); err != nil {
+	// Attention: For unknown reason it is not possible to use perms 0770 here. Docker Compose does not like it ...
+	if err := os.MkdirAll(path.Join(dir, dbDirName), 0777); err != nil {
 		return fmt.Errorf("creating database directory at %q: %w", dir, err)
 	}
 
