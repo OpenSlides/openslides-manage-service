@@ -15,6 +15,7 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_NAME: {{ .DATASTORE_DATABASE_NAME }}
   DATASTORE_DATABASE_USER: {{ .DATASTORE_DATABASE_USER }}
   DATASTORE_DATABASE_PASSWORD: {{ .DATASTORE_DATABASE_PASSWORD }}
+  DATASTORE_DATABASE_PASSWORD_FILE: {{ .DATASTORE_DATABASE_PASSWORD_FILE }}
 
   AUTOUPDATE_HOST: {{ .AUTOUPDATE_HOST }}
   AUTOUPDATE_PORT: {{ .AUTOUPDATE_PORT }}
@@ -35,6 +36,7 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_NAME: {{ .MEDIA_DATABASE_NAME }}
   MEDIA_DATABASE_USER: {{ .MEDIA_DATABASE_USER }}
   MEDIA_DATABASE_PASSWORD: {{ .MEDIA_DATABASE_PASSWORD }}
+  MEDIA_DATABASE_PASSWORD_FILE: {{ .MEDIA_DATABASE_PASSWORD_FILE }}
   MEDIA_DATABASE_TABLE: {{ .MEDIA_DATABASE_TABLE }}
   MEDIA_CACHE_SIZE: {{ .MEDIA_CACHE_SIZE }}
   MEDIA_CACHE_DATA_MIN_SIZE_KB: {{ .MEDIA_CACHE_DATA_MIN_SIZE_KB }}
@@ -115,6 +117,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - datastore_postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -133,6 +136,8 @@ services:
     networks:
       - datastore-reader
       - postgres
+    secrets:
+      - datastore_postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -153,6 +158,8 @@ services:
       - datastore-writer
       - postgres
       - redis
+    secrets:
+      - datastore_postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -164,11 +171,13 @@ services:
     environment:
       << : *default-environment
       POSTGRES_USER: openslides
-      POSTGRES_PASSWORD: openslides
+      POSTGRES_PASSWORD_FILE: /run/secrets/datastore_postgres_password
       POSTGRES_DB: openslides
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres
+    secrets:
+      - datastore_postgres_password
     volumes:
       - ./db-data:/var/lib/postgresql/data
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
@@ -250,6 +259,8 @@ services:
       - datastore-reader
       - datastore-writer
       - postgres
+    secrets:
+      - media_postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -326,3 +337,7 @@ secrets:
     file: ./secrets/auth_cookie_key
   superadmin:
     file: ./secrets/superadmin
+  datastore_postgres_password:
+    file: ./secrets/datastore_postgres_password
+  media_postgres_password:
+    file: ./secrets/media_postgres_password

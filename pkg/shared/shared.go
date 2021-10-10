@@ -3,13 +3,14 @@ package shared
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 )
 
 // CreateFile creates a file in the given directory with the given content.
 // Use a truthy value for force to override an existing file.
-func CreateFile(dir string, force bool, name string, content []byte) error {
+func CreateFile(dir string, force bool, name string, content []byte, secure bool) error {
 	p := path.Join(dir, name)
 
 	pExists, err := fileExists(p)
@@ -21,14 +22,13 @@ func CreateFile(dir string, force bool, name string, content []byte) error {
 		return nil
 	}
 
-	w, err := os.Create(p)
-	if err != nil {
-		return fmt.Errorf("creating file %q: %w", p, err)
+	var perm fs.FileMode
+	perm = 0666
+	if secure {
+		perm = 0660
 	}
-	defer w.Close()
-
-	if _, err := w.Write(content); err != nil {
-		return fmt.Errorf("writing content to file %q: %w", p, err)
+	if err := os.WriteFile(p, content, perm); err != nil {
+		return fmt.Errorf("creating and writing to file %q: %w", p, err)
 	}
 	return nil
 }

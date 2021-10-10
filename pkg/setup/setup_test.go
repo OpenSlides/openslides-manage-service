@@ -28,6 +28,8 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -49,6 +51,8 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -81,6 +85,8 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", customTpl)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -120,6 +126,8 @@ services:
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-backend:2.0.1")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -169,6 +177,8 @@ defaults:
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Ohm7uafo/openslides-proxy:test_Ra9va3ie")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -190,6 +200,8 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -212,6 +224,8 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -224,6 +238,8 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -245,6 +261,8 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, dir, "db-data")
 	})
@@ -266,6 +284,8 @@ func TestSetupExternalTemplate(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", tplText)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -301,6 +321,8 @@ services:
 		testFileContains(t, testDir, myFileName, "image: postgres:11")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testPasswordFile(t, secDir, "datastore_postgres_password")
+		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -403,6 +425,15 @@ func testKeyFile(t testing.TB, dir, name string) {
 	}
 }
 
+func testPasswordFile(t testing.TB, dir, name string) {
+	t.Helper()
+
+	p := path.Join(dir, name)
+	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file %q does not exist, expected existance", p)
+	}
+}
+
 func testDirectory(t testing.TB, dir, name string) {
 	t.Helper()
 
@@ -428,6 +459,7 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_NAME: openslides
   DATASTORE_DATABASE_USER: openslides
   DATASTORE_DATABASE_PASSWORD: openslides
+  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/datastore_postgres_password
 
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: 9012
@@ -448,6 +480,7 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_NAME: openslides
   MEDIA_DATABASE_USER: openslides
   MEDIA_DATABASE_PASSWORD: openslides
+  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/media_postgres_password
   MEDIA_DATABASE_TABLE: mediafile_data
   MEDIA_CACHE_SIZE: 10
   MEDIA_CACHE_DATA_MIN_SIZE_KB: 0
@@ -509,6 +542,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - datastore_postgres_password
 
   datastore-reader:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
@@ -520,6 +554,8 @@ services:
     networks:
       - datastore-reader
       - postgres
+    secrets:
+      - datastore_postgres_password
 
   datastore-writer:
     image: ghcr.io/openslides/openslides/openslides-datastore-writer:latest
@@ -533,17 +569,21 @@ services:
       - datastore-writer
       - postgres
       - redis
+    secrets:
+      - datastore_postgres_password
 
   postgres:
     image: postgres:11
     environment:
       << : *default-environment
       POSTGRES_USER: openslides
-      POSTGRES_PASSWORD: openslides
+      POSTGRES_PASSWORD_FILE: /run/secrets/datastore_postgres_password
       POSTGRES_DB: openslides
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres
+    secrets:
+      - datastore_postgres_password
     volumes:
       - ./db-data:/var/lib/postgresql/data
 
@@ -599,6 +639,8 @@ services:
       - datastore-reader
       - datastore-writer
       - postgres
+    secrets:
+      - media_postgres_password
 
   icc:
     image: ghcr.io/openslides/openslides/openslides-icc:latest
@@ -659,6 +701,10 @@ secrets:
     file: ./secrets/auth_cookie_key
   superadmin:
     file: ./secrets/superadmin
+  datastore_postgres_password:
+    file: ./secrets/datastore_postgres_password
+  media_postgres_password:
+    file: ./secrets/media_postgres_password
 `
 
 func TestSetupNoDirectory(t *testing.T) {
