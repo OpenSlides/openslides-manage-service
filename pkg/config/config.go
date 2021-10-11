@@ -175,6 +175,12 @@ type service struct {
 }
 
 func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
+	// Reverse config files
+	for i := len(configFiles)/2 - 1; i >= 0; i-- {
+		opp := len(configFiles) - 1 - i
+		configFiles[i], configFiles[opp] = configFiles[opp], configFiles[i]
+	}
+
 	// Append default config
 	configFiles = append(configFiles, defaultConfig)
 

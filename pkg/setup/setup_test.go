@@ -148,6 +148,7 @@ services:
 		customConfigContent := `---
 defaults:
   containerRegistry: example.com/test_Ohm7uafo
+  tag: wrong_tag_to_be_overridden
 `
 		if _, err := f.WriteString(customConfigContent); err != nil {
 			t.Fatalf("writing custom config to file %q: %v", customConfigFileName, err)
