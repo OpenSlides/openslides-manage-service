@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -16,31 +18,60 @@ const (
 
 	// DefaultTimeout holds the default timeout for the gRPC connection that is established by some commands.
 	DefaultTimeout = 5 * time.Second
+
+	// AuthHeader is the name of the header that contains the basic authoriztation password.
+	AuthHeader = "authorization"
 )
 
+// BasicAuth contains the password used in basic authorization process. The password has to be encoded in base64.
+// The struct implements https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
 type BasicAuth struct {
-	password string
+	password []byte
 }
 
+// GetRequestMetadata gets the current request metadata.
+// See https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
 func (a BasicAuth) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	enc := base64.StdEncoding.EncodeToString([]byte(a.password))
 	return map[string]string{
-		"Authorization": "Basic " + enc,
+		"authorization": base64.StdEncoding.EncodeToString(a.password),
 	}, nil
 }
 
+// RequireTransportSecurity indicates whether the credentials requires transport security.
+// See https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
 func (a BasicAuth) RequireTransportSecurity() bool {
 	return false
+}
+
+// CheckAuth checks if the basic authorization header is present and contains the correct password.
+func CheckAuth(ctx context.Context) error {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return fmt.Errorf("unable to get metadata from context")
+	}
+	a := md.Get("authorization")
+	pw, err := base64.StdEncoding.DecodeString(a[0])
+	if err != nil {
+		return fmt.Errorf("decoding password (base64): %w", err)
+	}
+	if bytes.Compare(pw, password()) != 0 {
+		return fmt.Errorf("password does not match")
+	}
+	return nil
 }
 
 // Dial creates a gRPC connection to the server.
 func Dial(ctx context.Context, address string) (proto.ManageClient, func() error, error) {
 	creds := BasicAuth{
-		password: "foo",
+		password: password(),
 	}
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithPerRPCCredentials(creds))
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating gRPC client connection with grpc.DialContect(): %w", err)
 	}
 	return proto.NewManageClient(conn), conn.Close, nil
+}
+
+func password() []byte {
+	return []byte("fooooooo")
 }

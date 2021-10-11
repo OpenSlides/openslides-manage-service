@@ -12,13 +12,13 @@ import (
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/auth"
+	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 const runDir = "/run"
@@ -63,7 +63,9 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	fmt.Println(metadata.FromIncomingContext(ctx))
+	if err := connection.CheckAuth(ctx); err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
 	auth := auth.New(s.config.authURL())
 	return initialdata.InitialData(ctx, in, runDir, ds, auth)

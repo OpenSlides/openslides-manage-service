@@ -482,10 +482,9 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_USER: openslides
   MEDIA_DATABASE_PASSWORD: openslides
   MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/media_postgres_password
-  MEDIA_DATABASE_TABLE: mediafile_data
-  MEDIA_CACHE_SIZE: 10
-  MEDIA_CACHE_DATA_MIN_SIZE_KB: 0
-  MEDIA_CACHE_DATA_MAX_SIZE_KB: 10240
+  MEDIA_BLOCK_SIZE: 4096
+  MEDIA_PRESENTER_HOST: backend
+  MEDIA_PRESENTER_PORT: 9003
 
   ICC_HOST: icc
   ICC_PORT: 9013
@@ -634,7 +633,6 @@ services:
       - postgres
     environment:
       << : *default-environment
-      # CHECK_REQUEST_URL:server:8000/check-media/
     networks:
       - frontend
       - datastore-reader
