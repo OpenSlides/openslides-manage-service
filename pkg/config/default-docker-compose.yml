@@ -56,7 +56,7 @@ services:
   {{- with .Services.proxy }}
   proxy:
     image: {{ .ContainerRegistry }}/openslides-proxy:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - client
       - backend
@@ -80,7 +80,7 @@ services:
 
   client:
     image: {{ .ContainerRegistry }}/openslides-client:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - backend
       - autoupdate
@@ -100,7 +100,7 @@ services:
 
   backend:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - datastore-writer
@@ -126,7 +126,7 @@ services:
 
   datastore-reader:
     image: {{ .ContainerRegistry }}/openslides-datastore-reader:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - postgres
     {{- end }}
@@ -146,7 +146,7 @@ services:
 
   datastore-writer:
     image: {{ .ContainerRegistry }}/openslides-datastore-writer:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - postgres
       - redis
@@ -164,7 +164,7 @@ services:
   {{- end }}
 
 
-  {{- if .DisablePostgres }}{{ else }}{{- with .Services.postgres }}
+  {{- if checkFlag .DisablePostgres }}{{ else }}{{- with .Services.postgres }}
 
   postgres:
     image: postgres:11
@@ -188,7 +188,7 @@ services:
 
   autoupdate:
     image: {{ .ContainerRegistry }}/openslides-autoupdate:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - redis
@@ -212,7 +212,7 @@ services:
 
   auth:
     image: {{ .ContainerRegistry }}/openslides-auth:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - redis
@@ -246,7 +246,7 @@ services:
 
   media:
     image: {{ .ContainerRegistry }}/openslides-media:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - backend
       - postgres
@@ -269,7 +269,7 @@ services:
 
   icc:
     image: {{ .ContainerRegistry }}/openslides-icc:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - postgres
@@ -295,7 +295,7 @@ services:
 
   manage:
     image: {{ .ContainerRegistry }}/openslides-manage:{{ .Tag }}
-    {{- if $.DisableDependsOn }}{{ else }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastore-reader
       - datastore-writer

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -125,8 +126,16 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 		result = strings.TrimRight(result, "\n")
 		return result, nil
 	}
+	checkFlagFunc := func(v interface{}) (bool, error) {
+		f, ok := v.(*bool)
+		if !ok {
+			return false, fmt.Errorf("using wrong type as argument in checkFlag function, only *bool is allowed")
+		}
+		return *f, nil
+	}
 	funcMap := template.FuncMap{}
 	funcMap["marshalContent"] = marshalContentFunc
+	funcMap["checkFlag"] = checkFlagFunc
 
 	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplContent))
 	if err != nil {
@@ -155,8 +164,8 @@ type ymlConfig struct {
 	ManageHost string `yaml:"manageHost"`
 	ManagePort string `yaml:"managePort"`
 
-	DisablePostgres  bool `yaml:"disablePostgres"`
-	DisableDependsOn bool `yaml:"disableDependsOn"`
+	DisablePostgres  *bool `yaml:"disablePostgres"`
+	DisableDependsOn *bool `yaml:"disableDependsOn"`
 
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
@@ -174,24 +183,36 @@ type service struct {
 	AdditionalContent json.RawMessage `yaml:"additionalContent"`
 }
 
-func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
-	// Reverse config files
-	for i := len(configFiles)/2 - 1; i >= 0; i-- {
-		opp := len(configFiles) - 1 - i
-		configFiles[i], configFiles[opp] = configFiles[opp], configFiles[i]
-	}
+// nullTransformer is used to fix a problem with mergo
+// see https://github.com/imdario/mergo/issues/131#issuecomment-589844203
+type nullTransformer struct{}
 
-	// Append default config
-	configFiles = append(configFiles, defaultConfig)
+func (t *nullTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
+	if typ.Kind() == reflect.Ptr {
+		return func(dst, src reflect.Value) error {
+			if dst.CanSet() && !src.IsNil() {
+				dst.Set(src)
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
+	allConfigFiles := [][]byte{
+		defaultConfig,
+	}
+	allConfigFiles = append(allConfigFiles, configFiles...)
 
 	// Unmarshal and merge them all
 	config := new(ymlConfig)
-	for _, configFile := range configFiles {
+	for _, configFile := range allConfigFiles {
 		c := new(ymlConfig)
 		if err := yaml.Unmarshal(configFile, c); err != nil {
 			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 		}
-		if err := mergo.Merge(config, c); err != nil {
+		if err := mergo.Merge(config, c, mergo.WithOverride, mergo.WithTransformers(&nullTransformer{})); err != nil {
 			return nil, fmt.Errorf("merging config files: %w", err)
 		}
 	}

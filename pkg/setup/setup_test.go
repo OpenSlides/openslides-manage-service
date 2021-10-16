@@ -310,8 +310,8 @@ services:
     tag: 2.0.0
 `
 		myFileName := "my-filename-ooph1OhShi.yml"
-		c := make([][]byte, 2)
-		c = append(c, []byte(customConfig))
+		c := make([][]byte, 1)
+		c[0] = []byte(customConfig)
 		if err := setup.Setup(testDir, false, nil, c); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
@@ -334,8 +334,8 @@ filename: my-filename-eab7iv8Oom.yml
 disablePostgres: true
 `
 		myFileName := "my-filename-eab7iv8Oom.yml"
-		c := make([][]byte, 2)
-		c = append(c, []byte(customConfig))
+		c := make([][]byte, 1)
+		c[0] = []byte(customConfig)
 		if err := setup.Setup(testDir, false, nil, c); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
@@ -348,8 +348,8 @@ filename: my-filename-Koo0eidifg.yml
 disableDependsOn: true
 `
 		myFileName := "my-filename-Koo0eidifg.yml"
-		c := make([][]byte, 2)
-		c = append(c, []byte(customConfig))
+		c := make([][]byte, 1)
+		c[0] = []byte(customConfig)
 		if err := setup.Setup(testDir, false, nil, c); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}

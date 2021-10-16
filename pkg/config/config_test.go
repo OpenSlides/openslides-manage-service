@@ -48,8 +48,10 @@ defaults:
 defaults:
   containerRegistry: example.com/test_Aeghies3me
 `
+
 		c := make([][]byte, 2)
-		c = append(c, []byte(customConfig1), []byte(customConfig2))
+		c[0] = []byte(customConfig1)
+		c[1] = []byte(customConfig2)
 		if err := config.Config(testDir, nil, c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
@@ -64,7 +66,8 @@ disablePostgres: false
 disablePostgres: true
 `
 		c := make([][]byte, 2)
-		c = append(c, []byte(customConfig1), []byte(customConfig2))
+		c[0] = []byte(customConfig1)
+		c[1] = []byte(customConfig2)
 		if err := config.Config(testDir, nil, c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
@@ -79,7 +82,8 @@ disablePostgres: true
 disablePostgres: false
 `
 		c := make([][]byte, 2)
-		c = append(c, []byte(customConfig1), []byte(customConfig2))
+		c[0] = []byte(customConfig1)
+		c[1] = []byte(customConfig2)
 		if err := config.Config(testDir, nil, c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
