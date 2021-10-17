@@ -6,11 +6,6 @@ filename: docker-compose.yml
 host: 127.0.0.1
 port: 8000
 
-# TODO: Remove these options after manage service is routed through the proxy.
-manageHost: 127.0.0.1
-managePort: 9008
-# TODO end ###############
-
 # Two options to disable the postgres service or the depends_on section in every service.
 disablePostgres: false
 disableDependsOn: false

@@ -160,10 +160,6 @@ type ymlConfig struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
 
-	// TODO: Remove these two fields.
-	ManageHost string `yaml:"manageHost"`
-	ManagePort string `yaml:"managePort"`
-
 	DisablePostgres  *bool `yaml:"disablePostgres"`
 	DisableDependsOn *bool `yaml:"disableDependsOn"`
 
