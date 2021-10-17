@@ -12,7 +12,6 @@ import (
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 )
 
@@ -154,6 +153,10 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 	return nil
 }
 
+type defaultEnvironment map[string]string
+
+type services map[string]service
+
 type ymlConfig struct {
 	Filename string `yaml:"filename"`
 
@@ -172,15 +175,79 @@ type ymlConfig struct {
 		Tag               string `yaml:"tag"`
 	} `yaml:"defaults"`
 
-	DefaultEnvironment map[string]string `yaml:"defaultEnvironment"`
+	DefaultEnvironment defaultEnvironment `yaml:"defaultEnvironment"`
 
-	Services map[string]service `yaml:"services"`
+	Services services `yaml:"services"`
+}
+
+func (y *ymlConfig) Merge(src ymlConfig) {
+	if src.Filename != "" {
+		y.Filename = src.Filename
+	}
+
+	if src.Host != "" {
+		y.Host = src.Host
+	}
+	if src.Port != "" {
+		y.Port = src.Port
+	}
+
+	if src.ManageHost != "" {
+		y.ManageHost = src.ManageHost
+	}
+	if src.ManagePort != "" {
+		y.ManagePort = src.ManagePort
+	}
+
+	if src.DisablePostgres != nil {
+		y.DisablePostgres = src.DisablePostgres
+	}
+	if src.DisableDependsOn != nil {
+		y.DisableDependsOn = src.DisableDependsOn
+	}
+
+	if src.Defaults.ContainerRegistry != "" {
+		y.Defaults.ContainerRegistry = src.Defaults.ContainerRegistry
+	}
+	if src.Defaults.Tag != "" {
+		y.Defaults.Tag = src.Defaults.Tag
+	}
+
+	if y.DefaultEnvironment == nil {
+		y.DefaultEnvironment = defaultEnvironment{}
+	}
+	for k, v := range src.DefaultEnvironment {
+		y.DefaultEnvironment[k] = v
+	}
+
+	if y.Services == nil {
+		y.Services = services{}
+	}
+	for k, v := range src.Services {
+		s := y.Services[k]
+		sPtr := &s
+		sPtr.Merge(v)
+		y.Services[k] = *sPtr
+	}
 }
 
 type service struct {
 	ContainerRegistry string          `yaml:"containerRegistry"`
 	Tag               string          `yaml:"tag"`
 	AdditionalContent json.RawMessage `yaml:"additionalContent"`
+}
+
+func (s *service) Merge(src service) {
+	fmt.Printf("Service Merge: %s into %s\n", src, *s)
+	if src.ContainerRegistry != "" {
+		s.ContainerRegistry = src.ContainerRegistry
+	}
+	if src.Tag != "" {
+		s.Tag = src.Tag
+	}
+	if src.AdditionalContent != nil {
+		s.AdditionalContent = src.AdditionalContent
+	}
 }
 
 // nullTransformer is used to fix a problem with mergo
@@ -212,9 +279,10 @@ func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
 		if err := yaml.Unmarshal(configFile, c); err != nil {
 			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 		}
-		if err := mergo.Merge(config, c, mergo.WithOverride, mergo.WithTransformers(&nullTransformer{})); err != nil {
-			return nil, fmt.Errorf("merging config files: %w", err)
-		}
+		//if err := mergo.Merge(config, c, mergo.WithOverride, mergo.WithTransformers(&nullTransformer{})); err != nil {
+		//	return nil, fmt.Errorf("merging config files: %w", err)
+		//}
+		config.Merge(*c)
 	}
 
 	// Fill services
