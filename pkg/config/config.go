@@ -147,7 +147,7 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 		return fmt.Errorf("executing template %v: %w", tmpl, err)
 	}
 
-	if err := shared.CreateFile(dir, force, cfg.Filename, res.Bytes(), false); err != nil {
+	if err := shared.CreateFile(dir, force, cfg.Filename, res.Bytes()); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 

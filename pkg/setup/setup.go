@@ -114,7 +114,7 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	if err != nil {
 		return fmt.Errorf("creating random key for auth token: %w", err)
 	}
-	if err := shared.CreateFile(secrDir, force, authTokenKeyFileName, secrToken, true); err != nil {
+	if err := shared.CreateFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
 		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
 	}
 
@@ -123,21 +123,21 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	if err != nil {
 		return fmt.Errorf("creating random key for auth cookie: %w", err)
 	}
-	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie, true); err != nil {
+	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
 		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
 	}
 
 	// Create postgres password files
 	postgresPassword := []byte("openslides")
-	if err := shared.CreateFile(secrDir, force, datastorePostgresPasswordFileName, postgresPassword, true); err != nil {
+	if err := shared.CreateFile(secrDir, force, datastorePostgresPasswordFileName, postgresPassword); err != nil {
 		return fmt.Errorf("creating secret datastore postgres password file at %q: %w", dir, err)
 	}
-	if err := shared.CreateFile(secrDir, force, mediaPostgresPasswordFileName, postgresPassword, true); err != nil {
+	if err := shared.CreateFile(secrDir, force, mediaPostgresPasswordFileName, postgresPassword); err != nil {
 		return fmt.Errorf("creating secret media postgres password file at %q: %w", dir, err)
 	}
 
 	// Create supereadmin file
-	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword), true); err != nil {
+	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
 

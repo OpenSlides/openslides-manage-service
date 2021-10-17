@@ -20,7 +20,7 @@ func TestCreateFile(t *testing.T) {
 		fileName := "test_file_eeGhu6du_3"
 		content := "test_content_kohv2EoT_3"
 
-		shared.CreateFile(testDir, false, fileName, []byte(content), false)
+		shared.CreateFile(testDir, false, fileName, []byte(content))
 
 		testContentFile(t, testDir, fileName, content)
 	})
@@ -31,7 +31,7 @@ func TestCreateFile(t *testing.T) {
 		content := "test_content_kohv2EoT_4"
 		hasErrMsg := "no such file or directory"
 
-		err := shared.CreateFile(testDir, false, fileName, []byte(content), false)
+		err := shared.CreateFile(testDir, false, fileName, []byte(content))
 
 		if !strings.Contains(err.Error(), hasErrMsg) {
 			t.Fatalf("running shared.CreateFile() with invalid directory, got error message %q, expected %q", err.Error(), hasErrMsg)
@@ -46,10 +46,10 @@ func TestCreateFile(t *testing.T) {
 		defer os.RemoveAll(testDir)
 		fileName := "test_file_eeGhu6du_5"
 		content := "test_content_kohv2EoT_5"
-		shared.CreateFile(testDir, false, fileName, []byte(content), false)
+		shared.CreateFile(testDir, false, fileName, []byte(content))
 		content = "test_content_kohv2EoT_5b"
 
-		shared.CreateFile(testDir, true, fileName, []byte(content), false)
+		shared.CreateFile(testDir, true, fileName, []byte(content))
 
 		testContentFile(t, testDir, fileName, content)
 	})
@@ -62,10 +62,10 @@ func TestCreateFile(t *testing.T) {
 		defer os.RemoveAll(testDir)
 		fileName := "test_file_eeGhu6du_6"
 		content := "test_content_kohv2EoT_6"
-		shared.CreateFile(testDir, false, fileName, []byte(content), false)
+		shared.CreateFile(testDir, false, fileName, []byte(content))
 		content2 := "test_content_kohv2EoT_6b"
 
-		err2 := shared.CreateFile(testDir, false, fileName, []byte(content2), false)
+		err2 := shared.CreateFile(testDir, false, fileName, []byte(content2))
 
 		if err2 != nil {
 			t.Fatalf("running shared.CreateFile() with invalid directory, got error message %q, expected nil error", err2.Error())
