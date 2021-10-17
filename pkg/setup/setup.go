@@ -41,6 +41,10 @@ is created in the given directory.`
 
 	// DefaultSuperadminPassword is the password for the first superadmin created with initial data.
 	DefaultSuperadminPassword = "superadmin"
+
+	// ManageAuthPasswordFileName is the name of the secrets file containing the password for
+	// (basic) authorization to the manage service.
+	ManageAuthPasswordFileName = "manage_auth_password"
 )
 
 // Cmd returns the setup subcommand.

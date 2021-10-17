@@ -5,8 +5,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"os"
+	"path"
 	"time"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -43,35 +46,41 @@ func (a BasicAuth) RequireTransportSecurity() bool {
 	return false
 }
 
-// CheckAuth checks if the basic authorization header is present and contains the correct password.
-func CheckAuth(ctx context.Context) error {
+// CheckAuthFromContext checks if the basic authorization header is present and contains the correct password.
+func CheckAuthFromContext(ctx context.Context, runPath string) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return fmt.Errorf("unable to get metadata from context")
 	}
 	a := md.Get("authorization")
-	pw, err := base64.StdEncoding.DecodeString(a[0])
+	password, err := base64.StdEncoding.DecodeString(a[0])
 	if err != nil {
 		return fmt.Errorf("decoding password (base64): %w", err)
 	}
-	if bytes.Compare(pw, password()) != 0 {
+
+	p := path.Join(runPath, setup.SecretsDirName, setup.ManageAuthPasswordFileName)
+	secret, err := os.ReadFile(p)
+	if err != nil {
+		return fmt.Errorf("reading manage auth password from secrets file %q: %w", p, err)
+	}
+	if !bytes.Equal(password, secret) {
 		return fmt.Errorf("password does not match")
 	}
 	return nil
 }
 
 // Dial creates a gRPC connection to the server.
-func Dial(ctx context.Context, address string) (proto.ManageClient, func() error, error) {
+func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient, func() error, error) {
+	pw, err := os.ReadFile(passwordFile)
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading manage auth password file %q: %w", passwordFile, err)
+	}
 	creds := BasicAuth{
-		password: password(),
+		password: pw,
 	}
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithPerRPCCredentials(creds))
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating gRPC client connection with grpc.DialContect(): %w", err)
 	}
 	return proto.NewManageClient(conn), conn.Close, nil
-}
-
-func password() []byte {
-	return []byte("fooooooo")
 }

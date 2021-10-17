@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -32,14 +34,17 @@ func Cmd() *cobra.Command {
 	cmd.MarkFlagRequired("user_id")
 	password := cmd.Flags().StringP("password", "p", "", "New password of the user")
 	cmd.MarkFlagRequired("password")
+
 	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
+	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
+	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service")
 	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr)
+		cl, close, err := connection.Dial(ctx, *addr, *passwordFile)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

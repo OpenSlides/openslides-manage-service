@@ -669,7 +669,6 @@ services:
     environment:
       << : *default-environment
     networks:
-      - uplink
       - frontend
       - datastore-reader
       - datastore-writer
@@ -677,8 +676,7 @@ services:
       - redis
     secrets:
       - superadmin
-    ports:
-      - 127.0.0.1:9008:9008
+      - manage_auth_password
 
 networks:
   uplink:
@@ -700,6 +698,8 @@ secrets:
     file: ./secrets/auth_cookie_key
   superadmin:
     file: ./secrets/superadmin
+  manage_auth_password:
+    file: ./secrets/manage_auth_password
   datastore_postgres_password:
     file: ./secrets/datastore_postgres_password
   media_postgres_password:

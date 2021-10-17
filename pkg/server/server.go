@@ -63,7 +63,7 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	if err := connection.CheckAuth(ctx); err != nil {
+	if err := connection.CheckAuthFromContext(ctx, runDir); err != nil {
 		return nil, fmt.Errorf("authorization failed: %w", err)
 	}
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
@@ -77,12 +77,18 @@ func (s *srv) CreateUser(context.Context, *proto.CreateUserRequest) (*proto.Crea
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
+	if err := connection.CheckAuthFromContext(ctx, runDir); err != nil {
+		return nil, fmt.Errorf("authorization failed: %w", err)
+	}
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
 	auth := auth.New(s.config.authURL())
 	return setpassword.SetPassword(ctx, in, ds, auth)
 }
 
 func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
+	if err := connection.CheckAuthFromContext(ts.Context(), runDir); err != nil {
+		return fmt.Errorf("authorization failed: %w", err)
+	}
 	return tunnel.Tunnel(ts)
 }
 

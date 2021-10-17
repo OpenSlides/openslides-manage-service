@@ -302,7 +302,6 @@ services:
     environment:
       << : *default-environment
     networks:
-      - uplink
       - frontend
       - datastore-reader
       - datastore-writer
@@ -310,8 +309,7 @@ services:
       - redis
     secrets:
       - superadmin
-    ports:
-      - {{ $.ManageHost }}:{{ $.ManagePort }}:9008
+      - manage_auth_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -335,6 +333,8 @@ secrets:
     file: ./secrets/auth_cookie_key
   superadmin:
     file: ./secrets/superadmin
+  manage_auth_password:
+    file: ./secrets/manage_auth_password
   datastore_postgres_password:
     file: ./secrets/datastore_postgres_password
   media_postgres_password:
