@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"text/template"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 )
 
@@ -125,8 +125,16 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 		result = strings.TrimRight(result, "\n")
 		return result, nil
 	}
+	checkFlagFunc := func(v interface{}) (bool, error) {
+		f, ok := v.(*bool)
+		if !ok {
+			return false, fmt.Errorf("using wrong type as argument in checkFlag function, only *bool is allowed")
+		}
+		return *f, nil
+	}
 	funcMap := template.FuncMap{}
 	funcMap["marshalContent"] = marshalContentFunc
+	funcMap["checkFlag"] = checkFlagFunc
 
 	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplContent))
 	if err != nil {
@@ -145,6 +153,10 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 	return nil
 }
 
+type defaultEnvironment map[string]string
+
+type services map[string]service
+
 type ymlConfig struct {
 	Filename string `yaml:"filename"`
 
@@ -155,17 +167,68 @@ type ymlConfig struct {
 	ManageHost string `yaml:"manageHost"`
 	ManagePort string `yaml:"managePort"`
 
-	DisablePostgres  bool `yaml:"disablePostgres"`
-	DisableDependsOn bool `yaml:"disableDependsOn"`
+	DisablePostgres  *bool `yaml:"disablePostgres"`
+	DisableDependsOn *bool `yaml:"disableDependsOn"`
 
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
 		Tag               string `yaml:"tag"`
 	} `yaml:"defaults"`
 
-	DefaultEnvironment map[string]string `yaml:"defaultEnvironment"`
+	DefaultEnvironment defaultEnvironment `yaml:"defaultEnvironment"`
 
-	Services map[string]service `yaml:"services"`
+	Services services `yaml:"services"`
+}
+
+func (y *ymlConfig) Merge(src ymlConfig) {
+	if src.Filename != "" {
+		y.Filename = src.Filename
+	}
+
+	if src.Host != "" {
+		y.Host = src.Host
+	}
+	if src.Port != "" {
+		y.Port = src.Port
+	}
+
+	if src.ManageHost != "" {
+		y.ManageHost = src.ManageHost
+	}
+	if src.ManagePort != "" {
+		y.ManagePort = src.ManagePort
+	}
+
+	if src.DisablePostgres != nil {
+		y.DisablePostgres = src.DisablePostgres
+	}
+	if src.DisableDependsOn != nil {
+		y.DisableDependsOn = src.DisableDependsOn
+	}
+
+	if src.Defaults.ContainerRegistry != "" {
+		y.Defaults.ContainerRegistry = src.Defaults.ContainerRegistry
+	}
+	if src.Defaults.Tag != "" {
+		y.Defaults.Tag = src.Defaults.Tag
+	}
+
+	if y.DefaultEnvironment == nil {
+		y.DefaultEnvironment = defaultEnvironment{}
+	}
+	for k, v := range src.DefaultEnvironment {
+		y.DefaultEnvironment[k] = v
+	}
+
+	if y.Services == nil {
+		y.Services = services{}
+	}
+	for k, v := range src.Services {
+		s := y.Services[k]
+		sPtr := &s
+		sPtr.Merge(v)
+		y.Services[k] = *sPtr
+	}
 }
 
 type service struct {
@@ -174,20 +237,52 @@ type service struct {
 	AdditionalContent json.RawMessage `yaml:"additionalContent"`
 }
 
+func (s *service) Merge(src service) {
+	fmt.Printf("Service Merge: %s into %s\n", src, *s)
+	if src.ContainerRegistry != "" {
+		s.ContainerRegistry = src.ContainerRegistry
+	}
+	if src.Tag != "" {
+		s.Tag = src.Tag
+	}
+	if src.AdditionalContent != nil {
+		s.AdditionalContent = src.AdditionalContent
+	}
+}
+
+// nullTransformer is used to fix a problem with mergo
+// see https://github.com/imdario/mergo/issues/131#issuecomment-589844203
+type nullTransformer struct{}
+
+func (t *nullTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
+	if typ.Kind() == reflect.Ptr {
+		return func(dst, src reflect.Value) error {
+			if dst.CanSet() && !src.IsNil() {
+				dst.Set(src)
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
 func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
-	// Append default config
-	configFiles = append(configFiles, defaultConfig)
+	allConfigFiles := [][]byte{
+		defaultConfig,
+	}
+	allConfigFiles = append(allConfigFiles, configFiles...)
 
 	// Unmarshal and merge them all
 	config := new(ymlConfig)
-	for _, configFile := range configFiles {
+	for _, configFile := range allConfigFiles {
 		c := new(ymlConfig)
 		if err := yaml.Unmarshal(configFile, c); err != nil {
 			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 		}
-		if err := mergo.Merge(config, c); err != nil {
-			return nil, fmt.Errorf("merging config files: %w", err)
-		}
+		//if err := mergo.Merge(config, c, mergo.WithOverride, mergo.WithTransformers(&nullTransformer{})); err != nil {
+		//	return nil, fmt.Errorf("merging config files: %w", err)
+		//}
+		config.Merge(*c)
 	}
 
 	// Fill services
