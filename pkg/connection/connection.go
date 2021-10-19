@@ -17,7 +17,7 @@ import (
 
 const (
 	// DefaultAddr holds the default host and port to be used for the gRPC connection that is established by some commands.
-	DefaultAddr = "localhost:9008"
+	DefaultAddr = "localhost:8000"
 
 	// DefaultTimeout holds the default timeout for the gRPC connection that is established by some commands.
 	DefaultTimeout = 5 * time.Second
