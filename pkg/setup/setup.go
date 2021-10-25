@@ -41,6 +41,10 @@ is created in the given directory.`
 
 	// DefaultSuperadminPassword is the password for the first superadmin created with initial data.
 	DefaultSuperadminPassword = "superadmin"
+
+	// ManageAuthPasswordFileName is the name of the secrets file containing the password for
+	// (basic) authorization to the manage service.
+	ManageAuthPasswordFileName = "manage_auth_password"
 )
 
 // Cmd returns the setup subcommand.
@@ -109,25 +113,13 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 		return fmt.Errorf("creating secrets directory at %q: %w", dir, err)
 	}
 
-	// Create auth token key file
-	secrToken, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for auth token: %w", err)
-	}
-	if err := shared.CreateFile(secrDir, force, authTokenKeyFileName, secrToken); err != nil {
-		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
-	}
-
-	// Create auth cookie key file
-	secrCookie, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for auth cookie: %w", err)
-	}
-	if err := shared.CreateFile(secrDir, force, authCookieKeyFileName, secrCookie); err != nil {
-		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
+	// Create random secrets (auth token key, auth cookie key, manage auth password)
+	if err := createRandomSecrets(secrDir, force); err != nil {
+		return fmt.Errorf("creating random secrets: %w", err)
 	}
 
 	// Create postgres password files
+	// TODO: Make them random too.
 	postgresPassword := []byte("openslides")
 	if err := shared.CreateFile(secrDir, force, datastorePostgresPasswordFileName, postgresPassword); err != nil {
 		return fmt.Errorf("creating secret datastore postgres password file at %q: %w", dir, err)
@@ -142,8 +134,40 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	}
 
 	// Create database directory
-	if err := os.MkdirAll(path.Join(dir, dbDirName), subDirPerms); err != nil {
+	// Attention: For unknown reason it is not possible to use perms 0770 here. Docker Compose does not like it ...
+	if err := os.MkdirAll(path.Join(dir, dbDirName), 0777); err != nil {
 		return fmt.Errorf("creating database directory at %q: %w", dir, err)
+	}
+
+	return nil
+}
+
+func createRandomSecrets(dir string, force bool) error {
+	// Create auth token key file
+	secrToken, err := randomSecret()
+	if err != nil {
+		return fmt.Errorf("creating random key for auth token: %w", err)
+	}
+	if err := shared.CreateFile(dir, force, authTokenKeyFileName, secrToken); err != nil {
+		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
+	}
+
+	// Create auth cookie key file
+	secrCookie, err := randomSecret()
+	if err != nil {
+		return fmt.Errorf("creating random key for auth cookie: %w", err)
+	}
+	if err := shared.CreateFile(dir, force, authCookieKeyFileName, secrCookie); err != nil {
+		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
+	}
+
+	// Create manage auth password file
+	authPw, err := randomSecret()
+	if err != nil {
+		return fmt.Errorf("creating random key for manage auth password: %w", err)
+	}
+	if err := shared.CreateFile(dir, force, ManageAuthPasswordFileName, authPw); err != nil {
+		return fmt.Errorf("creating secret manage auth password file at %q: %w", dir, err)
 	}
 
 	return nil

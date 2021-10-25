@@ -37,10 +37,9 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_USER: {{ .MEDIA_DATABASE_USER }}
   MEDIA_DATABASE_PASSWORD: {{ .MEDIA_DATABASE_PASSWORD }}
   MEDIA_DATABASE_PASSWORD_FILE: {{ .MEDIA_DATABASE_PASSWORD_FILE }}
-  MEDIA_DATABASE_TABLE: {{ .MEDIA_DATABASE_TABLE }}
-  MEDIA_CACHE_SIZE: {{ .MEDIA_CACHE_SIZE }}
-  MEDIA_CACHE_DATA_MIN_SIZE_KB: {{ .MEDIA_CACHE_DATA_MIN_SIZE_KB }}
-  MEDIA_CACHE_DATA_MAX_SIZE_KB: {{ .MEDIA_CACHE_DATA_MAX_SIZE_KB }}
+  MEDIA_BLOCK_SIZE: {{ .MEDIA_BLOCK_SIZE }}
+  MEDIA_PRESENTER_HOST: {{ .MEDIA_PRESENTER_HOST }}
+  MEDIA_PRESENTER_PORT: {{ .MEDIA_PRESENTER_PORT }}
 
   ICC_HOST: {{ .ICC_HOST }}
   ICC_PORT: {{ .ICC_PORT }}
@@ -253,7 +252,6 @@ services:
     {{- end }}
     environment:
       << : *default-environment
-      # CHECK_REQUEST_URL:server:8000/check-media/
     networks:
       - frontend
       - datastore-reader
@@ -304,7 +302,6 @@ services:
     environment:
       << : *default-environment
     networks:
-      - uplink
       - frontend
       - datastore-reader
       - datastore-writer
@@ -312,8 +309,7 @@ services:
       - redis
     secrets:
       - superadmin
-    ports:
-      - {{ $.ManageHost }}:{{ $.ManagePort }}:9008
+      - manage_auth_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -337,6 +333,8 @@ secrets:
     file: ./secrets/auth_cookie_key
   superadmin:
     file: ./secrets/superadmin
+  manage_auth_password:
+    file: ./secrets/manage_auth_password
   datastore_postgres_password:
     file: ./secrets/datastore_postgres_password
   media_postgres_password:

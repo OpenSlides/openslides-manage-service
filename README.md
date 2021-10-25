@@ -27,7 +27,7 @@ Then run:
     $ ./openslides setup .
     $ docker-compose up
 
-Wait until all services are available. Then run in a second terminal:
+Wait until all services are available. Then run in a second terminal in the same directory:
 
     $ ./openslides initial-data
 

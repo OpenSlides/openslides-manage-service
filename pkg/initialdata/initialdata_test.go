@@ -36,7 +36,7 @@ type mockInitialdataClient struct {
 
 func (m *mockInitialdataClient) InitialData(ctx context.Context, in *proto.InitialDataRequest, opts ...grpc.CallOption) (*proto.InitialDataResponse, error) {
 	m.called = true
-	if bytes.Compare(m.expected, in.Data) != 0 {
+	if !bytes.Equal(m.expected, in.Data) {
 		return nil, fmt.Errorf("wrong initial data, expected %q, got %q", m.expected, in.Data)
 	}
 	return &proto.InitialDataResponse{Initialized: true}, nil

@@ -28,6 +28,7 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -51,6 +52,7 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -85,6 +87,7 @@ func TestCmd(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", customTpl)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -126,6 +129,7 @@ services:
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-backend:2.0.1")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -178,6 +182,7 @@ defaults:
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Ohm7uafo/openslides-proxy:test_Ra9va3ie")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -201,6 +206,7 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -225,6 +231,7 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", testContent)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -239,6 +246,7 @@ func TestSetupCommon(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -262,6 +270,7 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -285,6 +294,7 @@ func TestSetupExternalTemplate(t *testing.T) {
 		testContentFile(t, testDir, "docker-compose.yml", tplText)
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -322,6 +332,7 @@ services:
 		testFileContains(t, testDir, myFileName, "image: postgres:11")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
+		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "datastore_postgres_password")
 		testPasswordFile(t, secDir, "media_postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
@@ -482,10 +493,9 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_USER: openslides
   MEDIA_DATABASE_PASSWORD: openslides
   MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/media_postgres_password
-  MEDIA_DATABASE_TABLE: mediafile_data
-  MEDIA_CACHE_SIZE: 10
-  MEDIA_CACHE_DATA_MIN_SIZE_KB: 0
-  MEDIA_CACHE_DATA_MAX_SIZE_KB: 10240
+  MEDIA_BLOCK_SIZE: 4096
+  MEDIA_PRESENTER_HOST: backend
+  MEDIA_PRESENTER_PORT: 9003
 
   ICC_HOST: icc
   ICC_PORT: 9013
@@ -634,7 +644,6 @@ services:
       - postgres
     environment:
       << : *default-environment
-      # CHECK_REQUEST_URL:server:8000/check-media/
     networks:
       - frontend
       - datastore-reader
@@ -671,7 +680,6 @@ services:
     environment:
       << : *default-environment
     networks:
-      - uplink
       - frontend
       - datastore-reader
       - datastore-writer
@@ -679,8 +687,7 @@ services:
       - redis
     secrets:
       - superadmin
-    ports:
-      - 127.0.0.1:9008:9008
+      - manage_auth_password
 
 networks:
   uplink:
@@ -702,6 +709,8 @@ secrets:
     file: ./secrets/auth_cookie_key
   superadmin:
     file: ./secrets/superadmin
+  manage_auth_password:
+    file: ./secrets/manage_auth_password
   datastore_postgres_password:
     file: ./secrets/datastore_postgres_password
   media_postgres_password:
