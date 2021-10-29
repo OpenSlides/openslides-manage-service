@@ -3,9 +3,6 @@
 Manage service and tool for OpenSlides which provides some management commands
 to setup and control OpenSlides instances.
 
-The service listens on the port given by environment variable
-`MANAGE_SERVICE_PORT` (default 9008) and uses [gRPC](https://grpc.io/).
-
 The (client) tool can be used as follows:
 
     $ ./openslides
@@ -25,13 +22,19 @@ running. Check if you have to run docker as local user or as root.
 Then run:
 
     $ ./openslides setup .
+    $ docker-compose pull
     $ docker-compose up
 
 Wait until all services are available. Then run in a second terminal in the same directory:
 
     $ ./openslides initial-data
 
-Now open https://localhost:8000, login and have fun (TODO: HTTPS-support is still missing). Afterwars run:
+Now open http://localhost:8000, login and have fun (TODO: HTTPS-support is still missing). 
+
+
+## Stop the server
+
+To stop the server run:
 
     $ docker-compose stop
 
