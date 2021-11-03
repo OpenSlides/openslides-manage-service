@@ -223,6 +223,7 @@ func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
 		"postgres",
 		"autoupdate",
 		"auth",
+		"vote",
 		"redis",
 		"media",
 		"icc",

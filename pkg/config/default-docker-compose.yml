@@ -23,6 +23,16 @@ x-default-environment: &default-environment
   AUTH_HOST: {{ .AUTH_HOST }}
   AUTH_PORT: {{ .AUTH_PORT }}
 
+  VOTE_HOST: {{ .VOTE_HOST }}
+  VOTE_PORT: {{ .VOTE_PORT }}
+  VOTE_REDIS_HOST: {{ .VOTE_REDIS_HOST }}
+  VOTE_REDIS_PORT: {{ .VOTE_REDIS_PORT }}
+  VOTE_DATABASE_USER: {{ .VOTE_DATABASE_USER }}
+  VOTE_DATABASE_PASSWORD: {{ .VOTE_DATABASE_PASSWORD }}
+  VOTE_DATABASE_HOST: {{ .VOTE_DATABASE_HOST }}
+  VOTE_DATABASE_PORT: {{ .VOTE_DATABASE_PORT }}
+  VOTE_DATABASE_NAME: {{ .VOTE_DATABASE_NAME }}
+
   CACHE_HOST: {{ .CACHE_HOST }}
   CACHE_PORT: {{ .CACHE_PORT }}
 
@@ -228,6 +238,31 @@ services:
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
+  {{- with .Services.vote }}
+
+  vote:
+    image: {{ .ContainerRegistry }}/openslides-vote:{{ .Tag }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - datastore-reader
+      - datastore-writer
+      - auth
+      - redis
+    {{- end }}
+    environment:
+      << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
+    networks:
+      - datastore-reader
+      - datastore-writer
+      - postgres
+      - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
 
   {{- with .Services.redis }}
 
