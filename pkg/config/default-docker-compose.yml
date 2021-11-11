@@ -80,11 +80,21 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+    {{- if checkFlag $.EnableLocalHTTPS }}
+      ENABLE_LOCAL_HTTPS: 1
+      HTTPS_CERT_FILE: /run/secrets/cert_crt
+      HTTPS_KEY_FILE: /run/secrets/cert_key
+    {{- end }}
     networks:
       - uplink
       - frontend
     ports:
       - {{ $.Host }}:{{ $.Port }}:8000
+    {{- if checkFlag $.EnableLocalHTTPS }}
+    secrets:
+      - cert_crt
+      - cert_key
+    {{- end }}
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -382,3 +392,9 @@ secrets:
     file: ./secrets/media_postgres_password
   vote_postgres_password:
     file: ./secrets/vote_postgres_password
+{{- if checkFlag $.EnableLocalHTTPS }}
+  cert_crt:
+    file: ./secrets/cert_crt
+  cert_key:
+    file: ./secrets/cert_key
+{{- end }}
