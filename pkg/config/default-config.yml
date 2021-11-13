@@ -82,14 +82,14 @@ defaultEnvironment:
 
   OPENSLIDES_DEVELOPMENT: "false"
 
-
 # You can extend or replace parts of the defaultEnvironment.
 #
 # Example:
 #
 # defaultEnvironment:
 #   EXTERNAL_DOMAIN: openslides.example.com
-#
+
+
 # You can customize single services using the services property. All
 # properties from the "defaults" section are available here. Service names
 # are written in camelCase.

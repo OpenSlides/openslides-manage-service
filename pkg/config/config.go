@@ -163,7 +163,7 @@ type ymlConfig struct {
 	DisablePostgres  *bool `yaml:"disablePostgres"`
 	DisableDependsOn *bool `yaml:"disableDependsOn"`
 	EnableLocalHTTPS *bool `yaml:"enableLocalHTTPS"`
-	EnableAutoHTTPS *bool `yaml:"enableAutoHTTPS"`
+	EnableAutoHTTPS  *bool `yaml:"enableAutoHTTPS"`
 
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
