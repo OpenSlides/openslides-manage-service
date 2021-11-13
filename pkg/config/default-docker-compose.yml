@@ -85,6 +85,9 @@ services:
       HTTPS_CERT_FILE: /run/secrets/cert_crt
       HTTPS_KEY_FILE: /run/secrets/cert_key
     {{- end }}
+    {{- if checkFlag $.EnableAutoHTTPS }}
+      ENABLE_AUTO_HTTPS: 1
+    {{- end }}
     networks:
       - uplink
       - frontend
