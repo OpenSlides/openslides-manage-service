@@ -76,20 +76,22 @@ See the [default config](pkg/setup/default-config.yml) for syntax and defaults.
 ## HTTPS
 
 The manage tool provides two settable options for using HTTPS, both of which can
-be set in a `config.yml` file. When running OpenSlides on localhost a locally
-generated self-signed certificate can be used. To do so add the following line
-to your `config.yml`.
+be set in a `config.yml` file. Firstly an existing certificate can be used.
+To do so add the following line to your `config.yml`.
 
     enableLocalHTTPS: true
 
 The `cert_crt` and `cert_key` files are now expected within the `secrets`
-directory. Use your favorite tool to generate them, e.g.
+directory. When running OpenSlides on localhost you can locally generate a
+self-signed certificate. Use your favorite tool to generate them, e.g.
 
     openssl req -x509 -newkey rsa:4096 -nodes -days 3650 \
         -subj "/C=DE/O=Selfsigned Test/CN=localhost" \
         -keyout secrets/cert_key -out secrets/cert_crt
 
-If OpenSlides is run behind a publicly available domain, caddys integrated
+Alternatively use any other certificate you may posses.
+
+If OpenSlides is running behind a publicly accessible domain, caddys integrated
 certificate retrieval can be utilized. The following lines in `config.yml` are
 necessary to do so.
 
