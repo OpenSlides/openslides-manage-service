@@ -245,9 +245,10 @@ services:
     image: {{ .ContainerRegistry }}/openslides-vote:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
+      - backend
       - datastore-reader
-      - datastore-writer
       - auth
+      - autoupdate
       - redis
     {{- end }}
     environment:
@@ -255,8 +256,8 @@ services:
       MESSAGING: redis
       AUTH: ticket
     networks:
+      - frontend
       - datastore-reader
-      - datastore-writer
       - postgres
       - redis
     secrets:

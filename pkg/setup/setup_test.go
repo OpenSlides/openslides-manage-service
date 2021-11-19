@@ -479,6 +479,17 @@ x-default-environment: &default-environment
   AUTH_HOST: auth
   AUTH_PORT: 9004
 
+  VOTE_HOST: vote
+  VOTE_PORT: 9013
+  VOTE_DATABASE_HOST: postgres
+  VOTE_DATABASE_PORT: 5432
+  VOTE_DATABASE_NAME: openslides
+  VOTE_DATABASE_USER: openslides
+  VOTE_DATABASE_PASSWORD: openslides
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/vote_postgres_password
+  VOTE_REDIS_HOST: redis
+  VOTE_REDIS_PORT: 6379
+
   CACHE_HOST: redis
   CACHE_PORT: 6379
 
@@ -630,6 +641,28 @@ services:
       - auth_token_key
       - auth_cookie_key
 
+  vote:
+    image: ghcr.io/openslides/openslides/openslides-vote:latest
+    depends_on:
+      - backend
+      - datastore-reader
+      - auth
+      - autoupdate
+      - redis
+    environment:
+      << : *default-environment
+      MESSAGING: redis
+      AUTH: ticket
+    networks:
+      - frontend
+      - datastore-reader
+      - postgres
+      - redis
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - vote_postgres_password
+
   redis:
     image: redis:latest
     environment:
@@ -715,6 +748,8 @@ secrets:
     file: ./secrets/datastore_postgres_password
   media_postgres_password:
     file: ./secrets/media_postgres_password
+  vote_postgres_password:
+    file: ./secrets/vote_postgres_password
 `
 
 func TestSetupNoDirectory(t *testing.T) {
