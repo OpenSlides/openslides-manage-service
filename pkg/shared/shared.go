@@ -3,9 +3,12 @@ package shared
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 )
+
+const fileMode fs.FileMode = 0666
 
 // CreateFile creates a file in the given directory with the given content.
 // Use a truthy value for force to override an existing file.
@@ -21,7 +24,7 @@ func CreateFile(dir string, force bool, name string, content []byte) error {
 		return nil
 	}
 
-	if err := os.WriteFile(p, content, os.ModePerm); err != nil {
+	if err := os.WriteFile(p, content, fileMode); err != nil {
 		return fmt.Errorf("creating and writing to file %q: %w", p, err)
 	}
 	return nil
