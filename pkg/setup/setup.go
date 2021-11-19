@@ -21,6 +21,7 @@ const (
 	authCookieKeyFileName                         = "auth_cookie_key"
 	datastorePostgresPasswordFileName             = "datastore_postgres_password"
 	mediaPostgresPasswordFileName                 = "media_postgres_password"
+	votePostgresPasswordFileName                  = "vote_postgres_password"
 	dbDirName                                     = "db-data"
 )
 
@@ -126,6 +127,9 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	}
 	if err := shared.CreateFile(secrDir, force, mediaPostgresPasswordFileName, postgresPassword); err != nil {
 		return fmt.Errorf("creating secret media postgres password file at %q: %w", dir, err)
+	}
+	if err := shared.CreateFile(secrDir, force, votePostgresPasswordFileName, postgresPassword); err != nil {
+		return fmt.Errorf("creating secret vote postgres password file at %q: %w", dir, err)
 	}
 
 	// Create supereadmin file

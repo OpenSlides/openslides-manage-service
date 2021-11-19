@@ -40,6 +40,17 @@ defaultEnvironment:
   AUTH_HOST: auth
   AUTH_PORT: 9004
 
+  VOTE_HOST: vote
+  VOTE_PORT: 9013
+  VOTE_DATABASE_HOST: postgres
+  VOTE_DATABASE_PORT: 5432
+  VOTE_DATABASE_NAME: openslides
+  VOTE_DATABASE_USER: openslides
+  VOTE_DATABASE_PASSWORD: openslides
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/vote_postgres_password
+  VOTE_REDIS_HOST: redis
+  VOTE_REDIS_PORT: 6379
+
   CACHE_HOST: redis
   CACHE_PORT: 6379
 
