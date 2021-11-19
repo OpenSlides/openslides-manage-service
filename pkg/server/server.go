@@ -63,7 +63,7 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	if err := connection.CheckAuthFromContext(ctx, runDir); err != nil {
+	if err := connection.CheckAuthFromContext(ctx, s.config.PasswordFile); err != nil {
 		return nil, fmt.Errorf("authorization failed: %w", err)
 	}
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
@@ -77,7 +77,7 @@ func (s *srv) CreateUser(context.Context, *proto.CreateUserRequest) (*proto.Crea
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	if err := connection.CheckAuthFromContext(ctx, runDir); err != nil {
+	if err := connection.CheckAuthFromContext(ctx, s.config.PasswordFile); err != nil {
 		return nil, fmt.Errorf("authorization failed: %w", err)
 	}
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
@@ -86,7 +86,7 @@ func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*p
 }
 
 func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
-	if err := connection.CheckAuthFromContext(ts.Context(), runDir); err != nil {
+	if err := connection.CheckAuthFromContext(ts.Context(), s.config.PasswordFile); err != nil {
 		return fmt.Errorf("authorization failed: %w", err)
 	}
 	return tunnel.Tunnel(ts)
@@ -98,7 +98,8 @@ type Config struct {
 	// variables. The first value is the name of the environment variable. After
 	// a comma the default value can be given. If no default value is given, then
 	// an empty string is used. The type of a env field has to be string.
-	Port string `env:"MANAGE_PORT,9008"`
+	Port         string `env:"MANAGE_PORT,9008"`
+	PasswordFile string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
 
 	AuthProtocol string `env:"AUTH_PROTOCOL,http"`
 	AuthHost     string `env:"AUTH_HOST,auth"`

@@ -6,10 +6,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
-	"path"
 	"time"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -47,7 +45,7 @@ func (a BasicAuth) RequireTransportSecurity() bool {
 }
 
 // CheckAuthFromContext checks if the basic authorization header is present and contains the correct password.
-func CheckAuthFromContext(ctx context.Context, runPath string) error {
+func CheckAuthFromContext(ctx context.Context, passwordFile string) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return fmt.Errorf("unable to get metadata from context")
@@ -58,10 +56,9 @@ func CheckAuthFromContext(ctx context.Context, runPath string) error {
 		return fmt.Errorf("decoding password (base64): %w", err)
 	}
 
-	p := path.Join(runPath, setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	secret, err := os.ReadFile(p)
+	secret, err := os.ReadFile(passwordFile)
 	if err != nil {
-		return fmt.Errorf("reading manage auth password from secrets file %q: %w", p, err)
+		return fmt.Errorf("reading manage auth password from secrets file %q: %w", passwordFile, err)
 	}
 	if !bytes.Equal(password, secret) {
 		return fmt.Errorf("password does not match")

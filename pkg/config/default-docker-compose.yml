@@ -59,6 +59,7 @@ x-default-environment: &default-environment
 
   MANAGE_HOST: {{ .MANAGE_HOST }}
   MANAGE_PORT: {{ .MANAGE_PORT }}
+  MANAGE_AUTH_PASSWORD_FILE: {{ .MANAGE_AUTH_PASSWORD_FILE }}
   {{- end}}
 
 services:
