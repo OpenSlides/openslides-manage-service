@@ -8,6 +8,11 @@ import (
 	"path"
 )
 
+// DevelopmentPassword is the password used if environment variable
+// OPENSLIDES_DEVELOPMENT is set to one of the following values: 1, t, T, TRUE,
+// true, True.
+const DevelopmentPassword = "openslides"
+
 const fileMode fs.FileMode = 0666
 
 // CreateFile creates a file in the given directory with the given content.

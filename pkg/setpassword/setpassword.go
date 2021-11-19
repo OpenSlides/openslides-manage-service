@@ -37,7 +37,7 @@ func Cmd() *cobra.Command {
 
 	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
 	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service")
+	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
 	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
