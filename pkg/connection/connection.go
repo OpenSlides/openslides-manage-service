@@ -68,12 +68,15 @@ func CheckAuthFromContext(ctx context.Context, secret []byte) error {
 func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient, func() error, error) {
 	pw := []byte(shared.DevelopmentPassword)
 	dev, _ := strconv.ParseBool(os.Getenv("OPENSLIDES_DEVELOPMENT"))
+	// Error value does not matter here. In case of an error dev is false and
+	// this is the expected behavior.
 	if !dev {
 		var err error
-		pw, err = os.ReadFile(passwordFile)
+		filePW, err := os.ReadFile(passwordFile)
 		if err != nil {
 			return nil, nil, fmt.Errorf("reading manage auth password file %q: %w", passwordFile, err)
 		}
+		pw = filePW
 	}
 	creds := BasicAuth{
 		password: pw,
