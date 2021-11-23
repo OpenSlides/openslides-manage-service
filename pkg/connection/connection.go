@@ -6,10 +6,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
-	"path"
+	"strconv"
 	"time"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -47,7 +47,7 @@ func (a BasicAuth) RequireTransportSecurity() bool {
 }
 
 // CheckAuthFromContext checks if the basic authorization header is present and contains the correct password.
-func CheckAuthFromContext(ctx context.Context, runPath string) error {
+func CheckAuthFromContext(ctx context.Context, secret []byte) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return fmt.Errorf("unable to get metadata from context")
@@ -58,11 +58,6 @@ func CheckAuthFromContext(ctx context.Context, runPath string) error {
 		return fmt.Errorf("decoding password (base64): %w", err)
 	}
 
-	p := path.Join(runPath, setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	secret, err := os.ReadFile(p)
-	if err != nil {
-		return fmt.Errorf("reading manage auth password from secrets file %q: %w", p, err)
-	}
 	if !bytes.Equal(password, secret) {
 		return fmt.Errorf("password does not match")
 	}
@@ -71,9 +66,17 @@ func CheckAuthFromContext(ctx context.Context, runPath string) error {
 
 // Dial creates a gRPC connection to the server.
 func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient, func() error, error) {
-	pw, err := os.ReadFile(passwordFile)
-	if err != nil {
-		return nil, nil, fmt.Errorf("reading manage auth password file %q: %w", passwordFile, err)
+	pw := []byte(shared.DevelopmentPassword)
+	dev, _ := strconv.ParseBool(os.Getenv("OPENSLIDES_DEVELOPMENT"))
+	// Error value does not matter here. In case of an error dev is false and
+	// this is the expected behavior.
+	if !dev {
+		var err error
+		filePW, err := os.ReadFile(passwordFile)
+		if err != nil {
+			return nil, nil, fmt.Errorf("reading manage auth password file %q: %w", passwordFile, err)
+		}
+		pw = filePW
 	}
 	creds := BasicAuth{
 		password: pw,
