@@ -517,7 +517,7 @@ x-default-environment: &default-environment
   MANAGE_PORT: 9008
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
 
-  OPENSLIDES_DEVELOPMENT: 0
+  OPENSLIDES_DEVELOPMENT: "false"
 
 services:
   proxy:
