@@ -330,6 +330,7 @@ services:
 		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-client:latest")
 		testFileContains(t, testDir, myFileName, "ports:\n      - 127.0.0.1:8001:8000")
 		testFileContains(t, testDir, myFileName, "image: postgres:11")
+		testFileNotContains(t, testDir, myFileName, "cert_crt")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
@@ -357,6 +358,7 @@ disablePostgres: true
 		customConfig := `---
 filename: my-filename-Koo0eidifg.yml
 disableDependsOn: true
+enableLocalHTTPS: true
 `
 		myFileName := "my-filename-Koo0eidifg.yml"
 		c := make([][]byte, 1)
@@ -365,6 +367,8 @@ disableDependsOn: true
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, myFileName, "depends_on")
+		testFileContains(t, testDir, myFileName, "cert_crt")
+
 	})
 }
 

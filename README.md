@@ -3,6 +3,9 @@
 Manage service and tool for OpenSlides which provides some management commands
 to setup and control OpenSlides instances.
 
+The service uses [gRPC](https://grpc.io/) and can be reached directly via the
+OpenSlides proxy service.
+
 The (client) tool can be used as follows:
 
     $ ./openslides
@@ -19,20 +22,27 @@ running. Check if you have to run docker as local user or as root.
 
     $ docker info
 
-Then run:
+To setup the instance directory run:
 
     $ ./openslides setup .
+
+Before starting the instance you must setup a means of SSL encryption because
+OpenSlides only runs over HTTPS. See [HTTPS](#HTTPS)
+
+When HTTPS is set up continue with:
+
     $ docker-compose pull
     $ docker-compose up
 
-Wait until all services are available. Then run in a second terminal in the same directory:
+Wait until all services are available. Then run in a second terminal in the same
+directory:
 
     $ ./openslides initial-data
 
-Now open http://localhost:8000, login and have fun (TODO: HTTPS-support is still missing). 
+Now open https://localhost:8000, login and have fun.
 
 
-## Stop the server
+## Stop the server and remove the containers
 
 To stop the server run:
 
@@ -48,13 +58,51 @@ setups. Let us know if this is interesting for you.
 
 ## Configuration of the generated YAML file
 
-The setup command generates also a YAML file (default filename: `docker-compose.yml`)
-with the container configuration for all services. This step can be configured with
-a YAML formated config file. E. g. to get a customized YAML file run:
+The setup command generates also a YAML file (default filename:
+`docker-compose.yml`) with the container configuration for all services. This
+step can be configured with a YAML formated config file. E. g. to get a
+customized YAML file run:
 
     $ ./openslides setup --config my-config.yml .
 
+To rebuild the YAML file without resetting the whole directory (including
+secrets) run:
+
+    $ ./openslides config --config my-config.yml .
+
 See the [default config](pkg/setup/default-config.yml) for syntax and defaults.
+
+
+## HTTPS
+
+The manage tool provides two settable options for using HTTPS, both of which can
+be set in a `config.yml` file. Firstly an existing certificate can be used.
+To do so add the following line to your `config.yml`.
+
+    enableLocalHTTPS: true
+
+The `cert_crt` and `cert_key` files are now expected within the `secrets`
+directory. When running OpenSlides on localhost you can locally generate a
+self-signed certificate. Use your favorite tool to generate them, e.g.
+
+    openssl req -x509 -newkey rsa:4096 -nodes -days 3650 \
+        -subj "/C=DE/O=Selfsigned Test/CN=localhost" \
+        -keyout secrets/cert_key -out secrets/cert_crt
+
+Alternatively use any other certificate you may posses.
+
+If OpenSlides is running behind a publicly accessible domain, caddys integrated
+certificate retrieval can be utilized. The following lines in `config.yml` are
+necessary to do so.
+
+    enableAutoHTTPS: true
+    defaultEnvironment:
+      EXTERNAL_ADDRESS: openslides.example.com
+      # Use letsencrypt staging environment for testing
+      # ACME_ENDPOINT: https://acme-staging-v02.api.letsencrypt.org/directory
+
+See [proxy](https://github.com/OpenSlides/OpenSlides/blob/master/proxy) for
+details on provided methods for HTTPS activation.
 
 
 ## Development

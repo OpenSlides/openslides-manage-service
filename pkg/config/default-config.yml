@@ -6,9 +6,11 @@ filename: docker-compose.yml
 host: 127.0.0.1
 port: 8000
 
-# Two options to disable the postgres service or the depends_on section in every service.
+# General options affecting the whole application (i.e. every service)
 disablePostgres: false
 disableDependsOn: false
+enableLocalHTTPS: false
+enableAutoHTTPS: false
 
 # Defaults for all OpenSlides services.
 defaults:
@@ -79,6 +81,14 @@ defaultEnvironment:
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
 
   OPENSLIDES_DEVELOPMENT: "false"
+
+# You can extend or replace parts of the defaultEnvironment.
+#
+# Example:
+#
+# defaultEnvironment:
+#   EXTERNAL_DOMAIN: openslides.example.com
+
 
 # You can customize single services using the services property. All
 # properties from the "defaults" section are available here. Service names
