@@ -473,8 +473,7 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_HOST: postgres
   DATASTORE_DATABASE_PORT: 5432
   DATASTORE_DATABASE_NAME: openslides
-  DATASTORE_DATABASE_USER: openslides
-  DATASTORE_DATABASE_PASSWORD: openslides
+  DATASTORE_DATABASE_USER_FILE: /run/secrets/datastore_postgres_user
   DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/datastore_postgres_password
 
   AUTOUPDATE_HOST: autoupdate
@@ -488,8 +487,7 @@ x-default-environment: &default-environment
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_PORT: 5432
   VOTE_DATABASE_NAME: openslides
-  VOTE_DATABASE_USER: openslides
-  VOTE_DATABASE_PASSWORD: openslides
+  VOTE_DATABASE_USER_FILE: /run/secrets/vote_postgres_user
   VOTE_DATABASE_PASSWORD_FILE: /run/secrets/vote_postgres_password
   VOTE_REDIS_HOST: redis
   VOTE_REDIS_PORT: 6379
@@ -505,8 +503,7 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_HOST: postgres
   MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
-  MEDIA_DATABASE_USER: openslides
-  MEDIA_DATABASE_PASSWORD: openslides
+  MEDIA_DATABASE_USER_FILE: /run/secrets/media_postgres_user
   MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/media_postgres_password
   MEDIA_BLOCK_SIZE: 4096
   MEDIA_PRESENTER_HOST: backend
@@ -571,6 +568,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - datastore_postgres_user
       - datastore_postgres_password
 
   datastore-reader:
@@ -584,6 +582,7 @@ services:
       - datastore-reader
       - postgres
     secrets:
+      - datastore_postgres_user
       - datastore_postgres_password
 
   datastore-writer:
@@ -599,6 +598,7 @@ services:
       - postgres
       - redis
     secrets:
+      - datastore_postgres_user
       - datastore_postgres_password
 
   postgres:
@@ -612,6 +612,7 @@ services:
     networks:
       - postgres
     secrets:
+      - datastore_postgres_user
       - datastore_postgres_password
     volumes:
       - ./db-data:/var/lib/postgresql/data
@@ -668,6 +669,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - vote_postgres_user
       - vote_postgres_password
 
   redis:
@@ -690,6 +692,7 @@ services:
       - datastore-writer
       - postgres
     secrets:
+      - media_postgres_user
       - media_postgres_password
 
   icc:
@@ -751,12 +754,18 @@ secrets:
     file: ./secrets/superadmin
   manage_auth_password:
     file: ./secrets/manage_auth_password
+  datastore_postgres_user:
+    file: ./secrets/datastore_postgres_user
   datastore_postgres_password:
     file: ./secrets/datastore_postgres_password
-  media_postgres_password:
-    file: ./secrets/media_postgres_password
+  vote_postgres_user:
+    file: ./secrets/vote_postgres_password
   vote_postgres_password:
     file: ./secrets/vote_postgres_password
+  media_postgres_user:
+    file: ./secrets/media_postgres_user
+  media_postgres_password:
+    file: ./secrets/media_postgres_password
 `
 
 func TestSetupNoDirectory(t *testing.T) {

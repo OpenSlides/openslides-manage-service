@@ -16,13 +16,8 @@ import (
 )
 
 const (
-	subDirPerms                       fs.FileMode = 0770
-	authTokenKeyFileName                          = "auth_token_key"
-	authCookieKeyFileName                         = "auth_cookie_key"
-	datastorePostgresPasswordFileName             = "datastore_postgres_password"
-	mediaPostgresPasswordFileName                 = "media_postgres_password"
-	votePostgresPasswordFileName                  = "vote_postgres_password"
-	dbDirName                                     = "db-data"
+	subDirPerms fs.FileMode = 0770
+	dbDirName               = "db-data"
 )
 
 const (
@@ -114,25 +109,12 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 		return fmt.Errorf("creating secrets directory at %q: %w", dir, err)
 	}
 
-	// Create random secrets (auth token key, auth cookie key, manage auth password)
+	// Create random secrets
 	if err := createRandomSecrets(secrDir, force); err != nil {
 		return fmt.Errorf("creating random secrets: %w", err)
 	}
 
-	// Create postgres password files
-	// TODO: Make them random too.
-	postgresPassword := []byte("openslides")
-	if err := shared.CreateFile(secrDir, force, datastorePostgresPasswordFileName, postgresPassword); err != nil {
-		return fmt.Errorf("creating secret datastore postgres password file at %q: %w", dir, err)
-	}
-	if err := shared.CreateFile(secrDir, force, mediaPostgresPasswordFileName, postgresPassword); err != nil {
-		return fmt.Errorf("creating secret media postgres password file at %q: %w", dir, err)
-	}
-	if err := shared.CreateFile(secrDir, force, votePostgresPasswordFileName, postgresPassword); err != nil {
-		return fmt.Errorf("creating secret vote postgres password file at %q: %w", dir, err)
-	}
-
-	// Create supereadmin file
+	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
@@ -147,33 +129,28 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 }
 
 func createRandomSecrets(dir string, force bool) error {
-	// Create auth token key file
-	secrToken, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for auth token: %w", err)
+	secs := []struct {
+		filename string
+	}{
+		{"auth_token_key"},
+		{"auth_cookie_key"},
+		{ManageAuthPasswordFileName},
+		{"datastore_postgres_user"},
+		{"datastore_postgres_password"},
+		{"media_postgres_user"},
+		{"media_postgres_password"},
+		{"vote_postgres_user"},
+		{"vote_postgres_password"},
 	}
-	if err := shared.CreateFile(dir, force, authTokenKeyFileName, secrToken); err != nil {
-		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
+	for _, s := range secs {
+		secrToken, err := randomSecret()
+		if err != nil {
+			return fmt.Errorf("creating random secret %q: %w", s.filename, err)
+		}
+		if err := shared.CreateFile(dir, force, s.filename, secrToken); err != nil {
+			return fmt.Errorf("creating secret file %q at %q: %w", dir, s.filename, err)
+		}
 	}
-
-	// Create auth cookie key file
-	secrCookie, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for auth cookie: %w", err)
-	}
-	if err := shared.CreateFile(dir, force, authCookieKeyFileName, secrCookie); err != nil {
-		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
-	}
-
-	// Create manage auth password file
-	authPw, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for manage auth password: %w", err)
-	}
-	if err := shared.CreateFile(dir, force, ManageAuthPasswordFileName, authPw); err != nil {
-		return fmt.Errorf("creating secret manage auth password file at %q: %w", dir, err)
-	}
-
 	return nil
 }
 
