@@ -2,11 +2,17 @@ package setup
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"io/fs"
+	"math/big"
 	"os"
 	"path"
 
@@ -16,8 +22,10 @@ import (
 )
 
 const (
-	subDirPerms fs.FileMode = 0770
-	dbDirName               = "db-data"
+	subDirPerms  fs.FileMode = 0770
+	dbDirName                = "db-data"
+	certCertName             = "cert_crt"
+	certKeyName              = "cert_key"
 )
 
 const (
@@ -114,6 +122,11 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 		return fmt.Errorf("creating random secrets: %w", err)
 	}
 
+	// Create certificats
+	if err := createCerts(secrDir, force); err != nil {
+		return fmt.Errorf("creating certificates: %w", err)
+	}
+
 	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
@@ -135,12 +148,7 @@ func createRandomSecrets(dir string, force bool) error {
 		{"auth_token_key"},
 		{"auth_cookie_key"},
 		{ManageAuthPasswordFileName},
-		{"datastore_postgres_user"},
-		{"datastore_postgres_password"},
-		{"media_postgres_user"},
-		{"media_postgres_password"},
-		{"vote_postgres_user"},
-		{"vote_postgres_password"},
+		{"postgres_password"},
 	}
 	for _, s := range secs {
 		secrToken, err := randomSecret()
@@ -164,4 +172,53 @@ func randomSecret() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func createCerts(dir string, force bool) error {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return fmt.Errorf("generating key: %w", err)
+	}
+
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return fmt.Errorf("generating serial number: %w", err)
+	}
+	templ := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject:      pkix.Name{Organization: []string{"OpenSlides"}},
+		DNSNames:     []string{"localhost"},
+		//NotBefore:             time.Now(),
+		//NotAfter:              time.Now().Add(90 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	certData, err := x509.CreateCertificate(rand.Reader, &templ, &templ, &key.PublicKey, key)
+	if err != nil {
+		return fmt.Errorf("creating certificate data: %w", err)
+	}
+	buf1 := new(bytes.Buffer)
+	if err := pem.Encode(buf1, &pem.Block{Type: "CERTIFICATE", Bytes: certData}); err != nil {
+		return fmt.Errorf("encoding certificate data: %w", err)
+	}
+	if err := shared.CreateFile(dir, force, certCertName, buf1.Bytes()); err != nil {
+		return fmt.Errorf("creating certificate file %q at %q: %w", certCertName, dir, err)
+	}
+
+	keyData, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		return fmt.Errorf("marshalling key: %w", err)
+	}
+	buf2 := new(bytes.Buffer)
+	if err := pem.Encode(buf2, &pem.Block{Type: "PRIVATE KEY", Bytes: keyData}); err != nil {
+		return fmt.Errorf("encoding key data: %w", err)
+	}
+	if err := shared.CreateFile(dir, force, certKeyName, buf2.Bytes()); err != nil {
+		return fmt.Errorf("creating key file %q at %q: %w", certKeyName, dir, err)
+	}
+
+	return nil
 }

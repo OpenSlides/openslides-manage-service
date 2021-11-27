@@ -13,6 +13,7 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_HOST: {{ .DATASTORE_DATABASE_HOST }}
   DATASTORE_DATABASE_PORT: {{ .DATASTORE_DATABASE_PORT}}
   DATASTORE_DATABASE_NAME: {{ .DATASTORE_DATABASE_NAME }}
+  DATASTORE_DATABASE_USER: {{ .DATASTORE_DATABASE_USER }}
   DATASTORE_DATABASE_USER_FILE: {{ .DATASTORE_DATABASE_USER_FILE }}
   DATASTORE_DATABASE_PASSWORD_FILE: {{ .DATASTORE_DATABASE_PASSWORD_FILE }}
 
@@ -27,7 +28,7 @@ x-default-environment: &default-environment
   VOTE_DATABASE_HOST: {{ .VOTE_DATABASE_HOST }}
   VOTE_DATABASE_PORT: {{ .VOTE_DATABASE_PORT }}
   VOTE_DATABASE_NAME: {{ .VOTE_DATABASE_NAME }}
-  VOTE_DATABASE_USER_FILE: {{ .VOTE_DATABASE_USER_FILE }}
+  VOTE_DATABASE_USER: {{ .VOTE_DATABASE_USER }}
   VOTE_DATABASE_PASSWORD_FILE: {{ .VOTE_DATABASE_PASSWORD_FILE }}
   VOTE_REDIS_HOST: {{ .VOTE_REDIS_HOST }}
   VOTE_REDIS_PORT: {{ .VOTE_REDIS_PORT }}
@@ -43,6 +44,7 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_HOST: {{ .MEDIA_DATABASE_HOST }}
   MEDIA_DATABASE_PORT: {{ .MEDIA_DATABASE_PORT }}
   MEDIA_DATABASE_NAME: {{ .MEDIA_DATABASE_NAME }}
+  MEDIA_DATABASE_USER: {{ .MEDIA_DATABASE_USER }}
   MEDIA_DATABASE_USER_FILE: {{ .MEDIA_DATABASE_USER_FILE }}
   MEDIA_DATABASE_PASSWORD_FILE: {{ .MEDIA_DATABASE_PASSWORD_FILE }}
   MEDIA_BLOCK_SIZE: {{ .MEDIA_BLOCK_SIZE }}
@@ -140,8 +142,8 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_user
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -161,8 +163,8 @@ services:
       - datastore-reader
       - postgres
     secrets:
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_user
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -184,8 +186,8 @@ services:
       - postgres
       - redis
     secrets:
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_user
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -197,14 +199,13 @@ services:
     environment:
       << : *default-environment
       POSTGRES_USER: openslides
-      POSTGRES_PASSWORD_FILE: /run/secrets/datastore_postgres_password
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: openslides
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres
     secrets:
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_password
     volumes:
       - ./db-data:/var/lib/postgresql/data
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
@@ -280,8 +281,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-      - vote_postgres_user
-      - vote_postgres_password
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -314,8 +314,8 @@ services:
       - datastore-writer
       - postgres
     secrets:
-      - media_postgres_user
-      - media_postgres_password
+      - postgres_user
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -392,18 +392,10 @@ secrets:
     file: ./secrets/superadmin
   manage_auth_password:
     file: ./secrets/manage_auth_password
-  datastore_postgres_user:
-    file: ./secrets/datastore_postgres_user
-  datastore_postgres_password:
-    file: ./secrets/datastore_postgres_password
-  vote_postgres_user:
-    file: ./secrets/vote_postgres_password
-  vote_postgres_password:
-    file: ./secrets/vote_postgres_password
-  media_postgres_user:
-    file: ./secrets/media_postgres_user
-  media_postgres_password:
-    file: ./secrets/media_postgres_password
+  postgres_user:
+    file: ./secrets/postgres_user
+  postgres_password:
+    file: ./secrets/postgres_password
 {{- if checkFlag $.EnableLocalHTTPS }}
   cert_crt:
     file: ./secrets/cert_crt

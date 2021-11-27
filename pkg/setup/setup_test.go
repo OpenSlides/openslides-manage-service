@@ -29,8 +29,7 @@ func TestCmd(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -53,8 +52,7 @@ func TestCmd(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -88,8 +86,7 @@ func TestCmd(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -130,8 +127,7 @@ services:
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -183,8 +179,7 @@ defaults:
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -207,8 +202,7 @@ func TestSetupCommon(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -232,8 +226,7 @@ func TestSetupCommon(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -247,8 +240,7 @@ func TestSetupCommon(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -271,8 +263,7 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, dir, "db-data")
 	})
@@ -295,8 +286,7 @@ func TestSetupExternalTemplate(t *testing.T) {
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -313,6 +303,7 @@ func TestSetupCommonWithConfig(t *testing.T) {
 		customConfig := `---
 filename: my-filename-ooph1OhShi.yml
 port: 8001
+enableLocalHTTPS: false
 defaults:
   containerRegistry: example.com/test_Waetai0ohf
 services:
@@ -334,8 +325,7 @@ services:
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
-		testPasswordFile(t, secDir, "datastore_postgres_password")
-		testPasswordFile(t, secDir, "media_postgres_password")
+		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 		testDirectory(t, testDir, "db-data")
 	})
@@ -358,7 +348,6 @@ disablePostgres: true
 		customConfig := `---
 filename: my-filename-Koo0eidifg.yml
 disableDependsOn: true
-enableLocalHTTPS: true
 `
 		myFileName := "my-filename-Koo0eidifg.yml"
 		c := make([][]byte, 1)
@@ -473,8 +462,9 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_HOST: postgres
   DATASTORE_DATABASE_PORT: 5432
   DATASTORE_DATABASE_NAME: openslides
-  DATASTORE_DATABASE_USER_FILE: /run/secrets/datastore_postgres_user
-  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/datastore_postgres_password
+  DATASTORE_DATABASE_USER: openslides
+  DATASTORE_DATABASE_USER_FILE: /run/secrets/postgres_user
+  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
 
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: 9012
@@ -487,8 +477,8 @@ x-default-environment: &default-environment
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_PORT: 5432
   VOTE_DATABASE_NAME: openslides
-  VOTE_DATABASE_USER_FILE: /run/secrets/vote_postgres_user
-  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/vote_postgres_password
+  VOTE_DATABASE_USER: openslides
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   VOTE_REDIS_HOST: redis
   VOTE_REDIS_PORT: 6379
 
@@ -503,8 +493,9 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_HOST: postgres
   MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
-  MEDIA_DATABASE_USER_FILE: /run/secrets/media_postgres_user
-  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/media_postgres_password
+  MEDIA_DATABASE_USER: openslides
+  MEDIA_DATABASE_USER_FILE: /run/secrets/postgres_user
+  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   MEDIA_BLOCK_SIZE: 4096
   MEDIA_PRESENTER_HOST: backend
   MEDIA_PRESENTER_PORT: 9003
@@ -532,11 +523,17 @@ services:
       - icc
     environment:
       << : *default-environment
+      ENABLE_LOCAL_HTTPS: 1
+      HTTPS_CERT_FILE: /run/secrets/cert_crt
+      HTTPS_KEY_FILE: /run/secrets/cert_key
     networks:
       - uplink
       - frontend
     ports:
       - 127.0.0.1:8000:8000
+    secrets:
+      - cert_crt
+      - cert_key
 
   client:
     image: ghcr.io/openslides/openslides/openslides-client:latest
@@ -568,8 +565,8 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_user
+      - postgres_password
 
   datastore-reader:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
@@ -582,8 +579,8 @@ services:
       - datastore-reader
       - postgres
     secrets:
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_user
+      - postgres_password
 
   datastore-writer:
     image: ghcr.io/openslides/openslides/openslides-datastore-writer:latest
@@ -598,22 +595,21 @@ services:
       - postgres
       - redis
     secrets:
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_user
+      - postgres_password
 
   postgres:
     image: postgres:11
     environment:
       << : *default-environment
       POSTGRES_USER: openslides
-      POSTGRES_PASSWORD_FILE: /run/secrets/datastore_postgres_password
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: openslides
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres
     secrets:
-      - datastore_postgres_user
-      - datastore_postgres_password
+      - postgres_password
     volumes:
       - ./db-data:/var/lib/postgresql/data
 
@@ -669,8 +665,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-      - vote_postgres_user
-      - vote_postgres_password
+      - postgres_password
 
   redis:
     image: redis:latest
@@ -692,8 +687,8 @@ services:
       - datastore-writer
       - postgres
     secrets:
-      - media_postgres_user
-      - media_postgres_password
+      - postgres_user
+      - postgres_password
 
   icc:
     image: ghcr.io/openslides/openslides/openslides-icc:latest
@@ -754,18 +749,14 @@ secrets:
     file: ./secrets/superadmin
   manage_auth_password:
     file: ./secrets/manage_auth_password
-  datastore_postgres_user:
-    file: ./secrets/datastore_postgres_user
-  datastore_postgres_password:
-    file: ./secrets/datastore_postgres_password
-  vote_postgres_user:
-    file: ./secrets/vote_postgres_password
-  vote_postgres_password:
-    file: ./secrets/vote_postgres_password
-  media_postgres_user:
-    file: ./secrets/media_postgres_user
-  media_postgres_password:
-    file: ./secrets/media_postgres_password
+  postgres_user:
+    file: ./secrets/postgres_user
+  postgres_password:
+    file: ./secrets/postgres_password
+  cert_crt:
+    file: ./secrets/cert_crt
+  cert_key:
+    file: ./secrets/cert_key
 `
 
 func TestSetupNoDirectory(t *testing.T) {
