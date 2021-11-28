@@ -26,10 +26,19 @@ To setup the instance directory run:
 
     $ ./openslides setup .
 
-Before starting the instance you must setup a means of SSL encryption because
-OpenSlides only runs over HTTPS. See [HTTPS](#HTTPS)
+This will give you a default setup with local self-signed SSL certificates. You
+will get [a browser warning and have to care yourself about checking the
+fingerprint of the
+certificate](https://en.wikipedia.org/wiki/Self-signed_certificate).
 
-When HTTPS is set up continue with:
+See [HTTPS](#HTTPS) for more information and how to use
+[caddys](https://github.com/OpenSlides/OpenSlides/blob/master/proxy) integrated
+certificate retrieval or how to disable HTTPS (in case you use an extra proxy in
+front of OpenSlides; keep in mind that the browser client requires a HTTPS
+connection to the server; it is NOT possible to use OpenSlides without any SSL
+encryption at all.)
+
+Now have a look at the `docker-compose.yml` and customize it if you want. Then run:
 
     $ docker-compose pull
     $ docker-compose up
@@ -58,10 +67,9 @@ setups. Let us know if this is interesting for you.
 
 ## Configuration of the generated YAML file
 
-The setup command generates also a YAML file (default filename:
-`docker-compose.yml`) with the container configuration for all services. This
-step can be configured with a YAML formated config file. E. g. to get a
-customized YAML file run:
+The setup command generates a YAML file (default filename: `docker-compose.yml`)
+with the container configuration for all services. This step can be configured
+with a YAML formated config file. E. g. to get a customized YAML file run:
 
     $ ./openslides setup --config my-config.yml .
 
@@ -70,30 +78,30 @@ secrets) run:
 
     $ ./openslides config --config my-config.yml .
 
-See the [default config](pkg/setup/default-config.yml) for syntax and defaults.
+See the [default config](pkg/setup/default-config.yml) for syntax and defaults
+of this configuration YAML file.
 
 
 ## HTTPS
 
-The manage tool provides two settable options for using HTTPS, both of which can
-be set in a `config.yml` file. Firstly an existing certificate can be used.
-To do so add the following line to your `config.yml`.
+The manage tool provides settable options for using HTTPS, which can be set in a
+`config.yml` file.
 
-    enableLocalHTTPS: true
+If you do not use a custom `config.yml` the setup command generates a
+self-signed certificate by default.
 
-The `cert_crt` and `cert_key` files are now expected within the `secrets`
-directory. When running OpenSlides on localhost you can locally generate a
-self-signed certificate. Use your favorite tool to generate them, e.g.
+If you want to use any other certificate you posses, just replace `cert_crt` and
+`cert_key` files in the `secrets` directory before starting docker.
 
-    openssl req -x509 -newkey rsa:4096 -nodes -days 3650 \
-        -subj "/C=DE/O=Selfsigned Test/CN=localhost" \
-        -keyout secrets/cert_key -out secrets/cert_crt
+If you want to disable HTTPS at all, because you use OpenSlides behind your own
+proxy that provides SSL encryption, just  add the following line to your
+`config.yml`.
 
-Alternatively use any other certificate you may posses.
+    enableLocalHTTPS: false
 
-If OpenSlides is running behind a publicly accessible domain, caddys integrated
-certificate retrieval can be utilized. The following lines in `config.yml` are
-necessary to do so.
+If you run OpenSlides behind a publicly accessible domain, you can use caddys
+integrated certificate retrieval. Add the following lines to your `config.yml`
+before running the setup command:
 
     enableAutoHTTPS: true
     defaultEnvironment:
