@@ -84,11 +84,11 @@ func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient
 		password: pw,
 	}
 
-	// TODO: https://itnext.io/practical-guide-to-securing-grpc-connections-with-go-and-tls-part-1-f63058e9d6d1
+	// TODO: Have a look at https://itnext.io/practical-guide-to-securing-grpc-connections-with-go-and-tls-part-1-f63058e9d6d1 and
+	// try not to use insecure settings by default.
 	transCreds := credentials.NewTLS(&tls.Config{
 		InsecureSkipVerify: true,
 	})
-
 	conn, err := grpc.DialContext(ctx, address,
 		grpc.WithTransportCredentials(transCreds),
 		grpc.WithBlock(),
