@@ -3,14 +3,11 @@
 Manage service and tool for OpenSlides which provides some management commands
 to setup and control OpenSlides instances.
 
-The service uses [gRPC](https://grpc.io/) and can be reached directly via the
-OpenSlides proxy service.
-
-The (client) tool can be used as follows:
+The tool can be used as follows:
 
     $ ./openslides
 
-You can find all management commands in the help text.
+You will get a help text with all management commands.
 
 
 ## How to start the full system
@@ -22,7 +19,8 @@ running. Check if you have to run docker as local user or as root.
 
     $ docker info
 
-To setup the instance directory run:
+Go to a nice place in your filesystem and download the manage tool `openslides`.
+To setup the instance in this directory run:
 
     $ ./openslides setup .
 
@@ -31,14 +29,15 @@ will get [a browser warning and have to care yourself about checking the
 fingerprint of the
 certificate](https://en.wikipedia.org/wiki/Self-signed_certificate).
 
-See [HTTPS](#HTTPS) for more information and how to use
+[Below](#SSL-encryption) you find for more information and how to use
 [caddys](https://github.com/OpenSlides/OpenSlides/blob/master/proxy) integrated
-certificate retrieval or how to disable HTTPS (in case you use an extra proxy in
-front of OpenSlides; keep in mind that the browser client requires a HTTPS
-connection to the server; it is NOT possible to use OpenSlides without any SSL
-encryption at all.)
+certificate retrieval or how to disable the proxy expecting SSL. Disabling SSL
+is only possible if you use an extra proxy in front of OpenSlides. Keep in mind
+that the browser client requires a HTTPS connection to the server. It is NOT
+possible to use OpenSlides without any SSL encryption at all.
 
-Now have a look at the `docker-compose.yml` and customize it if you want. Then run:
+Now have a look at the `docker-compose.yml` and customize it if you want. Then
+run:
 
     $ docker-compose pull
     $ docker-compose up
@@ -48,7 +47,8 @@ directory:
 
     $ ./openslides initial-data
 
-Now open https://localhost:8000, login and have fun.
+Now open https://localhost:8000, login with superuser credentials (default
+username and password: `superuser`) and have fun.
 
 
 ## Stop the server and remove the containers
@@ -82,10 +82,10 @@ See the [default config](pkg/setup/default-config.yml) for syntax and defaults
 of this configuration YAML file.
 
 
-## HTTPS
+## SSL encryption
 
-The manage tool provides settable options for using HTTPS, which can be set in a
-`config.yml` file.
+The manage tool provides settable options for using SSL encryption, which can be
+set in a `config.yml` file.
 
 If you do not use a custom `config.yml` the setup command generates a
 self-signed certificate by default.
@@ -93,7 +93,7 @@ self-signed certificate by default.
 If you want to use any other certificate you posses, just replace `cert_crt` and
 `cert_key` files in the `secrets` directory before starting docker.
 
-If you want to disable HTTPS at all, because you use OpenSlides behind your own
+If you want to disable SSL encryption, because you use OpenSlides behind your own
 proxy that provides SSL encryption, just  add the following line to your
 `config.yml`.
 
@@ -109,8 +109,14 @@ before running the setup command:
       # Use letsencrypt staging environment for testing
       # ACME_ENDPOINT: https://acme-staging-v02.api.letsencrypt.org/directory
 
-See [proxy](https://github.com/OpenSlides/OpenSlides/blob/master/proxy) for
+See [the proxy service](https://github.com/OpenSlides/OpenSlides/blob/master/proxy) for
 details on provided methods for HTTPS activation.
+
+
+## Under the hood
+
+The manage service uses [gRPC](https://grpc.io/) and can be reached directly via
+the OpenSlides proxy service.
 
 
 ## Development
@@ -118,11 +124,11 @@ details on provided methods for HTTPS activation.
 For development you need [Go](https://golang.org/) and the [Protocol Buffer
 Compiler](https://grpc.io/docs/protoc-installation/).
 
-The (client) tool can be build with
+The tool can be build with
 
     $ go build ./cmd/openslides
 
-The server part can be build with:
+The server can be build with:
 
     $ go build ./cmd/server
 
