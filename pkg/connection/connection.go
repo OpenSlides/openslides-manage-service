@@ -3,6 +3,7 @@ package connection
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -81,9 +83,19 @@ func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient
 	creds := BasicAuth{
 		password: pw,
 	}
-	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithPerRPCCredentials(creds))
+
+	// TODO: Have a look at https://itnext.io/practical-guide-to-securing-grpc-connections-with-go-and-tls-part-1-f63058e9d6d1 and
+	// try not to use insecure settings by default.
+	transCreds := credentials.NewTLS(&tls.Config{
+		InsecureSkipVerify: true,
+	})
+	conn, err := grpc.DialContext(ctx, address,
+		grpc.WithTransportCredentials(transCreds),
+		grpc.WithBlock(),
+		grpc.WithPerRPCCredentials(creds),
+	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("creating gRPC client connection with grpc.DialContect(): %w", err)
+		return nil, nil, fmt.Errorf("creating gRPC client connection with grpc.DialContext(): %w", err)
 	}
 	return proto.NewManageClient(conn), conn.Close, nil
 }

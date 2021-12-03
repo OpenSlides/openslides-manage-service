@@ -9,7 +9,7 @@ port: 8000
 # General options affecting the whole application (i.e. every service)
 disablePostgres: false
 disableDependsOn: false
-enableLocalHTTPS: false
+enableLocalHTTPS: true
 enableAutoHTTPS: false
 
 # Defaults for all OpenSlides services.
@@ -33,8 +33,8 @@ defaultEnvironment:
   DATASTORE_DATABASE_PORT: 5432
   DATASTORE_DATABASE_NAME: openslides
   DATASTORE_DATABASE_USER: openslides
-  DATASTORE_DATABASE_PASSWORD: openslides
-  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/datastore_postgres_password
+  DATASTORE_DATABASE_USER_FILE: /run/secrets/postgres_user
+  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
 
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: 9012
@@ -48,8 +48,7 @@ defaultEnvironment:
   VOTE_DATABASE_PORT: 5432
   VOTE_DATABASE_NAME: openslides
   VOTE_DATABASE_USER: openslides
-  VOTE_DATABASE_PASSWORD: openslides
-  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/vote_postgres_password
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   VOTE_REDIS_HOST: redis
   VOTE_REDIS_PORT: 6379
 
@@ -65,8 +64,8 @@ defaultEnvironment:
   MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
   MEDIA_DATABASE_USER: openslides
-  MEDIA_DATABASE_PASSWORD: openslides
-  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/media_postgres_password
+  MEDIA_DATABASE_USER_FILE: /run/secrets/postgres_user
+  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   MEDIA_BLOCK_SIZE: 4096
   MEDIA_PRESENTER_HOST: backend
   MEDIA_PRESENTER_PORT: 9003

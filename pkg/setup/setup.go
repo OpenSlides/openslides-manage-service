@@ -2,11 +2,17 @@ package setup
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"io/fs"
+	"math/big"
 	"os"
 	"path"
 
@@ -16,13 +22,10 @@ import (
 )
 
 const (
-	subDirPerms                       fs.FileMode = 0770
-	authTokenKeyFileName                          = "auth_token_key"
-	authCookieKeyFileName                         = "auth_cookie_key"
-	datastorePostgresPasswordFileName             = "datastore_postgres_password"
-	mediaPostgresPasswordFileName                 = "media_postgres_password"
-	votePostgresPasswordFileName                  = "vote_postgres_password"
-	dbDirName                                     = "db-data"
+	subDirPerms  fs.FileMode = 0770
+	dbDirName                = "db-data"
+	certCertName             = "cert_crt"
+	certKeyName              = "cert_key"
 )
 
 const (
@@ -114,25 +117,23 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 		return fmt.Errorf("creating secrets directory at %q: %w", dir, err)
 	}
 
-	// Create random secrets (auth token key, auth cookie key, manage auth password)
+	// Create random secrets
 	if err := createRandomSecrets(secrDir, force); err != nil {
 		return fmt.Errorf("creating random secrets: %w", err)
 	}
 
-	// Create postgres password files
-	// TODO: Make them random too.
-	postgresPassword := []byte("openslides")
-	if err := shared.CreateFile(secrDir, force, datastorePostgresPasswordFileName, postgresPassword); err != nil {
-		return fmt.Errorf("creating secret datastore postgres password file at %q: %w", dir, err)
-	}
-	if err := shared.CreateFile(secrDir, force, mediaPostgresPasswordFileName, postgresPassword); err != nil {
-		return fmt.Errorf("creating secret media postgres password file at %q: %w", dir, err)
-	}
-	if err := shared.CreateFile(secrDir, force, votePostgresPasswordFileName, postgresPassword); err != nil {
-		return fmt.Errorf("creating secret vote postgres password file at %q: %w", dir, err)
+	// Create secret postgres user file
+	// TODO: https://github.com/OpenSlides/openslides-manage-service/issues/116
+	if err := shared.CreateFile(secrDir, force, "postgres_user", []byte("openslides")); err != nil {
+		return fmt.Errorf("creating secret postgres user file at %q: %w", dir, err)
 	}
 
-	// Create supereadmin file
+	// Create certificates
+	if err := createCerts(secrDir, force); err != nil {
+		return fmt.Errorf("creating certificates: %w", err)
+	}
+
+	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
 	}
@@ -147,33 +148,23 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 }
 
 func createRandomSecrets(dir string, force bool) error {
-	// Create auth token key file
-	secrToken, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for auth token: %w", err)
+	secs := []struct {
+		filename string
+	}{
+		{"auth_token_key"},
+		{"auth_cookie_key"},
+		{ManageAuthPasswordFileName},
+		{"postgres_password"},
 	}
-	if err := shared.CreateFile(dir, force, authTokenKeyFileName, secrToken); err != nil {
-		return fmt.Errorf("creating secret auth token key file at %q: %w", dir, err)
+	for _, s := range secs {
+		secrToken, err := randomSecret()
+		if err != nil {
+			return fmt.Errorf("creating random secret %q: %w", s.filename, err)
+		}
+		if err := shared.CreateFile(dir, force, s.filename, secrToken); err != nil {
+			return fmt.Errorf("creating secret file %q at %q: %w", dir, s.filename, err)
+		}
 	}
-
-	// Create auth cookie key file
-	secrCookie, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for auth cookie: %w", err)
-	}
-	if err := shared.CreateFile(dir, force, authCookieKeyFileName, secrCookie); err != nil {
-		return fmt.Errorf("creating secret auth cookie key file at %q: %w", dir, err)
-	}
-
-	// Create manage auth password file
-	authPw, err := randomSecret()
-	if err != nil {
-		return fmt.Errorf("creating random key for manage auth password: %w", err)
-	}
-	if err := shared.CreateFile(dir, force, ManageAuthPasswordFileName, authPw); err != nil {
-		return fmt.Errorf("creating secret manage auth password file at %q: %w", dir, err)
-	}
-
 	return nil
 }
 
@@ -187,4 +178,53 @@ func randomSecret() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func createCerts(dir string, force bool) error {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return fmt.Errorf("generating key: %w", err)
+	}
+
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return fmt.Errorf("generating serial number: %w", err)
+	}
+	templ := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject:      pkix.Name{Organization: []string{"OpenSlides"}},
+		DNSNames:     []string{"localhost"},
+		//NotBefore:             time.Now(),
+		//NotAfter:              time.Now().Add(90 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	certData, err := x509.CreateCertificate(rand.Reader, &templ, &templ, &key.PublicKey, key)
+	if err != nil {
+		return fmt.Errorf("creating certificate data: %w", err)
+	}
+	buf1 := new(bytes.Buffer)
+	if err := pem.Encode(buf1, &pem.Block{Type: "CERTIFICATE", Bytes: certData}); err != nil {
+		return fmt.Errorf("encoding certificate data: %w", err)
+	}
+	if err := shared.CreateFile(dir, force, certCertName, buf1.Bytes()); err != nil {
+		return fmt.Errorf("creating certificate file %q at %q: %w", certCertName, dir, err)
+	}
+
+	keyData, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		return fmt.Errorf("marshalling key: %w", err)
+	}
+	buf2 := new(bytes.Buffer)
+	if err := pem.Encode(buf2, &pem.Block{Type: "PRIVATE KEY", Bytes: keyData}); err != nil {
+		return fmt.Errorf("encoding key data: %w", err)
+	}
+	if err := shared.CreateFile(dir, force, certKeyName, buf2.Bytes()); err != nil {
+		return fmt.Errorf("creating key file %q at %q: %w", certKeyName, dir, err)
+	}
+
+	return nil
 }
