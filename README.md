@@ -32,7 +32,7 @@ certificate](https://en.wikipedia.org/wiki/Self-signed_certificate).
 [Below](#SSL-encryption) you find for more information and how to use
 [caddys](https://github.com/OpenSlides/OpenSlides/blob/master/proxy) integrated
 certificate retrieval or how to disable the proxy expecting SSL. Disabling SSL
-is only possible if you use an extra proxy in front of OpenSlides. Keep in mind
+is only feasible if you use an extra proxy in front of OpenSlides. Keep in mind
 that the browser client requires a HTTPS connection to the server. It is NOT
 possible to use OpenSlides without any SSL encryption at all.
 

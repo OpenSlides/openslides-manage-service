@@ -122,12 +122,6 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 		return fmt.Errorf("creating random secrets: %w", err)
 	}
 
-	// Create secret postgres user file
-	// TODO: https://github.com/OpenSlides/openslides-manage-service/issues/116
-	if err := shared.CreateFile(secrDir, force, "postgres_user", []byte("openslides")); err != nil {
-		return fmt.Errorf("creating secret postgres user file at %q: %w", dir, err)
-	}
-
 	// Create certificates
 	if err := createCerts(secrDir, force); err != nil {
 		return fmt.Errorf("creating certificates: %w", err)
