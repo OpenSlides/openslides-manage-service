@@ -1,20 +1,17 @@
 package connection
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -48,37 +45,11 @@ func (a BasicAuth) RequireTransportSecurity() bool {
 	return false
 }
 
-// CheckAuthFromContext checks if the basic authorization header is present and contains the correct password.
-func CheckAuthFromContext(ctx context.Context, secret []byte) error {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return fmt.Errorf("unable to get metadata from context")
-	}
-	a := md.Get("authorization")
-	password, err := base64.StdEncoding.DecodeString(a[0])
-	if err != nil {
-		return fmt.Errorf("decoding password (base64): %w", err)
-	}
-
-	if !bytes.Equal(password, secret) {
-		return fmt.Errorf("password does not match")
-	}
-	return nil
-}
-
 // Dial creates a gRPC connection to the server.
 func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient, func() error, error) {
-	pw := []byte(shared.DevelopmentPassword)
-	dev, _ := strconv.ParseBool(os.Getenv("OPENSLIDES_DEVELOPMENT"))
-	// Error value does not matter here. In case of an error dev is false and
-	// this is the expected behavior.
-	if !dev {
-		var err error
-		filePW, err := os.ReadFile(passwordFile)
-		if err != nil {
-			return nil, nil, fmt.Errorf("reading manage auth password file %q: %w", passwordFile, err)
-		}
-		pw = filePW
+	pw, err := shared.ServerAuthSecret(passwordFile, os.Getenv("OPENSLIDES_DEVELOPMENT"))
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting server auth secret: %w", err)
 	}
 	creds := BasicAuth{
 		password: pw,
