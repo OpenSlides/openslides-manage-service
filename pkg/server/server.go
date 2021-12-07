@@ -1,8 +1,8 @@
 package server
 
 import (
-	"bytes"
 	"context"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -34,23 +34,27 @@ func Run(cfg *Config) error {
 		return fmt.Errorf("listen on address %q: %w", addr, err)
 	}
 
-	srv := grpc.NewServer(
+	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			grpc.UnaryServerInterceptor(serverAuthUnaryInterceptor),
+			grpc.UnaryServerInterceptor(authUnaryInterceptor),
 		),
 		grpc.ChainStreamInterceptor(
-			grpc.StreamServerInterceptor(serverAuthStreamInterceptor),
+			grpc.StreamServerInterceptor(authStreamInterceptor),
 		),
 	)
-	proto.RegisterManageServer(srv, newServer(cfg))
+	manageSrv, err := newServer(cfg)
+	if err != nil {
+		return fmt.Errorf("creating server object: %w", err)
+	}
+	proto.RegisterManageServer(grpcSrv, manageSrv)
 
 	go func() {
 		waitForShutdown()
-		srv.GracefulStop()
+		grpcSrv.GracefulStop()
 	}()
 
 	log.Printf("Running manage service on %s\n", addr)
-	if err := srv.Serve(lis); err != nil {
+	if err := grpcSrv.Serve(lis); err != nil {
 		return fmt.Errorf("running manage service: %w", err)
 	}
 
@@ -59,13 +63,20 @@ func Run(cfg *Config) error {
 
 // srv implements the manage methods on server side.
 type srv struct {
-	config *Config
+	config     *Config
+	authSecret []byte
 }
 
-func newServer(cfg *Config) *srv {
-	return &srv{
-		config: cfg,
+func newServer(cfg *Config) (*srv, error) {
+	sec, err := shared.ServerAuthSecret(cfg.PasswordFile, cfg.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting server auth secret: %w", err)
 	}
+	s := &srv{
+		config:     cfg,
+		authSecret: sec,
+	}
+	return s, nil
 }
 
 func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
@@ -93,8 +104,8 @@ func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
 	return tunnel.Tunnel(ts)
 }
 
-func serverAuthUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	if err := serverAuth(ctx, info.Server.(*srv)); err != nil {
+func authUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	if err := info.Server.(*srv).serverAuth(ctx); err != nil {
 		return nil, fmt.Errorf("server authentication: %w", err)
 	}
 	resp, err := handler(ctx, req)
@@ -104,8 +115,8 @@ func serverAuthUnaryInterceptor(ctx context.Context, req interface{}, info *grpc
 	return resp, nil
 }
 
-func serverAuthStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	if err := serverAuth(ss.Context(), serv.(*srv)); err != nil {
+func authStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	if err := serv.(*srv).serverAuth(ss.Context()); err != nil {
 		return fmt.Errorf("server authentication: %w", err)
 	}
 	if err := handler(serv, ss); err != nil {
@@ -114,23 +125,21 @@ func serverAuthStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *g
 	return nil
 }
 
-func serverAuth(ctx context.Context, s *srv) error {
+func (s *srv) serverAuth(ctx context.Context) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return fmt.Errorf("getting metadata from context: failed")
 	}
 	a := md.Get("authorization")
+	if len(a) == 0 {
+		return fmt.Errorf("no authorization header found")
+	}
 	password, err := base64.StdEncoding.DecodeString(a[0])
 	if err != nil {
 		return fmt.Errorf("decoding password (base64): %w", err)
 	}
 
-	sec, err := shared.ServerAuthSecret(s.config.PasswordFile, s.config.OpenSlidesDevelopment)
-	if err != nil {
-		return fmt.Errorf("getting server auth secret: %w", err)
-	}
-
-	if !bytes.Equal(password, sec) {
+	if subtle.ConstantTimeCompare(password, s.authSecret) != 1 {
 		return fmt.Errorf("password does not match")
 	}
 

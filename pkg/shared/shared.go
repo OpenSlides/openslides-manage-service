@@ -9,10 +9,10 @@ import (
 	"strconv"
 )
 
-// DevelopmentPassword is the password used if environment variable
+// developmentPassword is the password used if environment variable
 // OPENSLIDES_DEVELOPMENT is set to one of the following values: 1, t, T, TRUE,
 // true, True.
-const DevelopmentPassword = "openslides"
+const developmentPassword = "openslides"
 
 const fileMode fs.FileMode = 0666
 
@@ -53,16 +53,14 @@ func fileExists(p string) (bool, error) {
 // file as given in environment variable. In case of development it uses the
 // development password.
 func ServerAuthSecret(secretFile string, devEnv string) ([]byte, error) {
-	pw := []byte(DevelopmentPassword)
-	dev, _ := strconv.ParseBool(devEnv)
-	// Error value does not matter here. In case of an error dev is false and
-	// this is the expected behavior.
-	if !dev {
-		filePW, err := os.ReadFile(secretFile)
-		if err != nil {
-			return nil, fmt.Errorf("reading manage auth secret file %q: %w", secretFile, err)
-		}
-		pw = filePW
+	if dev, _ := strconv.ParseBool(devEnv); dev {
+		// Error value does not matter here. In case of an error dev is false and
+		// this is the expected behavior.
+		return []byte(developmentPassword), nil
+	}
+	pw, err := os.ReadFile(secretFile)
+	if err != nil {
+		return nil, fmt.Errorf("reading manage auth secret file %q: %w", secretFile, err)
 	}
 	return pw, nil
 }
