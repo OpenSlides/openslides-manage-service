@@ -14,10 +14,13 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
+    - name: Create manage auth password
+      run: echo "password" > manage_auth_password
+
     - name: Build and start server with golang
       run: |
         go build ./cmd/server
-        timeout --preserve-status --signal SIGINT 2s ./server
+        MANAGE_AUTH_PASSWORD_FILE=manage_auth_password timeout --preserve-status --signal SIGINT 5s ./server
 
     - name: Build and start manage with golang
       run: |
@@ -27,14 +30,14 @@ jobs:
     - name: Build and start server with Docker
       run: |
         docker build . --tag openslides-manage
-        timeout --preserve-status --signal SIGINT 2s docker run openslides-manage
+        timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage
       env:
         DOCKER_BUILDKIT: 1
 
     - name: Start development version of server with Makefile
       run: |
         make build-dev
-        timeout --preserve-status --signal SIGINT 2s docker run openslides-manage-dev
+        timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage-dev
       env:
         DOCKER_BUILDKIT: 1
 
