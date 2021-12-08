@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/subtle"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
@@ -9,11 +11,9 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/auth"
-	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -21,6 +21,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 const runDir = "/run"
@@ -33,16 +34,27 @@ func Run(cfg *Config) error {
 		return fmt.Errorf("listen on address %q: %w", addr, err)
 	}
 
-	srv := grpc.NewServer()
-	proto.RegisterManageServer(srv, newServer(cfg))
+	grpcSrv := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			grpc.UnaryServerInterceptor(authUnaryInterceptor),
+		),
+		grpc.ChainStreamInterceptor(
+			grpc.StreamServerInterceptor(authStreamInterceptor),
+		),
+	)
+	manageSrv, err := newServer(cfg)
+	if err != nil {
+		return fmt.Errorf("creating server object: %w", err)
+	}
+	proto.RegisterManageServer(grpcSrv, manageSrv)
 
 	go func() {
 		waitForShutdown()
-		srv.GracefulStop()
+		grpcSrv.GracefulStop()
 	}()
 
 	log.Printf("Running manage service on %s\n", addr)
-	if err := srv.Serve(lis); err != nil {
+	if err := grpcSrv.Serve(lis); err != nil {
 		return fmt.Errorf("running manage service: %w", err)
 	}
 
@@ -51,13 +63,20 @@ func Run(cfg *Config) error {
 
 // srv implements the manage methods on server side.
 type srv struct {
-	config *Config
+	config     *Config
+	authSecret []byte
 }
 
-func newServer(cfg *Config) *srv {
-	return &srv{
-		config: cfg,
+func newServer(cfg *Config) (*srv, error) {
+	sec, err := shared.ServerAuthSecret(cfg.PasswordFile, cfg.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting server auth secret: %w", err)
 	}
+	s := &srv{
+		config:     cfg,
+		authSecret: sec,
+	}
+	return s, nil
 }
 
 func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
@@ -65,13 +84,6 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	pw, err := s.serverAuthPassword()
-	if err != nil {
-		return nil, fmt.Errorf("getting manage auth password: %w", err)
-	}
-	if err := connection.CheckAuthFromContext(ctx, pw); err != nil {
-		return nil, fmt.Errorf("authorization failed: %w", err)
-	}
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
 	auth := auth.New(s.config.authURL())
 	return initialdata.InitialData(ctx, in, runDir, ds, auth)
@@ -83,40 +95,55 @@ func (s *srv) CreateUser(context.Context, *proto.CreateUserRequest) (*proto.Crea
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	pw, err := s.serverAuthPassword()
-	if err != nil {
-		return nil, fmt.Errorf("getting manage auth password: %w", err)
-	}
-	if err := connection.CheckAuthFromContext(ctx, pw); err != nil {
-		return nil, fmt.Errorf("authorization failed: %w", err)
-	}
 	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
 	auth := auth.New(s.config.authURL())
 	return setpassword.SetPassword(ctx, in, ds, auth)
 }
 
 func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
-	pw, err := s.serverAuthPassword()
-	if err != nil {
-		return fmt.Errorf("getting manage auth password: %w", err)
-	}
-	if err := connection.CheckAuthFromContext(ts.Context(), pw); err != nil {
-		return fmt.Errorf("authorization failed: %w", err)
-	}
 	return tunnel.Tunnel(ts)
 }
 
-func (s *srv) serverAuthPassword() ([]byte, error) {
-	dev, _ := strconv.ParseBool(s.config.OpenSlidesDevelopment)
-	if dev {
-		return []byte(shared.DevelopmentPassword), nil
+func authUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	if err := info.Server.(*srv).serverAuth(ctx); err != nil {
+		return nil, fmt.Errorf("server authentication: %w", err)
 	}
-	p := s.config.PasswordFile
-	pw, err := os.ReadFile(p)
+	resp, err := handler(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("reading manage auth password from secrets file %q: %w", p, err)
+		return nil, fmt.Errorf("calling handler: %w", err)
 	}
-	return pw, nil
+	return resp, nil
+}
+
+func authStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	if err := serv.(*srv).serverAuth(ss.Context()); err != nil {
+		return fmt.Errorf("server authentication: %w", err)
+	}
+	if err := handler(serv, ss); err != nil {
+		return fmt.Errorf("calling handler: %w", err)
+	}
+	return nil
+}
+
+func (s *srv) serverAuth(ctx context.Context) error {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return fmt.Errorf("getting metadata from context: failed")
+	}
+	a := md.Get("authorization")
+	if len(a) == 0 {
+		return fmt.Errorf("no authorization header found")
+	}
+	password, err := base64.StdEncoding.DecodeString(a[0])
+	if err != nil {
+		return fmt.Errorf("decoding password (base64): %w", err)
+	}
+
+	if subtle.ConstantTimeCompare(password, s.authSecret) != 1 {
+		return fmt.Errorf("password does not match")
+	}
+
+	return nil
 }
 
 // Config holds config data for the server.
