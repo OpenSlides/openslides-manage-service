@@ -55,13 +55,13 @@ func Cmd() *cobra.Command {
 		"backend-presenter": ":9003:backend:9003",
 		"auth":              ":9004:auth:9004",
 		"media":             ":9006:media:9006",
+		"icc":               ":9007:icc:9007",
+		"vote":              ":9013:vote:9013",
 		"datastore-reader":  ":9010:datastore-reader:9010",
 		"datastore-writer":  ":9011:datastore-writer:9011",
 		"autoupdate":        ":9012:autoupdate:9012",
-		"icc":               ":9013:icc:9013",
 		"postgres":          ":5432:postgres:5432",
 		"redis":             ":6379:redis:6379",
-		// TODO: Add voting.
 	}
 
 	var serviceNames []string

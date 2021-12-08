@@ -501,7 +501,7 @@ x-default-environment: &default-environment
   MEDIA_PRESENTER_PORT: 9003
 
   ICC_HOST: icc
-  ICC_PORT: 9013
+  ICC_PORT: 9007
   ICC_REDIS_HOST: redis
   ICC_REDIS_PORT: 6379
 
