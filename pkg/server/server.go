@@ -93,13 +93,6 @@ func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*p
 }
 
 func (s *srv) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
-	pw, err := s.serverAuthPassword()
-	if err != nil {
-		return nil, fmt.Errorf("getting manage auth password: %w", err)
-	}
-	if err := connection.CheckAuthFromContext(ctx, pw); err != nil {
-		return nil, fmt.Errorf("authorization failed: %w", err)
-	}
 	a := action.New(s.config.actionURL())
 	return createuser.CreateUser(ctx, in, a)
 }
