@@ -14,9 +14,7 @@ import (
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/action"
-	"github.com/OpenSlides/openslides-manage-service/pkg/auth"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
-	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
@@ -86,9 +84,8 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
-	auth := auth.New(s.config.authURL())
-	return initialdata.InitialData(ctx, in, runDir, ds, auth)
+	a := action.New(s.config.actionURL())
+	return initialdata.InitialData(ctx, in, runDir, a)
 
 }
 

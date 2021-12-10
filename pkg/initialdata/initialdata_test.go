@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
@@ -45,7 +43,7 @@ func (m *mockInitialdataClient) InitialData(ctx context.Context, in *proto.Initi
 func TestInitialdata(t *testing.T) {
 	t.Run("default initial data", func(t *testing.T) {
 		mc := new(mockInitialdataClient)
-		mc.expected = []byte(initialdata.DefaultInitialData)
+		mc.expected = []byte("")
 		ctx := context.Background()
 		if err := initialdata.Run(ctx, mc, ""); err != nil {
 			t.Fatalf("running initialdata.Run() failed with error: %v", err)
@@ -77,65 +75,32 @@ func TestInitialdata(t *testing.T) {
 
 // Server tests
 
-type mockDatastore struct {
-	content map[string]json.RawMessage
+type mockAction struct {
+	called map[string][]json.RawMessage
 }
 
-func (m *mockDatastore) Exists(ctx context.Context, collection string, id int) (bool, error) {
-	k := fmt.Sprintf("%s/%d/id", collection, id)
-	_, ok := m.content[k]
-	return ok, nil
+func newMockAction() *mockAction {
+	ma := new(mockAction)
+	ma.called = make(map[string][]json.RawMessage)
+	return ma
 }
 
-func (m *mockDatastore) Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error {
-	for fqid, fields := range creatables {
-		ss := strings.Split(fqid, "/")
-		collection := ss[0]
-		id, err := strconv.Atoi(ss[1])
-		if err != nil {
-			return fmt.Errorf("converting string to int: %w", err)
-		}
-
-		exists, err := m.Exists(ctx, collection, id)
-		if err != nil {
-			return fmt.Errorf("checking existance: %w", err)
-		}
-		if exists {
-			return fmt.Errorf("object %q already exists", fqid)
-		}
-		if m.content == nil {
-			m.content = make(map[string]json.RawMessage)
-		}
-		for field, value := range fields {
-			m.content[fqid+"/"+field] = value
-		}
+func (m *mockAction) Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error) {
+	switch name {
+	case "organization.initial_import", "user.set_password":
+		m.called[name] = append(m.called[name], data)
+	default:
+		return nil, fmt.Errorf("action %q is not defined here", name)
 	}
-	return nil
-}
-
-func (m *mockDatastore) Set(ctx context.Context, fqfield string, value json.RawMessage) error {
-	if m.content == nil {
-		m.content = make(map[string]json.RawMessage)
-	}
-	m.content[fqfield] = value
-	return nil
-}
-
-type mockAuth struct{}
-
-func (m *mockAuth) Hash(ctx context.Context, password string) (string, error) {
-	return "hash:" + password, nil
+	return nil, nil
 }
 
 func TestInitialDataServerAll(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	md := new(mockDatastore)
-	ma := new(mockAuth)
-	in := &proto.InitialDataRequest{
-		Data: initialdata.DefaultInitialData,
-	}
+	ma := newMockAction()
+	in := &proto.InitialDataRequest{}
 
 	// Prepare superadmin secret
 	testDir, err := os.MkdirTemp("", "openslides-manage-service-run-")
@@ -159,7 +124,7 @@ func TestInitialDataServerAll(t *testing.T) {
 
 	// Run tests
 	t.Run("running the first time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
+		resp, err := initialdata.InitialData(ctx, in, testDir, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
@@ -167,79 +132,10 @@ func TestInitialDataServerAll(t *testing.T) {
 			t.Fatalf("running InitialData() should return a truthy result, got falsy")
 		}
 
-		expected := fmt.Sprintf("%q", "hash:"+superadminPassword)
-		got := string(md.content["user/1/password"])
-		if expected != got {
-			t.Fatalf("wrong superadmin password, expected %q, got %q", expected, got)
-		}
-	})
-	t.Run("running the second time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(ctx, in, testDir, md, ma)
-		if err != nil {
-			t.Fatalf("running InitialData() failed: %v", err)
-		}
-		if resp.Initialized {
-			t.Fatalf("running InitialData() should return a falsy result, got truthy")
-		}
+		expected := json.RawMessage(fmt.Sprintf(`[{"id":1,"password":"%s"}]`, superadminPassword))
+		got := ma.called["user.set_password"][0]
 
-		expected := fmt.Sprintf("%q", "hash:"+superadminPassword)
-		got := string(md.content["user/1/password"])
-		if expected != got {
-			t.Fatalf("wrong superadmin password, expected %q, got %q", expected, got)
-		}
-	})
-}
-
-func TestInitialDataServer(t *testing.T) {
-	md := new(mockDatastore)
-
-	t.Run("checking datastore existance", func(t *testing.T) {
-		exists, err := initialdata.CheckDatastore(context.Background(), md)
-		if err != nil {
-			t.Fatalf("checking if data in datastore exist failed: %v", err)
-		}
-		if exists {
-			t.Fatal("(fake) database should be empty, but is not")
-		}
-	})
-
-	t.Run("adding initial data", func(t *testing.T) {
-		if err := initialdata.InsertIntoDatastore(context.Background(), md, initialdata.DefaultInitialData); err != nil {
-			t.Fatalf("inserting initial data into datastore failed: %v", err)
-		}
-	})
-
-	t.Run("checking datastore again", func(t *testing.T) {
-		exists, err := initialdata.CheckDatastore(context.Background(), md)
-		if err != nil {
-			t.Fatalf("checking if data in datastore exist failed: %v", err)
-		}
-		if !exists {
-			t.Fatal("(fake) database should not be empty, but is")
-		}
-	})
-
-	t.Run("setting superadmin password", func(t *testing.T) {
-		ma := new(mockAuth)
-
-		superadminPassword := "my_superadmin_password_Do7aeRaing"
-		f, err := os.CreateTemp("", "openslides-superadmin-secret")
-		if err != nil {
-			t.Fatalf("creating temporary file for superadmin password: %v", err)
-		}
-		defer os.Remove(f.Name())
-		f.WriteString(superadminPassword)
-		if err := f.Close(); err != nil {
-			t.Fatalf("closing temporary file for superadmin password: %v", err)
-		}
-
-		if err := initialdata.SetSuperadminPassword(context.Background(), f.Name(), md, ma); err != nil {
-			t.Fatalf("setting superadmin password failed: %v", err)
-		}
-		key := "user/1/password"
-		expected := fmt.Sprintf("%q", "hash:"+superadminPassword)
-		got := string(md.content[key])
-		if expected != got {
+		if !bytes.Equal(expected, got) {
 			t.Fatalf("wrong superadmin password, expected %q, got %q", expected, got)
 		}
 	})

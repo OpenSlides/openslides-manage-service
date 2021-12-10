@@ -82,23 +82,10 @@ type mockAction struct{}
 func (m *mockAction) Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error) {
 	switch name {
 	case "user.set_password":
-		return m.setPassword()
+		return nil, nil // There is no response here.
 	default:
 		return nil, fmt.Errorf("action %q is not defined here", name)
 	}
-}
-
-func (m *mockAction) setPassword() (json.RawMessage, error) {
-	r := []struct {
-		Foo string `json:"foo"`
-	}{
-		{Foo: "bar"},
-	}
-	encR, err := json.Marshal(r)
-	if err != nil {
-		return nil, fmt.Errorf("marshalling JSON: %w", err)
-	}
-	return encR, nil
 }
 
 func TestSetPasswordServerAll(t *testing.T) {
