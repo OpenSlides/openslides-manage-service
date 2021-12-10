@@ -15,7 +15,8 @@ const (
 	// SetPasswordHelp contains the short help text for the command.
 	SetPasswordHelp = "Sets the password of an user"
 
-	// SetPasswordHelpExtra contains the long help text for the command without the headline.
+	// SetPasswordHelpExtra contains the long help text for the command without
+	// the headline.
 	SetPasswordHelpExtra = "This command sets the password of an user by a given user ID."
 )
 

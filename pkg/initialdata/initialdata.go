@@ -22,7 +22,7 @@ const (
 	// InitialDataHelpExtra contains the long help text for the command without
 	// the headline.
 	InitialDataHelpExtra = `This command also sets password of user 1 to the value of the docker
-secret "superadmin". It does nothing if the datastore is not empty.`
+secret "superadmin" which is "superadmin" by default. It does nothing if the datastore is not empty.`
 )
 
 // Cmd returns the initial-data subcommand.
