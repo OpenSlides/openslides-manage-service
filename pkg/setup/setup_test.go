@@ -664,6 +664,7 @@ services:
 
   redis:
     image: redis:latest
+    command: redis-server --save ""
     environment:
       << : *default-environment
     networks:
