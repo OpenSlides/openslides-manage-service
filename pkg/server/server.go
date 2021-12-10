@@ -98,9 +98,8 @@ func (s *srv) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*pro
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	ds := datastore.New(s.config.datastoreReaderURL(), s.config.datastoreWriterURL())
-	auth := auth.New(s.config.authURL())
-	return setpassword.SetPassword(ctx, in, ds, auth)
+	a := action.New(s.config.actionURL())
+	return setpassword.SetPassword(ctx, in, a)
 }
 
 func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {

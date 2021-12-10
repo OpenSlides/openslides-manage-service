@@ -77,39 +77,37 @@ func TestSetPassword(t *testing.T) {
 
 // Server tests
 
-type mockAuth struct{}
+type mockAction struct{}
 
-func (m *mockAuth) Hash(ctx context.Context, password string) (string, error) {
-	return "hash:" + password, nil
-}
-
-type mockDatastore struct {
-	content map[string]json.RawMessage
-}
-
-func (m *mockDatastore) Set(ctx context.Context, fqfield string, value json.RawMessage) error {
-	if m.content == nil {
-		m.content = make(map[string]json.RawMessage)
+func (m *mockAction) Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error) {
+	switch name {
+	case "user.set_password":
+		return m.setPassword()
+	default:
+		return nil, fmt.Errorf("action %q is not defined here", name)
 	}
-	m.content[fqfield] = value
-	return nil
+}
+
+func (m *mockAction) setPassword() (json.RawMessage, error) {
+	r := []struct {
+		Foo string `json:"foo"`
+	}{
+		{Foo: "bar"},
+	}
+	encR, err := json.Marshal(r)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling JSON: %w", err)
+	}
+	return encR, nil
 }
 
 func TestSetPasswordServerAll(t *testing.T) {
-	md := new(mockDatastore)
-	ma := new(mockAuth)
+	ma := new(mockAction)
 	in := &proto.SetPasswordRequest{
 		UserID:   1,
 		Password: "my_password",
 	}
-	if _, err := setpassword.SetPassword(context.Background(), in, md, ma); err != nil {
+	if _, err := setpassword.SetPassword(context.Background(), in, ma); err != nil {
 		t.Fatalf("running SetPassword() failed: %v", err)
-	}
-
-	key := "user/1/password"
-	expected := fmt.Sprintf("%q", "hash:my_password")
-	got := string(md.content[key])
-	if expected != got {
-		t.Fatalf("wrong (mock) datastore key %s, expected %q, got %q ", key, expected, got)
 	}
 }

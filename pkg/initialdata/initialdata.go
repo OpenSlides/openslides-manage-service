@@ -9,7 +9,6 @@ import (
 	"path"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
-	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
@@ -178,8 +177,9 @@ func SetSuperadminPassword(ctx context.Context, superadminSecretFile string, ds 
 	if err != nil {
 		return fmt.Errorf("reading file %q: %w", superadminSecretFile, err)
 	}
-	if err := setpassword.Execute(ctx, 1, string(sapw), ds, auth); err != nil {
-		return fmt.Errorf("setting superadmin password: %w", err)
-	}
+	_ = sapw
+	// if err := setpassword.Execute(ctx, 1, string(sapw), ds, auth); err != nil {
+	// 	return fmt.Errorf("setting superadmin password: %w", err)
+	// }
 	return nil
 }

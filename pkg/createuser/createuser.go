@@ -117,24 +117,24 @@ type action interface {
 // This function is the server side entrypoint for this package.
 func CreateUser(ctx context.Context, in *proto.CreateUserRequest, a action) (*proto.CreateUserResponse, error) {
 	name := "user.create"
-	users := []*proto.CreateUserRequest{in}
-	encodedData, err := json.Marshal(users)
+	payload := []*proto.CreateUserRequest{in}
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling action data: %w", err)
 	}
-	resp, err := a.Single(ctx, name, encodedData)
+	result, err := a.Single(ctx, name, data)
 	if err != nil {
 		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}
 
-	var respData []struct {
+	var ids []struct {
 		ID int `json:"id"`
 	}
-	if err := json.Unmarshal(resp, &respData); err != nil {
-		return nil, fmt.Errorf("unmarshalling action response %q: %w", string(resp), err)
+	if err := json.Unmarshal(result, &ids); err != nil {
+		return nil, fmt.Errorf("unmarshalling action result %q: %w", string(result), err)
 	}
-	if len(respData) != 1 {
-		return nil, fmt.Errorf("wrong lenght of action response, expected 1 item, got %d", len(respData))
+	if len(ids) != 1 {
+		return nil, fmt.Errorf("wrong lenght of action result, expected 1 item, got %d", len(ids))
 	}
-	return &proto.CreateUserResponse{UserID: int64(respData[0].ID)}, nil
+	return &proto.CreateUserResponse{UserID: int64(ids[0].ID)}, nil
 }
