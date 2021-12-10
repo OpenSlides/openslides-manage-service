@@ -32,7 +32,7 @@ secret "superadmin". It does nothing if the datastore is not empty.`
 var DefaultInitialData []byte
 
 // Cmd returns the initial-data subcommand.
-func Cmd(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.Duration) *cobra.Command {
+func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration, noSSL *bool) *cobra.Command {
 	cmd.Use = "initial-data"
 	cmd.Short = InitialDataHelp
 	cmd.Long = InitialDataHelp + "\n\n" + InitialDataHelpExtra
@@ -44,7 +44,7 @@ func Cmd(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.D
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr, *passwordFile)
+		cl, close, err := connection.Dial(ctx, *addr, *passwordFile, !*noSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

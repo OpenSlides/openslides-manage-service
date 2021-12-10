@@ -21,7 +21,7 @@ const (
 )
 
 // Cmd returns the set-password subcommand.
-func Cmd(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.Duration) *cobra.Command {
+func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration, noSSL *bool) *cobra.Command {
 	cmd.Use = "set-password"
 	cmd.Short = SetPasswordHelp
 	cmd.Long = SetPasswordHelp + "\n\n" + SetPasswordHelpExtra
@@ -36,7 +36,7 @@ func Cmd(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.D
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr, *passwordFile)
+		cl, close, err := connection.Dial(ctx, *addr, *passwordFile, !*noSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

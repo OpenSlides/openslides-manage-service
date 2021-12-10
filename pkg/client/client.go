@@ -47,7 +47,7 @@ func RootCmd() *cobra.Command {
 	return cmd
 }
 
-type cmdFunc func(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.Duration) *cobra.Command
+type cmdFunc func(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration, noSSL *bool) *cobra.Command
 
 func withConnectionFlags(fn cmdFunc) *cobra.Command {
 	cmd := &cobra.Command{}
@@ -55,5 +55,6 @@ func withConnectionFlags(fn cmdFunc) *cobra.Command {
 	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
 	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
 	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
-	return fn(cmd, addr, passwordFile, timeout)
+	noSSL := cmd.Flags().Bool("no-ssl", false, "use an unencrypted connection to manage service")
+	return fn(cmd, addr, passwordFile, timeout, noSSL)
 }

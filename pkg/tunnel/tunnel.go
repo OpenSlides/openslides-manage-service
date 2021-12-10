@@ -87,7 +87,7 @@ func Cmd() *cobra.Command {
 		ctx, cancel := contextWithInterrupt(context.Background())
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr, *passwordFile)
+		cl, close, err := connection.Dial(ctx, *addr, *passwordFile, true) // TODO: Fix this
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}
