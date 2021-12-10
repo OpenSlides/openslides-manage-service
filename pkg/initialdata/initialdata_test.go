@@ -20,10 +20,10 @@ import (
 func TestCmd(t *testing.T) {
 	t.Skip("this test does not work because there is no (fake) server running")
 	t.Run("executing initialdata.Cmd() without flags so using default initial data", func(t *testing.T) {
-		cmd := initialdata.Cmd()
-		if err := cmd.Execute(); err != nil {
-			t.Fatalf("executing initial-data subcommand: %v", err)
-		}
+		// cmd := initialdata.Cmd()
+		// if err := cmd.Execute(); err != nil {
+		// 	t.Fatalf("executing initial-data subcommand: %v", err)
+		// }
 	})
 }
 

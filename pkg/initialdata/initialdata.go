@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -31,20 +32,13 @@ secret "superadmin". It does nothing if the datastore is not empty.`
 var DefaultInitialData []byte
 
 // Cmd returns the initial-data subcommand.
-func Cmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "initial-data",
-		Short: InitialDataHelp,
-		Long:  InitialDataHelp + "\n\n" + InitialDataHelpExtra,
-		Args:  cobra.NoArgs,
-	}
+func Cmd(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.Duration) *cobra.Command {
+	cmd.Use = "initial-data"
+	cmd.Short = InitialDataHelp
+	cmd.Long = InitialDataHelp + "\n\n" + InitialDataHelpExtra
+	cmd.Args = cobra.NoArgs
 
 	dataFile := cmd.Flags().StringP("file", "f", "", "custom JSON file with initial data")
-
-	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
-	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
-	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)

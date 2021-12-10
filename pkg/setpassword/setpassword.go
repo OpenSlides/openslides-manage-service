@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
-	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -22,23 +21,16 @@ const (
 )
 
 // Cmd returns the set-password subcommand.
-func Cmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "set-password",
-		Short: SetPasswordHelp,
-		Long:  SetPasswordHelp + "\n\n" + SetPasswordHelpExtra,
-		Args:  cobra.NoArgs,
-	}
+func Cmd(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.Duration) *cobra.Command {
+	cmd.Use = "set-password"
+	cmd.Short = SetPasswordHelp
+	cmd.Long = SetPasswordHelp + "\n\n" + SetPasswordHelpExtra
+	cmd.Args = cobra.NoArgs
 
 	userID := cmd.Flags().Int64P("user_id", "u", 0, "ID of the user account")
 	cmd.MarkFlagRequired("user_id")
 	password := cmd.Flags().StringP("password", "p", "", "New password of the user")
 	cmd.MarkFlagRequired("password")
-
-	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
-	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
-	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)

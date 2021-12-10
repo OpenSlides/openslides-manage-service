@@ -2,8 +2,11 @@ package client
 
 import (
 	"fmt"
+	"path"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/config"
+	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -35,11 +38,22 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(
 		setup.Cmd(),
 		config.Cmd(),
-		initialdata.Cmd(),
-		setpassword.Cmd(),
-		createuser.Cmd(),
+		withConnectionFlags(initialdata.Cmd),
+		withConnectionFlags(setpassword.Cmd),
+		withConnectionFlags(createuser.Cmd),
 		tunnel.Cmd(),
 	)
 
 	return cmd
+}
+
+type cmdFunc func(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.Duration) *cobra.Command
+
+func withConnectionFlags(fn cmdFunc) *cobra.Command {
+	cmd := &cobra.Command{}
+	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
+	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
+	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
+	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
+	return fn(cmd, addr, passwordFile, timeout)
 }

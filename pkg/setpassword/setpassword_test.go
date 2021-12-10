@@ -12,6 +12,16 @@ import (
 	"google.golang.org/grpc"
 )
 
+func TestCmd(t *testing.T) {
+	t.Skip("this test does not work because there is no (fake) server running")
+	t.Run("executing setpassword.Cmd()", func(t *testing.T) {
+		// cmd := setpassword.Cmd()
+		// if err := cmd.Execute(); err != nil {
+		// 	t.Fatalf("executing set-password subcommand: %v", err)
+		// }
+	})
+}
+
 // Client tests.
 
 type mockSetpasswordClient struct {

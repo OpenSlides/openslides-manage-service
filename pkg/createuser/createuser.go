@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
-	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -27,24 +26,17 @@ data including default password and organization management level.`
 )
 
 // Cmd returns the create-user subcommand.
-func Cmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "create-user",
-		Short: CreateUserHelp,
-		Long:  CreateUserHelp + "\n\n" + CreateUserHelpExtra,
-		Args:  cobra.NoArgs,
-	}
+func Cmd(cmd *cobra.Command, addr *string, passwordFile *string, timeout *time.Duration) *cobra.Command {
+	cmd.Use = "create-user"
+	cmd.Short = CreateUserHelp
+	cmd.Long = CreateUserHelp + "\n\n" + CreateUserHelpExtra
+	cmd.Args = cobra.NoArgs
 
 	userFileHelpText := "custom YAML file with user data " +
 		"(required fields: username, default_password; " +
 		"extra fields: first_name, last_name, email, organization_management_level)"
 	userFile := cmd.Flags().StringP("file", "f", "", userFileHelpText)
 	cmd.MarkFlagRequired("file")
-
-	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
-	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
-	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
