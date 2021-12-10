@@ -38,23 +38,69 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(
 		setup.Cmd(),
 		config.Cmd(),
-		withConnectionFlags(initialdata.Cmd),
-		withConnectionFlags(setpassword.Cmd),
-		withConnectionFlags(createuser.Cmd),
-		tunnel.Cmd(),
+		unaryConnection(initialdata.Cmd),
+		unaryConnection(setpassword.Cmd),
+		unaryConnection(createuser.Cmd),
+		streamConnection(tunnel.Cmd),
 	)
 
 	return cmd
 }
 
-type cmdFunc func(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration, noSSL *bool) *cobra.Command
+type connectionParams struct {
+	addr         *string
+	passwordFile *string
+	timeout      *time.Duration
+	noSSL        *bool
+}
 
-func withConnectionFlags(fn cmdFunc) *cobra.Command {
+func (c *connectionParams) Addr() string {
+	return *c.addr
+}
+
+func (c *connectionParams) PasswordFile() string {
+	return *c.passwordFile
+}
+
+func (c *connectionParams) Timeout() time.Duration {
+	return *c.timeout
+}
+
+func (c *connectionParams) NoSSL() bool {
+	return *c.noSSL
+}
+
+func unaryConnection(fn func(cmd *cobra.Command, cp connection.Params) *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{}
 	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
 	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
 	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
 	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 	noSSL := cmd.Flags().Bool("no-ssl", false, "use an unencrypted connection to manage service")
-	return fn(cmd, addr, passwordFile, timeout, noSSL)
+
+	cp := &connectionParams{
+		addr:         addr,
+		passwordFile: passwordFile,
+		timeout:      timeout,
+		noSSL:        noSSL,
+	}
+
+	return fn(cmd, cp)
+}
+
+func streamConnection(fn func(cmd *cobra.Command, cp connection.Params) *cobra.Command) *cobra.Command {
+	cmd := &cobra.Command{}
+	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
+	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
+	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
+	noSSL := cmd.Flags().Bool("no-ssl", false, "use an unencrypted connection to manage service")
+
+	cp := &connectionParams{
+		addr:         addr,
+		passwordFile: passwordFile,
+		noSSL:        noSSL,
+	}
+
+	return fn(cmd, cp)
+
 }

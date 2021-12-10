@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -32,7 +31,7 @@ secret "superadmin". It does nothing if the datastore is not empty.`
 var DefaultInitialData []byte
 
 // Cmd returns the initial-data subcommand.
-func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration, noSSL *bool) *cobra.Command {
+func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Use = "initial-data"
 	cmd.Short = InitialDataHelp
 	cmd.Long = InitialDataHelp + "\n\n" + InitialDataHelpExtra
@@ -41,10 +40,10 @@ func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration,
 	dataFile := cmd.Flags().StringP("file", "f", "", "custom JSON file with initial data")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr, *passwordFile, !*noSSL)
+		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -21,7 +20,7 @@ const (
 )
 
 // Cmd returns the set-password subcommand.
-func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration, noSSL *bool) *cobra.Command {
+func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Use = "set-password"
 	cmd.Short = SetPasswordHelp
 	cmd.Long = SetPasswordHelp + "\n\n" + SetPasswordHelpExtra
@@ -33,10 +32,10 @@ func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration,
 	cmd.MarkFlagRequired("password")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr, *passwordFile, !*noSSL)
+		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -26,7 +25,7 @@ data including default password and organization management level.`
 )
 
 // Cmd returns the create-user subcommand.
-func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration, noSSL *bool) *cobra.Command {
+func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Use = "create-user"
 	cmd.Short = CreateUserHelp
 	cmd.Long = CreateUserHelp + "\n\n" + CreateUserHelpExtra
@@ -39,10 +38,12 @@ func Cmd(cmd *cobra.Command, addr, passwordFile *string, timeout *time.Duration,
 	cmd.MarkFlagRequired("file")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), *timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr, *passwordFile, !*noSSL)
+		cmd.Flags()
+
+		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

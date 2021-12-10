@@ -7,12 +7,10 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
 	"sync"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
-	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -49,7 +47,7 @@ $ openslides tunnel -L localhost:8080:auth:9004
 )
 
 // Cmd returns the set-password subcommand.
-func Cmd() *cobra.Command {
+func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	services := map[string]string{
 		"backend-action":    ":9002:backend:9002",
 		"backend-presenter": ":9003:backend:9003",
@@ -63,31 +61,24 @@ func Cmd() *cobra.Command {
 		"postgres":          ":5432:postgres:5432",
 		"redis":             ":6379:redis:6379",
 	}
-
 	var serviceNames []string
 	for service := range services {
 		serviceNames = append(serviceNames, service)
 	}
 
-	cmd := &cobra.Command{
-		Use:       "tunnel",
-		Short:     TunnelHelp,
-		Long:      TunnelHelp + "\n\n" + TunnelHelpExtra,
-		Args:      cobra.OnlyValidArgs,
-		ValidArgs: serviceNames,
-	}
+	cmd.Use = "tunnel"
+	cmd.Short = TunnelHelp
+	cmd.Long = TunnelHelp + "\n\n" + TunnelHelpExtra
+	cmd.Args = cobra.OnlyValidArgs
+	cmd.ValidArgs = serviceNames
 
 	bindLocal := cmd.Flags().StringArrayP("bind", "L", nil, "[bind_address:]port:host:hostport")
-
-	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
-	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := contextWithInterrupt(context.Background())
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *addr, *passwordFile, true) // TODO: Fix this
+		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

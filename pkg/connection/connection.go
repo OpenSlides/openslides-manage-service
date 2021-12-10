@@ -45,6 +45,14 @@ func (a BasicAuth) RequireTransportSecurity() bool {
 	return false
 }
 
+// Params ... TODO
+type Params interface {
+	Addr() string
+	PasswordFile() string
+	Timeout() time.Duration
+	NoSSL() bool
+}
+
 // Dial creates a gRPC connection to the server.
 func Dial(ctx context.Context, address, passwordFile string, ssl bool) (proto.ManageClient, func() error, error) {
 	pw, err := shared.ServerAuthSecret(passwordFile, os.Getenv("OPENSLIDES_DEVELOPMENT"))
