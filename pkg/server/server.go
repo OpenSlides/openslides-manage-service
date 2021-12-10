@@ -13,7 +13,9 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/action"
 	"github.com/OpenSlides/openslides-manage-service/pkg/auth"
+	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastore"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -90,8 +92,9 @@ func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*p
 
 }
 
-func (s *srv) CreateUser(context.Context, *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
-	return nil, fmt.Errorf("currently not implemented")
+func (s *srv) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
+	a := action.New(s.config.actionURL())
+	return createuser.CreateUser(ctx, in, a)
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
@@ -155,6 +158,10 @@ type Config struct {
 	Port         string `env:"MANAGE_PORT,9008"`
 	PasswordFile string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
 
+	ActionProtocol string `env:"ACTION_PROTOCOL,http"`
+	ActionHost     string `env:"ACTION_HOST,backend"`
+	ActionPort     string `env:"ACTION_PORT,9002"`
+
 	AuthProtocol string `env:"AUTH_PROTOCOL,http"`
 	AuthHost     string `env:"AUTH_HOST,auth"`
 	AuthPort     string `env:"AUTH_PORT,9004"`
@@ -199,6 +206,16 @@ func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
 	return &c
 }
 
+// actionURL returns an URL object to the backend action service.
+func (c *Config) actionURL() *url.URL {
+	u := url.URL{
+		Scheme: c.ActionProtocol,
+		Host:   c.ActionHost + ":" + c.ActionPort,
+		Path:   "/internal/handle_request",
+	}
+	return &u
+}
+
 // authURL returns an URL object to the auth service with empty path.
 func (c *Config) authURL() *url.URL {
 	u := url.URL{
@@ -208,7 +225,7 @@ func (c *Config) authURL() *url.URL {
 	return &u
 }
 
-// datastoreReaderURL returns an URL object to the datastore reader service with empty path.
+// datastoreReaderURL returns an URL object to the datastore reader service.
 func (c *Config) datastoreReaderURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreReaderProtocol,
@@ -218,7 +235,7 @@ func (c *Config) datastoreReaderURL() *url.URL {
 	return &u
 }
 
-// datastoreWriterURL returns an URL object to the datastore writer service with empty path.
+// datastoreWriterURL returns an URL object to the datastore writer service.
 func (c *Config) datastoreWriterURL() *url.URL {
 	u := url.URL{
 		Scheme: c.DatastoreWriterProtocol,
