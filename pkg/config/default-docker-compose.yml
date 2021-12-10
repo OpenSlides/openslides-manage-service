@@ -14,7 +14,6 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_PORT: {{ .DATASTORE_DATABASE_PORT}}
   DATASTORE_DATABASE_NAME: {{ .DATASTORE_DATABASE_NAME }}
   DATASTORE_DATABASE_USER: {{ .DATASTORE_DATABASE_USER }}
-  DATASTORE_DATABASE_USER_FILE: {{ .DATASTORE_DATABASE_USER_FILE }}
   DATASTORE_DATABASE_PASSWORD_FILE: {{ .DATASTORE_DATABASE_PASSWORD_FILE }}
 
   AUTOUPDATE_HOST: {{ .AUTOUPDATE_HOST }}
@@ -45,7 +44,6 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_PORT: {{ .MEDIA_DATABASE_PORT }}
   MEDIA_DATABASE_NAME: {{ .MEDIA_DATABASE_NAME }}
   MEDIA_DATABASE_USER: {{ .MEDIA_DATABASE_USER }}
-  MEDIA_DATABASE_USER_FILE: {{ .MEDIA_DATABASE_USER_FILE }}
   MEDIA_DATABASE_PASSWORD_FILE: {{ .MEDIA_DATABASE_PASSWORD_FILE }}
   MEDIA_BLOCK_SIZE: {{ .MEDIA_BLOCK_SIZE }}
   MEDIA_PRESENTER_HOST: {{ .MEDIA_PRESENTER_HOST }}
@@ -142,7 +140,6 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-      - postgres_user
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
@@ -163,7 +160,6 @@ services:
       - datastore-reader
       - postgres
     secrets:
-      - postgres_user
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
@@ -186,7 +182,6 @@ services:
       - postgres
       - redis
     secrets:
-      - postgres_user
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
@@ -314,7 +309,6 @@ services:
       - datastore-writer
       - postgres
     secrets:
-      - postgres_user
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
@@ -392,8 +386,6 @@ secrets:
     file: ./secrets/superadmin
   manage_auth_password:
     file: ./secrets/manage_auth_password
-  postgres_user:
-    file: ./secrets/postgres_user
   postgres_password:
     file: ./secrets/postgres_password
 {{- if checkFlag $.EnableLocalHTTPS }}

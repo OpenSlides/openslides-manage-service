@@ -463,7 +463,6 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_PORT: 5432
   DATASTORE_DATABASE_NAME: openslides
   DATASTORE_DATABASE_USER: openslides
-  DATASTORE_DATABASE_USER_FILE: /run/secrets/postgres_user
   DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
 
   AUTOUPDATE_HOST: autoupdate
@@ -494,7 +493,6 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
   MEDIA_DATABASE_USER: openslides
-  MEDIA_DATABASE_USER_FILE: /run/secrets/postgres_user
   MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   MEDIA_BLOCK_SIZE: 4096
   MEDIA_PRESENTER_HOST: backend
@@ -565,7 +563,6 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-      - postgres_user
       - postgres_password
 
   datastore-reader:
@@ -579,7 +576,6 @@ services:
       - datastore-reader
       - postgres
     secrets:
-      - postgres_user
       - postgres_password
 
   datastore-writer:
@@ -595,7 +591,6 @@ services:
       - postgres
       - redis
     secrets:
-      - postgres_user
       - postgres_password
 
   postgres:
@@ -687,7 +682,6 @@ services:
       - datastore-writer
       - postgres
     secrets:
-      - postgres_user
       - postgres_password
 
   icc:
@@ -749,8 +743,6 @@ secrets:
     file: ./secrets/superadmin
   manage_auth_password:
     file: ./secrets/manage_auth_password
-  postgres_user:
-    file: ./secrets/postgres_user
   postgres_password:
     file: ./secrets/postgres_password
   cert_crt:
