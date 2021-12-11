@@ -90,6 +90,29 @@ services:
   {{- end }}
 
 
+  {{- with .Services.backendSetup }}
+
+  backend-setup:
+    image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - backend
+    {{- end }}
+    environment:
+      << : *default-environment
+    networks:
+      - datastore-reader
+      - datastore-writer
+      - postgres
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - internal_auth_password
+      - postgres_password
+    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+  {{- end }}
+
+
   {{- with .Services.datastoreReader }}
 
   datastore-reader:
