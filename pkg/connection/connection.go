@@ -3,7 +3,6 @@ package connection
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"time"
@@ -20,30 +19,7 @@ const (
 
 	// DefaultTimeout holds the default timeout for the gRPC connection that is established by some commands.
 	DefaultTimeout = 5 * time.Second
-
-	// AuthHeader is the name of the header that contains the basic authoriztation password.
-	AuthHeader = "authorization"
 )
-
-// BasicAuth contains the password used in basic authorization process. The password has to be encoded in base64.
-// The struct implements https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
-type BasicAuth struct {
-	password []byte
-}
-
-// GetRequestMetadata gets the current request metadata.
-// See https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
-func (a BasicAuth) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	return map[string]string{
-		"authorization": base64.StdEncoding.EncodeToString(a.password),
-	}, nil
-}
-
-// RequireTransportSecurity indicates whether the credentials requires transport security.
-// See https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
-func (a BasicAuth) RequireTransportSecurity() bool {
-	return false
-}
 
 // Params provides the parameters for the connection to the manage server.
 type Params interface {
@@ -55,12 +31,12 @@ type Params interface {
 
 // Dial creates a gRPC connection to the server.
 func Dial(ctx context.Context, address, passwordFile string, ssl bool) (proto.ManageClient, func() error, error) {
-	pw, err := shared.ServerAuthSecret(passwordFile, os.Getenv("OPENSLIDES_DEVELOPMENT"))
+	pw, err := shared.AuthSecret(passwordFile, os.Getenv("OPENSLIDES_DEVELOPMENT"))
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting server auth secret: %w", err)
 	}
-	creds := BasicAuth{
-		password: pw,
+	creds := shared.BasicAuth{
+		Password: pw,
 	}
 
 	transportOption := grpc.WithInsecure() // Option for unencrypted HTTP connection

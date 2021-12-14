@@ -148,6 +148,7 @@ func createRandomSecrets(dir string, force bool) error {
 		{"auth_token_key"},
 		{"auth_cookie_key"},
 		{ManageAuthPasswordFileName},
+		{"internal_auth_password"},
 		{"postgres_password"},
 	}
 	for _, s := range secs {

@@ -507,6 +507,8 @@ x-default-environment: &default-environment
   MANAGE_PORT: 9008
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
 
+  INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
+
   OPENSLIDES_DEVELOPMENT: "false"
 
 services:
@@ -563,6 +565,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - internal_auth_password
       - postgres_password
 
   datastore-reader:
@@ -721,6 +724,7 @@ services:
     secrets:
       - superadmin
       - manage_auth_password
+      - internal_auth_password
 
 networks:
   uplink:
@@ -744,6 +748,8 @@ secrets:
     file: ./secrets/superadmin
   manage_auth_password:
     file: ./secrets/manage_auth_password
+  internal_auth_password:
+    file: ./secrets/internal_auth_password
   postgres_password:
     file: ./secrets/postgres_password
   cert_crt:

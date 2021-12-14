@@ -63,18 +63,18 @@ func Run(cfg *Config) error {
 
 // srv implements the manage methods on server side.
 type srv struct {
-	config     *Config
-	authSecret []byte
+	config *Config
+	pw     []byte
 }
 
 func newServer(cfg *Config) (*srv, error) {
-	sec, err := shared.ServerAuthSecret(cfg.PasswordFile, cfg.OpenSlidesDevelopment)
+	pw, err := shared.AuthSecret(cfg.ManageAuthPasswordFile, cfg.OpenSlidesDevelopment)
 	if err != nil {
 		return nil, fmt.Errorf("getting server auth secret: %w", err)
 	}
 	s := &srv{
-		config:     cfg,
-		authSecret: sec,
+		config: cfg,
+		pw:     pw,
 	}
 	return s, nil
 }
@@ -84,18 +84,30 @@ func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.Ch
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
-	a := action.New(s.config.actionURL())
+	pw, err := shared.AuthSecret(s.config.InternalAuthPasswordFile, s.config.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
+	}
+	a := action.New(s.config.actionURL(), pw)
 	return initialdata.InitialData(ctx, in, runDir, a)
 
 }
 
 func (s *srv) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*proto.CreateUserResponse, error) {
-	a := action.New(s.config.actionURL())
+	pw, err := shared.AuthSecret(s.config.InternalAuthPasswordFile, s.config.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
+	}
+	a := action.New(s.config.actionURL(), pw)
 	return createuser.CreateUser(ctx, in, a)
 }
 
 func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	a := action.New(s.config.actionURL())
+	pw, err := shared.AuthSecret(s.config.InternalAuthPasswordFile, s.config.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
+	}
+	a := action.New(s.config.actionURL(), pw)
 	return setpassword.SetPassword(ctx, in, a)
 }
 
@@ -138,7 +150,7 @@ func (s *srv) serverAuth(ctx context.Context) error {
 		return fmt.Errorf("decoding password (base64): %w", err)
 	}
 
-	if subtle.ConstantTimeCompare(password, s.authSecret) != 1 {
+	if subtle.ConstantTimeCompare(password, s.pw) != 1 {
 		return fmt.Errorf("password does not match")
 	}
 
@@ -151,8 +163,8 @@ type Config struct {
 	// variables. The first value is the name of the environment variable. After
 	// a comma the default value can be given. If no default value is given, then
 	// an empty string is used. The type of a env field has to be string.
-	Port         string `env:"MANAGE_PORT,9008"`
-	PasswordFile string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
+	Port                   string `env:"MANAGE_PORT,9008"`
+	ManageAuthPasswordFile string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
 
 	ActionProtocol string `env:"ACTION_PROTOCOL,http"`
 	ActionHost     string `env:"ACTION_HOST,backend"`
@@ -169,6 +181,8 @@ type Config struct {
 	DatastoreWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
 	DatastoreWriterHost     string `env:"DATASTORE_WRITER_HOST,datastore-writer"`
 	DatastoreWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`
+
+	InternalAuthPasswordFile string `env:"INTERNAL_AUTH_PASSWORD_FILE,/run/secrets/internal_auth_password"`
 
 	OpenSlidesDevelopment string `env:"OPENSLIDES_DEVELOPMENT,0"`
 }

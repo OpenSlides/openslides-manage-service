@@ -58,6 +58,8 @@ x-default-environment: &default-environment
   MANAGE_PORT: {{ .MANAGE_PORT }}
   MANAGE_AUTH_PASSWORD_FILE: {{ .MANAGE_AUTH_PASSWORD_FILE }}
 
+  INTERNAL_AUTH_PASSWORD_FILE: {{ .INTERNAL_AUTH_PASSWORD_FILE }}
+
   OPENSLIDES_DEVELOPMENT: "{{ .OPENSLIDES_DEVELOPMENT }}"
   {{- end}}
 
@@ -140,6 +142,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - internal_auth_password
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
@@ -362,6 +365,7 @@ services:
     secrets:
       - superadmin
       - manage_auth_password
+      - internal_auth_password
     {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
   {{- end }}
 
@@ -387,6 +391,8 @@ secrets:
     file: ./secrets/superadmin
   manage_auth_password:
     file: ./secrets/manage_auth_password
+  internal_auth_password:
+    file: ./secrets/internal_auth_password
   postgres_password:
     file: ./secrets/postgres_password
 {{- if checkFlag $.EnableLocalHTTPS }}
