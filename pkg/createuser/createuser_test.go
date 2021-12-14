@@ -16,7 +16,7 @@ import (
 func TestCmd(t *testing.T) {
 	t.Skip("this test does not work because there is no (fake) server running")
 	t.Run("executing createuser.Cmd() with some data", func(t *testing.T) {
-		// cmd := createuser.Cmd() // TODO: Add user data
+		// cmd := createuser.Cmd()
 		// if err := cmd.Execute(); err != nil {
 		// 	t.Fatalf("executing create-user subcommand: %v", err)
 		// }

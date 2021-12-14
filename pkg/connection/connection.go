@@ -45,7 +45,7 @@ func (a BasicAuth) RequireTransportSecurity() bool {
 	return false
 }
 
-// Params ... TODO
+// Params provides the parameters for the connection to the manage server.
 type Params interface {
 	Addr() string
 	PasswordFile() string

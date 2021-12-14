@@ -71,24 +71,16 @@ func (c *connectionParams) NoSSL() bool {
 }
 
 func unaryConnection(fn func(cmd *cobra.Command, cp connection.Params) *cobra.Command) *cobra.Command {
-	cmd := &cobra.Command{}
-	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
-	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
-	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
-	timeout := cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
-	noSSL := cmd.Flags().Bool("no-ssl", false, "use an unencrypted connection to manage service")
-
-	cp := &connectionParams{
-		addr:         addr,
-		passwordFile: passwordFile,
-		timeout:      timeout,
-		noSSL:        noSSL,
-	}
-
+	cmd, cp := newCmdWithParams()
+	cp.timeout = cmd.Flags().DurationP("timeout", "t", connection.DefaultTimeout, "time to wait for the command's response")
 	return fn(cmd, cp)
 }
 
 func streamConnection(fn func(cmd *cobra.Command, cp connection.Params) *cobra.Command) *cobra.Command {
+	return fn(newCmdWithParams())
+}
+
+func newCmdWithParams() (*cobra.Command, *connectionParams) {
 	cmd := &cobra.Command{}
 	addr := cmd.Flags().StringP("address", "a", connection.DefaultAddr, "address of the OpenSlides manage service")
 	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
@@ -100,7 +92,5 @@ func streamConnection(fn func(cmd *cobra.Command, cp connection.Params) *cobra.C
 		passwordFile: passwordFile,
 		noSSL:        noSSL,
 	}
-
-	return fn(cmd, cp)
-
+	return cmd, cp
 }
