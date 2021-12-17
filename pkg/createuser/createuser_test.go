@@ -45,9 +45,12 @@ func TestCreateUser(t *testing.T) {
 username: %s
 first_name: my_first_name_Tahz3raegh
 last_name: my_last_name_Einohjee1E
-email: my_new_emailaddress_ooduN6fuh7@ohth1Osa1I.com
+is_active: true
 default_password: my_new_password_weu6Aichaj
+email: my_new_emailaddress_ooduN6fuh7@ohth1Osa1I.com
 organization_management_level: superadmin
+committee_$_management_level: {"1": "can_manage"}
+group_$_ids: {"1": [1,2]}
 `, username)
 		testUserFile(t, username, user, "")
 	})
@@ -165,6 +168,10 @@ func TestCreateUserServerAll(t *testing.T) {
 			Username:                    "my_username_moh9Sep8Ae",
 			DefaultPassword:             "my_password_nah4Aigahp",
 			OrganizationManagementLevel: "superadmin",
+			IsActive:                    true,
+			Committee_ManagementLevel: map[string]string{
+				"1": "can_manage",
+			},
 		}
 		res, err := createuser.CreateUser(context.Background(), in, ma)
 		if err != nil {

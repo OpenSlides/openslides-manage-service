@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -122,7 +123,7 @@ func CreateUser(ctx context.Context, in *proto.CreateUserRequest, a action) (*pr
 	if err != nil {
 		return nil, fmt.Errorf("marshalling action data: %w", err)
 	}
-	result, err := a.Single(ctx, name, data)
+	result, err := a.Single(ctx, name, transform(data))
 	if err != nil {
 		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}
@@ -137,4 +138,21 @@ func CreateUser(ctx context.Context, in *proto.CreateUserRequest, a action) (*pr
 		return nil, fmt.Errorf("wrong lenght of action result, expected 1 item, got %d", len(ids))
 	}
 	return &proto.CreateUserResponse{UserID: int64(ids[0].ID)}, nil
+}
+
+// transform changes some JSON keys so we can use OpenSlides' template fields.
+func transform(b []byte) []byte {
+	fields := map[string]string{
+		"committee__management_level": "committee_$_management_level",
+		"group__ids":                  "group_$_ids",
+	}
+	s := string(b)
+	for old, new := range fields {
+		s = strings.ReplaceAll(s,
+			fmt.Sprintf(`"%s":`, old),
+			fmt.Sprintf(`"%s":`, new),
+		)
+
+	}
+	return []byte(s)
 }
