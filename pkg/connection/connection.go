@@ -45,8 +45,16 @@ func (a BasicAuth) RequireTransportSecurity() bool {
 	return false
 }
 
+// Params provides the parameters for the connection to the manage server.
+type Params interface {
+	Addr() string
+	PasswordFile() string
+	Timeout() time.Duration
+	NoSSL() bool
+}
+
 // Dial creates a gRPC connection to the server.
-func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient, func() error, error) {
+func Dial(ctx context.Context, address, passwordFile string, ssl bool) (proto.ManageClient, func() error, error) {
 	pw, err := shared.ServerAuthSecret(passwordFile, os.Getenv("OPENSLIDES_DEVELOPMENT"))
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting server auth secret: %w", err)
@@ -55,13 +63,18 @@ func Dial(ctx context.Context, address, passwordFile string) (proto.ManageClient
 		password: pw,
 	}
 
-	// TODO: Have a look at https://itnext.io/practical-guide-to-securing-grpc-connections-with-go-and-tls-part-1-f63058e9d6d1 and
-	// try not to use insecure settings by default.
-	transCreds := credentials.NewTLS(&tls.Config{
-		InsecureSkipVerify: true,
-	})
+	transportOption := grpc.WithInsecure() // Option for unencrypted HTTP connection
+	if ssl {
+		// TODO: Have a look at https://itnext.io/practical-guide-to-securing-grpc-connections-with-go-and-tls-part-1-f63058e9d6d1 and
+		// try not to use InsecureSkipVerify by default.
+		transCreds := credentials.NewTLS(&tls.Config{
+			InsecureSkipVerify: true,
+		})
+		transportOption = grpc.WithTransportCredentials(transCreds)
+	}
+
 	conn, err := grpc.DialContext(ctx, address,
-		grpc.WithTransportCredentials(transCreds),
+		transportOption,
 		grpc.WithBlock(),
 		grpc.WithPerRPCCredentials(creds),
 	)
