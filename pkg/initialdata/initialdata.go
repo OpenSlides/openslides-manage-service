@@ -2,7 +2,6 @@ package initialdata
 
 import (
 	"context"
-	_ "embed" // Blank import required to use go directive.
 	"encoding/json"
 	"fmt"
 	"os"
@@ -23,12 +22,8 @@ const (
 	// InitialDataHelpExtra contains the long help text for the command without
 	// the headline.
 	InitialDataHelpExtra = `This command also sets password of user 1 to the value of the docker
-secret "superadmin". It does nothing if the datastore is not empty.`
+secret "superadmin" which is "superadmin" by default. It does nothing if the datastore is not empty.`
 )
-
-//go:embed default-initial-data.json
-// DefaultInitialData contains default initial data as JSON
-var DefaultInitialData []byte
 
 // Cmd returns the initial-data subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
@@ -64,9 +59,8 @@ type gRPCClient interface {
 }
 
 // Run calls respective procedure to set initial data to an empty database via given gRPC client.
-// If dataFile is an empty string, the default initial data are used.
 func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
-	iniD := DefaultInitialData
+	var iniD []byte
 	if dataFile != "" {
 		content, err := os.ReadFile(dataFile)
 		if err != nil {
@@ -94,91 +88,53 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 
 // Server
 
-type datastore interface {
-	Exists(ctx context.Context, collection string, id int) (bool, error)
-	Create(ctx context.Context, creatables map[string]map[string]json.RawMessage, migrationIndex int) error
-	Set(ctx context.Context, fqfield string, value json.RawMessage) error
-}
-
-type auth interface {
-	Hash(ctx context.Context, password string) (string, error)
+type action interface {
+	Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error)
 }
 
 // InitialData sets initial data in the datastore.
-func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, ds datastore, auth auth) (*proto.InitialDataResponse, error) {
-	exists, err := CheckDatastore(ctx, ds)
-	if err != nil {
-		return nil, fmt.Errorf("checking existance in datastore: %w", err)
-	}
-	if exists {
-		return &proto.InitialDataResponse{Initialized: false}, nil
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, a action) (*proto.InitialDataResponse, error) {
+	initialData := in.Data
+	if initialData == nil {
+		// The backend expects at least an empty object.
+		initialData = []byte("{}")
+	} else {
+		// TODO: validate data
 	}
 
-	if err := InsertIntoDatastore(ctx, ds, in.Data); err != nil {
-		return nil, fmt.Errorf("inserting initial data into datastore: %w", err)
+	name := "organization.initial_import"
+	payload := []struct {
+		Data json.RawMessage `json:"data"`
+	}{
+		{
+			Data: json.RawMessage(initialData),
+		},
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling action data: %w", err)
+	}
+
+	if _, err := a.Single(ctx, name, data); err != nil {
+		// There is no action result in success case.
+		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}
 
 	p := path.Join(runPath, setup.SecretsDirName, setup.SuperadminFileName)
-	if err := SetSuperadminPassword(ctx, p, ds, auth); err != nil {
+	if err := SetSuperadminPassword(ctx, p, a); err != nil {
 		return nil, fmt.Errorf("setting superadmin password: %w", err)
 	}
 
 	return &proto.InitialDataResponse{Initialized: true}, nil
 }
 
-// CheckDatastore checks if the object organization/1 exists in the datastore.
-func CheckDatastore(ctx context.Context, ds datastore) (bool, error) {
-	exists, err := ds.Exists(ctx, "organization", 1)
-	if err != nil {
-		return false, fmt.Errorf("checking existance in datastore: %w", err)
-	}
-	return exists, nil
-}
-
-// InsertIntoDatastore inserts the given JSON data into datastore with write requests.
-//
-// The given data should be formatted like this: '{"collection_a": {"1": {"field_a": "foo", "field_b": "bar"}}}'
-// but the datastore.Create expected a map with FQId like this: '{"collection_a/1": {"field_a": "foo", "field_b": "bar"}}'
-// so this function also transforms the data into correct format.
-func InsertIntoDatastore(ctx context.Context, ds datastore, data []byte) error {
-	var decodedData map[string]json.RawMessage
-	if err := json.Unmarshal(data, &decodedData); err != nil {
-		return fmt.Errorf("unmarshaling JSON: %w", err)
-	}
-
-	creatables := make(map[string]map[string]json.RawMessage)
-	migrationIndex := -1
-	for collection, value := range decodedData {
-		if collection == "_migration_index" {
-			if err := json.Unmarshal(value, &migrationIndex); err != nil {
-				return fmt.Errorf("unmarshaling JSON: %w", err)
-			}
-			continue
-		}
-		var elements map[string]map[string]json.RawMessage
-		if err := json.Unmarshal(value, &elements); err != nil {
-			return fmt.Errorf("unmarshaling JSON: %w", err)
-		}
-		for id, fields := range elements {
-			fqid := fmt.Sprintf("%s/%s", collection, id)
-			creatables[fqid] = fields
-		}
-	}
-
-	if err := ds.Create(ctx, creatables, migrationIndex); err != nil {
-		return fmt.Errorf("creating datastore objects: %w", err)
-	}
-
-	return nil
-}
-
 // SetSuperadminPassword sets the first password for the superadmin according to respective secret.
-func SetSuperadminPassword(ctx context.Context, superadminSecretFile string, ds datastore, auth auth) error {
+func SetSuperadminPassword(ctx context.Context, superadminSecretFile string, a action) error {
 	sapw, err := os.ReadFile(superadminSecretFile)
 	if err != nil {
 		return fmt.Errorf("reading file %q: %w", superadminSecretFile, err)
 	}
-	if err := setpassword.Execute(ctx, 1, string(sapw), ds, auth); err != nil {
+	if err := setpassword.Execute(ctx, 1, string(sapw), a); err != nil {
 		return fmt.Errorf("setting superadmin password: %w", err)
 	}
 	return nil

@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -13,6 +15,9 @@ import (
 // OPENSLIDES_DEVELOPMENT is set to one of the following values: 1, t, T, TRUE,
 // true, True.
 const developmentPassword = "openslides"
+
+// AuthHeader is the name of the header that contains the basic authoriztation password.
+const AuthHeader = "authorization"
 
 const fileMode fs.FileMode = 0666
 
@@ -49,18 +54,43 @@ func fileExists(p string) (bool, error) {
 	return false, fmt.Errorf("checking existance of file %s: %w", p, err)
 }
 
-// ServerAuthSecret returns the secret of the manage server using the secret
-// file as given in environment variable. In case of development it uses the
-// development password.
-func ServerAuthSecret(secretFile string, devEnv string) ([]byte, error) {
+// AuthSecret returns a secret using the secret file as given in
+// environment variable. In case of development it uses the development
+// password.
+func AuthSecret(pwFile string, devEnv string) ([]byte, error) {
 	if dev, _ := strconv.ParseBool(devEnv); dev {
 		// Error value does not matter here. In case of an error dev is false and
 		// this is the expected behavior.
 		return []byte(developmentPassword), nil
 	}
-	pw, err := os.ReadFile(secretFile)
+	pw, err := os.ReadFile(pwFile)
 	if err != nil {
-		return nil, fmt.Errorf("reading manage auth secret file %q: %w", secretFile, err)
+		return nil, fmt.Errorf("reading secret file %q: %w", pwFile, err)
 	}
 	return pw, nil
+}
+
+// BasicAuth contains the password used in basic authorization process. The password will be encoded in base64.
+// The struct implements https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
+type BasicAuth struct {
+	Password []byte
+}
+
+// EncPassword returns the password encoded in base 64.
+func (a BasicAuth) EncPassword() string {
+	return base64.StdEncoding.EncodeToString(a.Password)
+}
+
+// GetRequestMetadata gets the current request metadata.
+// See https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
+func (a BasicAuth) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	return map[string]string{
+		"authorization": a.EncPassword(),
+	}, nil
+}
+
+// RequireTransportSecurity indicates whether the credentials requires transport security.
+// See https://pkg.go.dev/google.golang.org/grpc@v1.38.0/credentials#PerRPCCredentials
+func (a BasicAuth) RequireTransportSecurity() bool {
+	return false
 }

@@ -77,6 +77,8 @@ defaultEnvironment:
   MANAGE_PORT: 9008
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
 
+  INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
+
   OPENSLIDES_DEVELOPMENT: "false"
 
 # You can extend or replace parts of the defaultEnvironment.

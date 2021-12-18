@@ -8,23 +8,27 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 )
 
 // Conn holds a connection to the backend action service.
 type Conn struct {
-	URL *url.URL
+	URL                  *url.URL
+	internalAuthPassword []byte
 }
 
 // New returns a new connection to the backend action service.
-func New(url *url.URL) *Conn {
-	d := new(Conn)
-	d.URL = url
-	return d
+func New(url *url.URL, pw []byte) *Conn {
+	c := new(Conn)
+	c.URL = url
+	c.internalAuthPassword = pw
+	return c
 }
 
 // Single sends a request to backend action service with a single action.
-func (d *Conn) Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error) {
-	addr := d.URL.String()
+func (c *Conn) Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error) {
+	addr := c.URL.String()
 	reqBody := []struct {
 		Action string          `json:"action"`
 		Data   json.RawMessage `json:"data"`
@@ -44,7 +48,11 @@ func (d *Conn) Single(ctx context.Context, name string, data json.RawMessage) (j
 	if err != nil {
 		return nil, fmt.Errorf("creating request to backend action service: %w", err)
 	}
+	creds := shared.BasicAuth{
+		Password: c.internalAuthPassword,
+	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(shared.AuthHeader, creds.EncPassword())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
