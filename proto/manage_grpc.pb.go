@@ -22,7 +22,11 @@ type ManageClient interface {
 	InitialData(ctx context.Context, in *InitialDataRequest, opts ...grpc.CallOption) (*InitialDataResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
+<<<<<<< HEAD
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
+=======
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+>>>>>>> 9ea2bab (add get sub-command)
 	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error)
 }
 
@@ -70,9 +74,15 @@ func (c *manageClient) SetPassword(ctx context.Context, in *SetPasswordRequest, 
 	return out, nil
 }
 
+<<<<<<< HEAD
 func (c *manageClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error) {
 	out := new(SetResponse)
 	err := c.cc.Invoke(ctx, "/Manage/Set", in, out, opts...)
+=======
+func (c *manageClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	out := new(GetResponse)
+	err := c.cc.Invoke(ctx, "/Manage/Get", in, out, opts...)
+>>>>>>> 9ea2bab (add get sub-command)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +128,11 @@ type ManageServer interface {
 	InitialData(context.Context, *InitialDataRequest) (*InitialDataResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
+<<<<<<< HEAD
 	Set(context.Context, *SetRequest) (*SetResponse, error)
+=======
+	Get(context.Context, *GetRequest) (*GetResponse, error)
+>>>>>>> 9ea2bab (add get sub-command)
 	Tunnel(Manage_TunnelServer) error
 }
 
@@ -138,8 +152,13 @@ func (UnimplementedManageServer) CreateUser(context.Context, *CreateUserRequest)
 func (UnimplementedManageServer) SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPassword not implemented")
 }
+<<<<<<< HEAD
 func (UnimplementedManageServer) Set(context.Context, *SetRequest) (*SetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
+=======
+func (UnimplementedManageServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+>>>>>>> 9ea2bab (add get sub-command)
 }
 func (UnimplementedManageServer) Tunnel(Manage_TunnelServer) error {
 	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
@@ -228,12 +247,18 @@ func _Manage_SetPassword_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+<<<<<<< HEAD
 func _Manage_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetRequest)
+=======
+func _Manage_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
+>>>>>>> 9ea2bab (add get sub-command)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
+<<<<<<< HEAD
 		return srv.(ManageServer).Set(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
@@ -242,6 +267,16 @@ func _Manage_Set_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ManageServer).Set(ctx, req.(*SetRequest))
+=======
+		return srv.(ManageServer).Get(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/Get",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).Get(ctx, req.(*GetRequest))
+>>>>>>> 9ea2bab (add get sub-command)
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -296,8 +331,13 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Manage_SetPassword_Handler,
 		},
 		{
+<<<<<<< HEAD
 			MethodName: "Set",
 			Handler:    _Manage_Set_Handler,
+=======
+			MethodName: "Get",
+			Handler:    _Manage_Get_Handler,
+>>>>>>> 9ea2bab (add get sub-command)
 		},
 	},
 	Streams: []grpc.StreamDesc{
