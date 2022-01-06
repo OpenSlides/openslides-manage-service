@@ -112,7 +112,7 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	marshalContentFunc := func(v interface{}) (string, error) {
+	marshalContentFunc := func(ws int, v interface{}) (string, error) {
 		y, err := yaml.Marshal(v)
 		if err != nil {
 			return "", err
@@ -120,7 +120,7 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 		result := "\n"
 		for _, line := range strings.Split(string(y), "\n") {
 			if len(line) != 0 {
-				result += fmt.Sprintf("    %s\n", line)
+				result += fmt.Sprintf("%s%s\n", strings.Repeat(" ", ws), line)
 			}
 		}
 		result = strings.TrimRight(result, "\n")
@@ -176,9 +176,10 @@ type ymlConfig struct {
 }
 
 type service struct {
-	ContainerRegistry string          `yaml:"containerRegistry"`
-	Tag               string          `yaml:"tag"`
-	AdditionalContent json.RawMessage `yaml:"additionalContent"`
+	ContainerRegistry string            `yaml:"containerRegistry"`
+	Tag               string            `yaml:"tag"`
+	Environment       map[string]string `yaml:"environment"`
+	AdditionalContent json.RawMessage   `yaml:"additionalContent"`
 }
 
 // nullTransformer is used to fix a problem with mergo

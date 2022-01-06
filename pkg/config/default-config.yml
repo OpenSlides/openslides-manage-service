@@ -86,12 +86,16 @@ defaultEnvironment:
 # Example:
 #
 # defaultEnvironment:
-#   EXTERNAL_DOMAIN: openslides.example.com
+#   SOME_ENV_VAR: my value
 
-
-# You can customize single services using the services property. All
-# properties from the "defaults" section are available here. Service names
+# You can customize single services using the services property. Service names
 # are written in camelCase.
+services:
+  datastoreReader:
+    environment:
+      NUM_WORKERS: 8
+
+# All properties from the "defaults" section are available here.
 #
 # Example:
 #
@@ -101,8 +105,17 @@ defaultEnvironment:
 #   autoupdate:
 #     containerRegistry: example.com/my-registry
 #
-# You can also define some additional content for all services. This will just add the
-# object to the respective service blob.
+# You can also extend or replace parts of the environment.
+#
+# Example:
+#
+# services:
+#   datastoreReader:
+#     environment
+#       NUM_WORKERS: 8
+#
+# You can also define some additional content for all services. This will just
+# add the object to the respective service blob.
 #
 # Example:
 #
