@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/fehler"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -77,16 +79,17 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 		return fmt.Errorf("setting initial data: %w", err)
 	}
 
-	msg := "Datastore contains data. Initial data were NOT set."
-	if resp.Initialized {
-		msg = "Initial data were set successfully."
+	if !resp.Initialized {
+		return fehler.ExitCode(2, fmt.Errorf("datastore contains data, initial data were NOT set"))
 	}
-	fmt.Println(msg)
 
+	fmt.Println("Initial data were set successfully.")
 	return nil
 }
 
 // Server
+
+const datastoreNotEmptyMsg = "Datastore is not empty"
 
 type action interface {
 	Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error)
@@ -117,6 +120,9 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath stri
 
 	if _, err := a.Single(ctx, name, data); err != nil {
 		// There is no action result in success case.
+		if strings.Contains(err.Error(), datastoreNotEmptyMsg) {
+			return &proto.InitialDataResponse{Initialized: false}, nil
+		}
 		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}
 
