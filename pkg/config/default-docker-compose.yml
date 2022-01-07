@@ -1,4 +1,6 @@
 ---
+version: "3.7"
+
 x-default-environment: &default-environment
   {{- marshalContent 2 .DefaultEnvironment }}
 
@@ -68,7 +70,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastore-reader
       - datastore-writer
       - auth
       - postgres
@@ -78,21 +79,18 @@ services:
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
-      - datastore-reader
-      - datastore-writer
-      - postgres
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
-      - internal_auth_password
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
-  {{- with .Services.backendSetup }}
+  {{- with .Services.backendManage }}
 
-  backend-setup:
+  backendManage:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
@@ -100,10 +98,9 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
-      - datastore-reader
-      - datastore-writer
-      - postgres
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -115,7 +112,7 @@ services:
 
   {{- with .Services.datastoreReader }}
 
-  datastore-reader:
+  datastoreReader:
     image: {{ .ContainerRegistry }}/openslides-datastore-reader:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
@@ -125,8 +122,7 @@ services:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
-      - datastore-reader
-      - postgres
+      - data
     secrets:
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
@@ -135,7 +131,7 @@ services:
 
   {{- with .Services.datastoreWriter }}
 
-  datastore-writer:
+  datastoreWriter:
     image: {{ .ContainerRegistry }}/openslides-datastore-writer:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
@@ -146,10 +142,7 @@ services:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
-      - datastore-reader
-      - datastore-writer
-      - postgres
-      - redis
+      - data
     secrets:
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
@@ -168,7 +161,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
-      - postgres
+      - data
     secrets:
       - postgres_password
     volumes:
@@ -193,8 +186,7 @@ services:
       AUTH: ticket
     networks:
       - frontend
-      - datastore-reader
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -216,8 +208,7 @@ services:
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
-      - datastore-reader
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -243,9 +234,7 @@ services:
       AUTH: ticket
     networks:
       - frontend
-      - datastore-reader
-      - postgres
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -262,7 +251,7 @@ services:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
-      - redis
+      - data
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
@@ -281,9 +270,7 @@ services:
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
-      - datastore-reader
-      - datastore-writer
-      - postgres
+      - data
     secrets:
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
@@ -307,9 +294,7 @@ services:
       AUTH: ticket
     networks:
       - frontend
-      - datastore-reader
-      - postgres
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -332,10 +317,7 @@ services:
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
-      - datastore-reader
-      - datastore-writer
-      - postgres
-      - redis
+      - data
     secrets:
       - superadmin
       - manage_auth_password
@@ -347,13 +329,7 @@ networks:
   uplink:
   frontend:
     internal: true
-  datastore-reader:
-    internal: true
-  datastore-writer:
-    internal: true
-  postgres:
-    internal: true
-  redis:
+  data:
     internal: true
 
 secrets:
