@@ -61,33 +61,33 @@ func Cmd() *cobra.Command {
 	}
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
-	tplFile := config.FlagTpl(cmd)
-	configFiles := config.FlagConfig(cmd)
+	tplFileName := config.FlagTpl(cmd)
+	configFileNames := config.FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
 
-		var tpl []byte
-		if *tplFile != "" {
-			fc, err := os.ReadFile(*tplFile)
+		var tplFile []byte
+		if *tplFileName != "" {
+			fc, err := os.ReadFile(*tplFileName)
 			if err != nil {
-				return fmt.Errorf("reading file %q: %w", *tplFile, err)
+				return fmt.Errorf("reading file %q: %w", *tplFileName, err)
 			}
-			tpl = fc
+			tplFile = fc
 		}
 
-		var config [][]byte
-		if len(*configFiles) > 0 {
-			for _, configFile := range *configFiles {
-				fc, err := os.ReadFile(configFile)
+		var configFiles [][]byte
+		if len(*configFileNames) > 0 {
+			for _, configFileName := range *configFileNames {
+				fc, err := os.ReadFile(configFileName)
 				if err != nil {
-					return fmt.Errorf("reading file %q: %w", configFile, err)
+					return fmt.Errorf("reading file %q: %w", configFileName, err)
 				}
-				config = append(config, fc)
+				configFiles = append(configFiles, fc)
 			}
 		}
 
-		if err := Setup(dir, *force, tpl, config); err != nil {
+		if err := Setup(dir, *force, tplFile, configFiles); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -100,14 +100,19 @@ func Cmd() *cobra.Command {
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
 // and YAML configs can be provided.
-func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error {
+func Setup(dir string, force bool, tplFile []byte, configFiles [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
-	if err := config.CreateYmlFile(dir, force, tplContent, cfgContent); err != nil {
+	cfg, err := config.NewYmlConfig(configFiles)
+	if err != nil {
+		return fmt.Errorf("creating new YML config object: %w", err)
+	}
+
+	if err := config.CreateYmlFile(dir, force, tplFile, cfg); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
@@ -123,8 +128,10 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 	}
 
 	// Create certificates
-	if err := createCerts(secrDir, force); err != nil {
-		return fmt.Errorf("creating certificates: %w", err)
+	if *cfg.EnableLocalHTTPS {
+		if err := createCerts(secrDir, force); err != nil {
+			return fmt.Errorf("creating certificates: %w", err)
+		}
 	}
 
 	// Create superadmin file
@@ -134,8 +141,10 @@ func Setup(dir string, force bool, tplContent []byte, cfgContent [][]byte) error
 
 	// Create database directory
 	// Attention: For unknown reason it is not possible to use perms 0770 here. Docker Compose does not like it ...
-	if err := os.MkdirAll(path.Join(dir, dbDirName), 0777); err != nil {
-		return fmt.Errorf("creating database directory at %q: %w", dir, err)
+	if !*cfg.DisablePostgres {
+		if err := os.MkdirAll(path.Join(dir, dbDirName), 0777); err != nil {
+			return fmt.Errorf("creating database directory at %q: %w", dir, err)
+		}
 	}
 
 	return nil
