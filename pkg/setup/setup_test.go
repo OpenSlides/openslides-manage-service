@@ -482,6 +482,8 @@ func testDirectory(t testing.TB, dir, name string) {
 }
 
 const defaultDockerComposeYml = `---
+version: "3.7"
+
 x-default-environment: &default-environment
   ACTION_HOST: backend
   ACTION_PORT: "9002"
@@ -496,15 +498,16 @@ x-default-environment: &default-environment
   DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   DATASTORE_DATABASE_PORT: "5432"
   DATASTORE_DATABASE_USER: openslides
-  DATASTORE_READER_HOST: datastore-reader
+  DATASTORE_READER_HOST: datastoreReader
   DATASTORE_READER_PORT: "9010"
-  DATASTORE_WRITER_HOST: datastore-writer
+  DATASTORE_WRITER_HOST: datastoreWriter
   DATASTORE_WRITER_PORT: "9011"
   ICC_HOST: icc
   ICC_PORT: "9007"
   ICC_REDIS_HOST: redis
   ICC_REDIS_PORT: "6379"
   INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
+  MANAGE_ACTION_HOST: backendManage
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
   MANAGE_HOST: manage
   MANAGE_PORT: "9008"
@@ -573,7 +576,6 @@ services:
   backend:
     image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
-      - datastore-reader
       - datastore-writer
       - auth
       - postgres
@@ -581,16 +583,27 @@ services:
       << : *default-environment
     networks:
       - frontend
-      - datastore-reader
-      - datastore-writer
-      - postgres
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
+  backendManage:
+    image: ghcr.io/openslides/openslides/openslides-backend:latest
+    depends_on:
+      - backend
+    environment:
+      << : *default-environment
+    networks:
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
       - internal_auth_password
       - postgres_password
 
-  datastore-reader:
+  datastoreReader:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
     depends_on:
       - postgres
@@ -598,12 +611,11 @@ services:
       << : *default-environment
       NUM_WORKERS: "8"
     networks:
-      - datastore-reader
-      - postgres
+      - data
     secrets:
       - postgres_password
 
-  datastore-writer:
+  datastoreWriter:
     image: ghcr.io/openslides/openslides/openslides-datastore-writer:latest
     depends_on:
       - postgres
@@ -611,10 +623,7 @@ services:
     environment:
       << : *default-environment
     networks:
-      - datastore-reader
-      - datastore-writer
-      - postgres
-      - redis
+      - data
     secrets:
       - postgres_password
 
@@ -627,7 +636,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
-      - postgres
+      - data
     secrets:
       - postgres_password
     volumes:
@@ -644,8 +653,7 @@ services:
       AUTH: ticket
     networks:
       - frontend
-      - datastore-reader
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -659,8 +667,7 @@ services:
       << : *default-environment
     networks:
       - frontend
-      - datastore-reader
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -679,9 +686,7 @@ services:
       AUTH: ticket
     networks:
       - frontend
-      - datastore-reader
-      - postgres
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -693,7 +698,7 @@ services:
     environment:
       << : *default-environment
     networks:
-      - redis
+      - data
 
   media:
     image: ghcr.io/openslides/openslides/openslides-media:latest
@@ -704,9 +709,7 @@ services:
       << : *default-environment
     networks:
       - frontend
-      - datastore-reader
-      - datastore-writer
-      - postgres
+      - data
     secrets:
       - postgres_password
 
@@ -722,9 +725,7 @@ services:
       AUTH: ticket
     networks:
       - frontend
-      - datastore-reader
-      - postgres
-      - redis
+      - data
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -739,10 +740,7 @@ services:
       << : *default-environment
     networks:
       - frontend
-      - datastore-reader
-      - datastore-writer
-      - postgres
-      - redis
+      - data
     secrets:
       - superadmin
       - manage_auth_password
@@ -752,13 +750,7 @@ networks:
   uplink:
   frontend:
     internal: true
-  datastore-reader:
-    internal: true
-  datastore-writer:
-    internal: true
-  postgres:
-    internal: true
-  redis:
+  data:
     internal: true
 
 secrets:
