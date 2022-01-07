@@ -359,6 +359,39 @@ disableDependsOn: true
 		testFileContains(t, testDir, myFileName, "cert_crt")
 
 	})
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using custom config with custom env", func(t *testing.T) {
+		customConfig := `---
+filename: my-filename-ieGh8ox0do.yml
+defaultEnvironment:
+  FOOOO: 1234567890
+`
+		myFileName := "my-filename-ieGh8ox0do.yml"
+		c := make([][]byte, 1)
+		c[0] = []byte(customConfig)
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testFileContains(t, testDir, myFileName, `FOOOO: "1234567890"`)
+	})
+
+	t.Run("running setup.Setup() and create all stuff in tmp directory using custom config with custom env for service", func(t *testing.T) {
+		customConfig := `---
+filename: my-filename-shoPhie9Ax.yml
+services:
+  backend:
+    environment:
+      KEY_SKRIVESLDIERUFJ: test_iyoe8bahGh
+`
+		myFileName := "my-filename-shoPhie9Ax.yml"
+		c := make([][]byte, 1)
+		c[0] = []byte(customConfig)
+		if err := setup.Setup(testDir, false, nil, c); err != nil {
+			t.Fatalf("running Setup() failed with error: %v", err)
+		}
+		testFileContains(t, testDir, myFileName, `KEY_SKRIVESLDIERUFJ: test_iyoe8bahGh`)
+	})
+
 }
 
 func testContentFile(t testing.TB, dir, name, expected string) {
@@ -451,65 +484,54 @@ func testDirectory(t testing.TB, dir, name string) {
 const defaultDockerComposeYml = `---
 x-default-environment: &default-environment
   ACTION_HOST: backend
-  ACTION_PORT: 9002
-  PRESENTER_HOST: backend
-  PRESENTER_PORT: 9003
-
-  DATASTORE_READER_HOST: datastore-reader
-  DATASTORE_READER_PORT: 9010
-  DATASTORE_WRITER_HOST: datastore-writer
-  DATASTORE_WRITER_PORT: 9011
-  DATASTORE_DATABASE_HOST: postgres
-  DATASTORE_DATABASE_PORT: 5432
-  DATASTORE_DATABASE_NAME: openslides
-  DATASTORE_DATABASE_USER: openslides
-  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-
-  AUTOUPDATE_HOST: autoupdate
-  AUTOUPDATE_PORT: 9012
-
+  ACTION_PORT: "9002"
   AUTH_HOST: auth
-  AUTH_PORT: 9004
-
-  VOTE_HOST: vote
-  VOTE_PORT: 9013
-  VOTE_DATABASE_HOST: postgres
-  VOTE_DATABASE_PORT: 5432
-  VOTE_DATABASE_NAME: openslides
-  VOTE_DATABASE_USER: openslides
-  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  VOTE_REDIS_HOST: redis
-  VOTE_REDIS_PORT: 6379
-
+  AUTH_PORT: "9004"
+  AUTOUPDATE_HOST: autoupdate
+  AUTOUPDATE_PORT: "9012"
   CACHE_HOST: redis
-  CACHE_PORT: 6379
-
-  MESSAGE_BUS_HOST: redis
-  MESSAGE_BUS_PORT: 6379
-
-  MEDIA_HOST: media
-  MEDIA_PORT: 9006
-  MEDIA_DATABASE_HOST: postgres
-  MEDIA_DATABASE_PORT: 5432
-  MEDIA_DATABASE_NAME: openslides
-  MEDIA_DATABASE_USER: openslides
-  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  MEDIA_BLOCK_SIZE: 4096
-  MEDIA_PRESENTER_HOST: backend
-  MEDIA_PRESENTER_PORT: 9003
-
+  CACHE_PORT: "6379"
+  DATASTORE_DATABASE_HOST: postgres
+  DATASTORE_DATABASE_NAME: openslides
+  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  DATASTORE_DATABASE_PORT: "5432"
+  DATASTORE_DATABASE_USER: openslides
+  DATASTORE_READER_HOST: datastore-reader
+  DATASTORE_READER_PORT: "9010"
+  DATASTORE_WRITER_HOST: datastore-writer
+  DATASTORE_WRITER_PORT: "9011"
   ICC_HOST: icc
-  ICC_PORT: 9007
+  ICC_PORT: "9007"
   ICC_REDIS_HOST: redis
-  ICC_REDIS_PORT: 6379
-
-  MANAGE_HOST: manage
-  MANAGE_PORT: 9008
-  MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
-
+  ICC_REDIS_PORT: "6379"
   INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
-
+  MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
+  MANAGE_HOST: manage
+  MANAGE_PORT: "9008"
+  MEDIA_BLOCK_SIZE: "4096"
+  MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_NAME: openslides
+  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  MEDIA_DATABASE_PORT: "5432"
+  MEDIA_DATABASE_USER: openslides
+  MEDIA_HOST: media
+  MEDIA_PORT: "9006"
+  MEDIA_PRESENTER_HOST: backend
+  MEDIA_PRESENTER_PORT: "9003"
+  MESSAGE_BUS_HOST: redis
+  MESSAGE_BUS_PORT: "6379"
   OPENSLIDES_DEVELOPMENT: "false"
+  PRESENTER_HOST: backend
+  PRESENTER_PORT: "9003"
+  VOTE_DATABASE_HOST: postgres
+  VOTE_DATABASE_NAME: openslides
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  VOTE_DATABASE_PORT: "5432"
+  VOTE_DATABASE_USER: openslides
+  VOTE_HOST: vote
+  VOTE_PORT: "9013"
+  VOTE_REDIS_HOST: redis
+  VOTE_REDIS_PORT: "6379"
 
 services:
   proxy:
@@ -574,7 +596,7 @@ services:
       - postgres
     environment:
       << : *default-environment
-      NUM_WORKERS: 8
+      NUM_WORKERS: "8"
     networks:
       - datastore-reader
       - postgres
@@ -600,9 +622,9 @@ services:
     image: postgres:11
     environment:
       << : *default-environment
+      POSTGRES_DB: openslides
       POSTGRES_USER: openslides
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      POSTGRES_DB: openslides
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres

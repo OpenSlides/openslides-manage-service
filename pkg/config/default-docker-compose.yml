@@ -1,67 +1,6 @@
 ---
 x-default-environment: &default-environment
-  {{- with .DefaultEnvironment }}
-  ACTION_HOST: {{ .ACTION_HOST }}
-  ACTION_PORT: {{ .ACTION_PORT }}
-  PRESENTER_HOST: {{ .PRESENTER_HOST }}
-  PRESENTER_PORT: {{ .PRESENTER_PORT }}
-
-  DATASTORE_READER_HOST: {{ .DATASTORE_READER_HOST }}
-  DATASTORE_READER_PORT: {{ .DATASTORE_READER_PORT }}
-  DATASTORE_WRITER_HOST: {{ .DATASTORE_WRITER_HOST }}
-  DATASTORE_WRITER_PORT: {{ .DATASTORE_WRITER_PORT }}
-  DATASTORE_DATABASE_HOST: {{ .DATASTORE_DATABASE_HOST }}
-  DATASTORE_DATABASE_PORT: {{ .DATASTORE_DATABASE_PORT}}
-  DATASTORE_DATABASE_NAME: {{ .DATASTORE_DATABASE_NAME }}
-  DATASTORE_DATABASE_USER: {{ .DATASTORE_DATABASE_USER }}
-  DATASTORE_DATABASE_PASSWORD_FILE: {{ .DATASTORE_DATABASE_PASSWORD_FILE }}
-
-  AUTOUPDATE_HOST: {{ .AUTOUPDATE_HOST }}
-  AUTOUPDATE_PORT: {{ .AUTOUPDATE_PORT }}
-
-  AUTH_HOST: {{ .AUTH_HOST }}
-  AUTH_PORT: {{ .AUTH_PORT }}
-
-  VOTE_HOST: {{ .VOTE_HOST }}
-  VOTE_PORT: {{ .VOTE_PORT }}
-  VOTE_DATABASE_HOST: {{ .VOTE_DATABASE_HOST }}
-  VOTE_DATABASE_PORT: {{ .VOTE_DATABASE_PORT }}
-  VOTE_DATABASE_NAME: {{ .VOTE_DATABASE_NAME }}
-  VOTE_DATABASE_USER: {{ .VOTE_DATABASE_USER }}
-  VOTE_DATABASE_PASSWORD_FILE: {{ .VOTE_DATABASE_PASSWORD_FILE }}
-  VOTE_REDIS_HOST: {{ .VOTE_REDIS_HOST }}
-  VOTE_REDIS_PORT: {{ .VOTE_REDIS_PORT }}
-
-  CACHE_HOST: {{ .CACHE_HOST }}
-  CACHE_PORT: {{ .CACHE_PORT }}
-
-  MESSAGE_BUS_HOST: {{ .MESSAGE_BUS_HOST }}
-  MESSAGE_BUS_PORT: {{ .MESSAGE_BUS_PORT }}
-
-  MEDIA_HOST: {{ .MEDIA_HOST }}
-  MEDIA_PORT: {{ .MEDIA_PORT }}
-  MEDIA_DATABASE_HOST: {{ .MEDIA_DATABASE_HOST }}
-  MEDIA_DATABASE_PORT: {{ .MEDIA_DATABASE_PORT }}
-  MEDIA_DATABASE_NAME: {{ .MEDIA_DATABASE_NAME }}
-  MEDIA_DATABASE_USER: {{ .MEDIA_DATABASE_USER }}
-  MEDIA_DATABASE_PASSWORD_FILE: {{ .MEDIA_DATABASE_PASSWORD_FILE }}
-  MEDIA_BLOCK_SIZE: {{ .MEDIA_BLOCK_SIZE }}
-  MEDIA_PRESENTER_HOST: {{ .MEDIA_PRESENTER_HOST }}
-  MEDIA_PRESENTER_PORT: {{ .MEDIA_PRESENTER_PORT }}
-
-  ICC_HOST: {{ .ICC_HOST }}
-  ICC_PORT: {{ .ICC_PORT }}
-  ICC_REDIS_HOST: {{ .ICC_REDIS_HOST }}
-  ICC_REDIS_PORT: {{ .ICC_REDIS_PORT }}
-
-  MANAGE_HOST: {{ .MANAGE_HOST }}
-  MANAGE_PORT: {{ .MANAGE_PORT }}
-  MANAGE_AUTH_PASSWORD_FILE: {{ .MANAGE_AUTH_PASSWORD_FILE }}
-
-  INTERNAL_AUTH_PASSWORD_FILE: {{ .INTERNAL_AUTH_PASSWORD_FILE }}
-
-  OPENSLIDES_DEVELOPMENT: "{{ .OPENSLIDES_DEVELOPMENT }}"
-  {{- end}}
+  {{- marshalContent 2 .DefaultEnvironment }}
 
 services:
 
@@ -79,6 +18,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     {{- if checkFlag $.EnableLocalHTTPS }}
       ENABLE_LOCAL_HTTPS: 1
       HTTPS_CERT_FILE: /run/secrets/cert_crt
@@ -97,7 +37,7 @@ services:
       - cert_crt
       - cert_key
     {{- end }}
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -115,9 +55,10 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{ end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{ end }}
   {{- end }}
 
 
@@ -134,6 +75,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
       - datastore-reader
@@ -144,7 +86,7 @@ services:
       - auth_cookie_key
       - internal_auth_password
       - postgres_password
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -158,13 +100,13 @@ services:
     {{- end }}
     environment:
       << : *default-environment
-      NUM_WORKERS: 8
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - datastore-reader
       - postgres
     secrets:
       - postgres_password
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -179,6 +121,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - datastore-reader
       - datastore-writer
@@ -186,7 +129,7 @@ services:
       - redis
     secrets:
       - postgres_password
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -196,9 +139,10 @@ services:
     image: postgres:11
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
+      POSTGRES_DB: openslides
       POSTGRES_USER: openslides
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      POSTGRES_DB: openslides
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - postgres
@@ -206,7 +150,7 @@ services:
       - postgres_password
     volumes:
       - ./db-data:/var/lib/postgresql/data
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}{{- end }}
 
 
@@ -221,6 +165,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
       MESSAGING: redis
       AUTH: ticket
     networks:
@@ -230,7 +175,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -245,6 +190,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
       - datastore-reader
@@ -252,7 +198,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
   {{- with .Services.vote }}
@@ -269,6 +215,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
       MESSAGING: redis
       AUTH: ticket
     networks:
@@ -280,7 +227,7 @@ services:
       - auth_token_key
       - auth_cookie_key
       - postgres_password
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
   {{- with .Services.redis }}
@@ -290,9 +237,10 @@ services:
     command: redis-server --save ""
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - redis
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -307,6 +255,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
       - datastore-reader
@@ -314,7 +263,7 @@ services:
       - postgres
     secrets:
       - postgres_password
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -330,6 +279,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
       MESSAGING: redis
       AUTH: ticket
     networks:
@@ -340,7 +290,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
@@ -356,6 +306,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend
       - datastore-reader
@@ -366,7 +317,7 @@ services:
       - superadmin
       - manage_auth_password
       - internal_auth_password
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 networks:
