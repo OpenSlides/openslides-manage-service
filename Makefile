@@ -23,3 +23,9 @@ protoc:
 	protoc --go_out=. --go_opt=paths=source_relative \
 	--go-grpc_out=require_unimplemented_servers=false:. --go-grpc_opt=paths=source_relative \
 	proto/manage.proto
+
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+
+binary:
+	docker build . --target builder --tag openslides-manage-builder
+	docker run --interactive --tty --volume $(dir $(mkfile_path))build:/build --rm openslides-manage-builder /bin/cp /root/openslides /build/
