@@ -70,7 +70,7 @@ services:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastore-writer
+      - datastoreWriter
       - auth
       - postgres
     {{- end }}
@@ -176,7 +176,7 @@ services:
     image: {{ .ContainerRegistry }}/openslides-autoupdate:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastore-reader
+      - datastoreReader
       - redis
     {{- end }}
     environment:
@@ -200,7 +200,7 @@ services:
     image: {{ .ContainerRegistry }}/openslides-auth:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastore-reader
+      - datastoreReader
       - redis
     {{- end }}
     environment:
@@ -222,7 +222,7 @@ services:
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - backend
-      - datastore-reader
+      - datastoreReader
       - auth
       - autoupdate
       - redis
@@ -283,7 +283,7 @@ services:
     image: {{ .ContainerRegistry }}/openslides-icc:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastore-reader
+      - datastoreReader
       - postgres
       - redis
     {{- end }}
@@ -308,9 +308,10 @@ services:
     image: {{ .ContainerRegistry }}/openslides-manage:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastore-reader
-      - datastore-writer
+      - datastoreReader
+      - datastoreWriter
       - auth
+      - backendManage
     {{- end }}
     environment:
       << : *default-environment
