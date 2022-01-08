@@ -13,8 +13,8 @@ import (
 )
 
 func TestRunClient(t *testing.T) {
-	if err := client.RunClient(); err != nil {
-		t.Fatalf("running RunClient() failed: %v", err)
+	if code := client.RunClient(); code != 0 {
+		t.Fatal("running RunClient() failed")
 	}
 }
 

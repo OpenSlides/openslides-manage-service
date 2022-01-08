@@ -221,6 +221,7 @@ func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
 		"proxy",
 		"client",
 		"backend",
+		"backendManage",
 		"datastoreReader",
 		"datastoreWriter",
 		"postgres",

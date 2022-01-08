@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"time"
@@ -16,11 +17,26 @@ import (
 )
 
 // RunClient is the entrypoint for the client tool of this service. It starts the root command.
-func RunClient() error {
-	if err := RootCmd().Execute(); err != nil {
-		return fmt.Errorf("executing root command: %w", err)
+func RunClient() int {
+	err := RootCmd().Execute()
+
+	if err == nil {
+		return 0
 	}
-	return nil
+
+	code := 1
+	var errExit interface {
+		ExitCode() int
+	}
+	if errors.As(err, &errExit) {
+		code = errExit.ExitCode()
+		if code <= 0 {
+			code = 1
+			err = fmt.Errorf("wrong error code for error: %w", err)
+		}
+	}
+	fmt.Printf("Error: %v\n", err)
+	return code
 }
 
 // RootHelp is the main help text for the client tool.
@@ -29,10 +45,11 @@ const RootHelp = `openslides is an admin tool to setup an OpenSlides instance an
 // RootCmd returns the root cobra command.
 func RootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "openslides",
-		Short:        "Swiss army knife for OpenSlides admins",
-		Long:         RootHelp,
-		SilenceUsage: true,
+		Use:           "openslides",
+		Short:         "Swiss army knife for OpenSlides admins",
+		Long:          RootHelp,
+		SilenceErrors: true,
+		SilenceUsage:  true,
 	}
 
 	cmd.AddCommand(
