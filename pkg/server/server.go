@@ -88,7 +88,7 @@ func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*p
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.actionURL(), pw)
+	a := action.New(s.config.manageActionURL(), pw)
 	return initialdata.InitialData(ctx, in, runDir, a)
 
 }
@@ -98,7 +98,7 @@ func (s *srv) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*pro
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.actionURL(), pw)
+	a := action.New(s.config.manageActionURL(), pw)
 	return createuser.CreateUser(ctx, in, a)
 }
 
@@ -107,7 +107,7 @@ func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*p
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.actionURL(), pw)
+	a := action.New(s.config.manageActionURL(), pw)
 	return setpassword.SetPassword(ctx, in, a)
 }
 
@@ -170,6 +170,8 @@ type Config struct {
 	ActionHost     string `env:"ACTION_HOST,backend"`
 	ActionPort     string `env:"ACTION_PORT,9002"`
 
+	ManageActionHost string `env:"MANAGE_ACTION_HOST,backendManage"`
+
 	AuthProtocol string `env:"AUTH_PROTOCOL,http"`
 	AuthHost     string `env:"AUTH_HOST,auth"`
 	AuthPort     string `env:"AUTH_PORT,9004"`
@@ -216,11 +218,11 @@ func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
 	return &c
 }
 
-// actionURL returns an URL object to the backend action service.
-func (c *Config) actionURL() *url.URL {
+// manageActionURL returns an URL object to the backend action service.
+func (c *Config) manageActionURL() *url.URL {
 	u := url.URL{
 		Scheme: c.ActionProtocol,
-		Host:   c.ActionHost + ":" + c.ActionPort,
+		Host:   c.ManageActionHost + ":" + c.ActionPort,
 		Path:   "/internal/handle_request",
 	}
 	return &u
