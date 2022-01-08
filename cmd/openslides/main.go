@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	if err := client.RunClient(); err != nil {
-		os.Exit(1)
+	code := client.RunClient()
+	if code != 0 {
+		os.Exit(code)
 	}
 }
