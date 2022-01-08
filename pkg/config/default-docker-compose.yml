@@ -94,7 +94,8 @@ services:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - backend
+      - datastoreWriter
+      - postgres
     {{- end }}
     environment:
       << : *default-environment

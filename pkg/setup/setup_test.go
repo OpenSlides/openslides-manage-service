@@ -576,7 +576,7 @@ services:
   backend:
     image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
-      - datastore-writer
+      - datastoreWriter
       - auth
       - postgres
     environment:
@@ -592,7 +592,8 @@ services:
   backendManage:
     image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
-      - backend
+      - datastoreWriter
+      - postgres
     environment:
       << : *default-environment
     networks:
@@ -645,7 +646,7 @@ services:
   autoupdate:
     image: ghcr.io/openslides/openslides/openslides-autoupdate:latest
     depends_on:
-      - datastore-reader
+      - datastoreReader
       - redis
     environment:
       << : *default-environment
@@ -661,7 +662,7 @@ services:
   auth:
     image: ghcr.io/openslides/openslides/openslides-auth:latest
     depends_on:
-      - datastore-reader
+      - datastoreReader
       - redis
     environment:
       << : *default-environment
@@ -676,7 +677,7 @@ services:
     image: ghcr.io/openslides/openslides/openslides-vote:latest
     depends_on:
       - backend
-      - datastore-reader
+      - datastoreReader
       - auth
       - autoupdate
       - redis
@@ -716,7 +717,7 @@ services:
   icc:
     image: ghcr.io/openslides/openslides/openslides-icc:latest
     depends_on:
-      - datastore-reader
+      - datastoreReader
       - postgres
       - redis
     environment:
@@ -733,9 +734,10 @@ services:
   manage:
     image: ghcr.io/openslides/openslides/openslides-manage:latest
     depends_on:
-      - datastore-reader
-      - datastore-writer
+      - datastoreReader
+      - datastoreWriter
       - auth
+      - backendManage
     environment:
       << : *default-environment
     networks:
