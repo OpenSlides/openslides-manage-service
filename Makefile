@@ -1,4 +1,4 @@
-all: test
+all: openslides
 
 build-dev:
 	docker build . --target development --tag openslides-manage-dev
@@ -28,6 +28,12 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 
 openslides:
 	docker build . --target builder --tag openslides-manage-builder
-	docker run -e MYUID=$(id -u) -e MYGID=$(id -g) --interactive --tty --volume $(dir $(mkfile_path)):/build/ --rm openslides-manage-builder "/bin/cp -v /root/openslides /build/ && ls -al /build && chown $MYUID:$MYGID /build/openslides"
+	docker run --interactive --tty --volume $(dir $(mkfile_path)):/build/ --rm openslides-manage-builder sh -c " \
+		if [ $(shell whoami) != root ]; then \
+			addgroup -g $(shell id -g) build ; \
+			adduser -u $(shell id -u) -G build -D build ; \
+			chown build: /root/openslides ; \
+		fi; \
+		cp -p /root/openslides /build/"
 
 .PHONY: openslides
