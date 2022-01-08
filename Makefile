@@ -26,6 +26,8 @@ protoc:
 
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 
-binary:
+openslides:
 	docker build . --target builder --tag openslides-manage-builder
-	docker run --interactive --tty --volume $(dir $(mkfile_path))build:/build --rm openslides-manage-builder /bin/cp /root/openslides /build/
+	docker run -e MYUID=$(id -u) -e MYGID=$(id -g) --interactive --tty --volume $(dir $(mkfile_path)):/build/ --rm openslides-manage-builder "/bin/cp -v /root/openslides /build/ && ls -al /build && chown $MYUID:$MYGID /build/openslides"
+
+.PHONY: openslides
