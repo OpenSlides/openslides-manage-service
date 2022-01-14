@@ -78,7 +78,7 @@ secrets) run:
 
     $ ./openslides config --config my-config.yml .
 
-See the [default config](pkg/setup/default-config.yml) for syntax and defaults
+See the [default config](pkg/config/default-config.yml) for syntax and defaults
 of this configuration YAML file.
 
 
