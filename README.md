@@ -48,7 +48,7 @@ directory:
     $ ./openslides initial-data
 
 Now open https://localhost:8000, login with superuser credentials (default
-username and password: `superuser`) and have fun.
+username and password: `superadmin`) and have fun.
 
 
 ## Stop the server and remove the containers
@@ -78,7 +78,7 @@ secrets) run:
 
     $ ./openslides config --config my-config.yml .
 
-See the [default config](pkg/setup/default-config.yml) for syntax and defaults
+See the [default config](pkg/config/default-config.yml) for syntax and defaults
 of this configuration YAML file.
 
 

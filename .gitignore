@@ -1,6 +1,7 @@
 # Patterns of intentionally untracked files that Git should ignore
 
 # Binaries
+/build
 /openslides
 /server
 
