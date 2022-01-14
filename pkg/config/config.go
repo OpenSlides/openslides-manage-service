@@ -39,33 +39,33 @@ func Cmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 	}
 
-	tplFile := FlagTpl(cmd)
-	configFiles := FlagConfig(cmd)
+	tplFileName := FlagTpl(cmd)
+	configFileNames := FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
 
-		var tpl []byte
-		if *tplFile != "" {
-			fc, err := os.ReadFile(*tplFile)
+		var tplFile []byte
+		if *tplFileName != "" {
+			fc, err := os.ReadFile(*tplFileName)
 			if err != nil {
-				return fmt.Errorf("reading file %q: %w", *tplFile, err)
+				return fmt.Errorf("reading file %q: %w", *tplFileName, err)
 			}
-			tpl = fc
+			tplFile = fc
 		}
 
-		var config [][]byte
-		if len(*configFiles) > 0 {
-			for _, configFile := range *configFiles {
-				fc, err := os.ReadFile(configFile)
+		var configFiles [][]byte
+		if len(*configFileNames) > 0 {
+			for _, configFileName := range *configFileNames {
+				fc, err := os.ReadFile(configFileName)
 				if err != nil {
-					return fmt.Errorf("reading file %q: %w", configFile, err)
+					return fmt.Errorf("reading file %q: %w", configFileName, err)
 				}
-				config = append(config, fc)
+				configFiles = append(configFiles, fc)
 			}
 		}
 
-		if err := Config(dir, tpl, config); err != nil {
+		if err := Config(dir, tplFile, configFiles); err != nil {
 			return fmt.Errorf("running Config(): %w", err)
 		}
 		return nil
@@ -86,14 +86,19 @@ func FlagConfig(cmd *cobra.Command) *[]string {
 // Config rebuilds the YAML file for using Docker Compose or Docker Swarm.
 //
 // A custom template for the YAML file and YAML configs can be provided.
-func Config(dir string, tplContent []byte, cfgContent [][]byte) error {
+func Config(dir string, tplFile []byte, configFiles [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
-	if err := CreateYmlFile(dir, true, tplContent, cfgContent); err != nil {
+	cfg, err := NewYmlConfig(configFiles)
+	if err != nil {
+		return fmt.Errorf("creating new YML config object: %w", err)
+	}
+
+	if err := CreateYmlFile(dir, true, tplFile, cfg); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
@@ -102,14 +107,9 @@ func Config(dir string, tplContent []byte, cfgContent [][]byte) error {
 
 // CreateYmlFile builds the YAML file at the given directory. Use a truthy value for force
 // to override an existing file.
-func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byte) error {
-	if tplContent == nil {
-		tplContent = defaultDockerComposeYml
-	}
-
-	cfg, err := newYmlConfig(cfgContent)
-	if err != nil {
-		return fmt.Errorf("creating new YML config object: %w", err)
+func CreateYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error {
+	if tplFile == nil {
+		tplFile = defaultDockerComposeYml
 	}
 
 	marshalContentFunc := func(ws int, v interface{}) (string, error) {
@@ -137,7 +137,7 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 	funcMap["marshalContent"] = marshalContentFunc
 	funcMap["checkFlag"] = checkFlagFunc
 
-	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplContent))
+	tmpl, err := template.New("YAML File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplFile))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
@@ -154,7 +154,9 @@ func CreateYmlFile(dir string, force bool, tplContent []byte, cfgContent [][]byt
 	return nil
 }
 
-type ymlConfig struct {
+// YmlConfig contains the (merged) configuration for the creation of the Docker
+// Compose YAML file.
+type YmlConfig struct {
 	Filename string `yaml:"filename"`
 
 	Host string `yaml:"host"`
@@ -198,16 +200,18 @@ func (t *nullTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Va
 	return nil
 }
 
-func newYmlConfig(configFiles [][]byte) (*ymlConfig, error) {
+// NewYmlConfig creates a ymlConfig object from all given files. The files were
+// merged together with the default config.
+func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 	allConfigFiles := [][]byte{
 		defaultConfig,
 	}
 	allConfigFiles = append(allConfigFiles, configFiles...)
 
 	// Unmarshal and merge them all
-	config := new(ymlConfig)
+	config := new(YmlConfig)
 	for _, configFile := range allConfigFiles {
-		c := new(ymlConfig)
+		c := new(YmlConfig)
 		if err := yaml.Unmarshal(configFile, c); err != nil {
 			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 		}
