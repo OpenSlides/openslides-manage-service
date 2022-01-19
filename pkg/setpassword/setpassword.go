@@ -13,7 +13,7 @@ import (
 
 const (
 	// SetPasswordHelp contains the short help text for the command.
-	SetPasswordHelp = "Sets the password of an user"
+	SetPasswordHelp = "Sets the password of an user in OpenSlides"
 
 	// SetPasswordHelpExtra contains the long help text for the command without
 	// the headline.
@@ -29,7 +29,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 
 	userID := cmd.Flags().Int64P("user_id", "u", 0, "ID of the user account")
 	cmd.MarkFlagRequired("user_id")
-	password := cmd.Flags().StringP("password", "p", "", "New password of the user")
+	password := cmd.Flags().StringP("password", "p", "", "new password of the user")
 	cmd.MarkFlagRequired("password")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {

@@ -17,7 +17,7 @@ import (
 
 const (
 	// CreateUserHelp contains the short help text for the command.
-	CreateUserHelp = "Creates a new user"
+	CreateUserHelp = "Creates a new user in OpenSlides"
 
 	// CreateUserHelpExtra contains the long help text for the command without
 	// the headline.

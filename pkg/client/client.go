@@ -55,6 +55,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(
 		setup.Cmd(),
 		config.Cmd(),
+		config.CmdCreateDefault(),
 		unaryConnection(initialdata.Cmd),
 		unaryConnection(setpassword.Cmd),
 		unaryConnection(createuser.Cmd),
