@@ -24,13 +24,19 @@ var defaultConfig []byte
 
 const (
 	// ConfigHelp contains the short help text for the command.
-	ConfigHelp = "Rebuilds the YAML file for using Docker Compose or Docker Swarm"
+	ConfigHelp = "(Re)creates the container configuration YAML file for using Docker Compose or Docker Swarm"
 
 	// ConfigHelpExtra contains the long help text for the command without the headline.
-	ConfigHelpExtra = `This command (re)creates a YAML file in the given directory.`
+	ConfigHelpExtra = `This command (re)creates the container configuration YAML file in the given directory.`
+
+	// ConfigCreateDefaultHelp contains the short help text for the command.
+	ConfigCreateDefaultHelp = "(Re)creates the default setup configuration YAML file"
+
+	// ConfigCreateDefaultHelpExtra contains the long help text for the command without the headline.
+	ConfigCreateDefaultHelpExtra = `This command (re)creates the default setup configuration YAML file in the given directory.`
 )
 
-// Cmd returns the setup subcommand.
+// Cmd returns the config subcommand.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config directory",
@@ -259,4 +265,41 @@ func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 	}
 
 	return config, nil
+}
+
+// CmdCreateDefault returns the config-create-default subcommand.
+func CmdCreateDefault() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "config-create-default",
+		Short: ConfigCreateDefaultHelp,
+		Long:  ConfigCreateDefaultHelp + "\n\n" + ConfigCreateDefaultHelpExtra,
+		Args:  cobra.ExactArgs(1),
+	}
+
+	name := cmd.Flags().StringP("file", "f", "config.yml", "name of the created file")
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		dir := args[0]
+
+		if err := ConfigCreateDefault(dir, *name); err != nil {
+			return fmt.Errorf("running ConfigCreateDefault(): %w", err)
+		}
+
+		return nil
+	}
+	return cmd
+}
+
+// ConfigCreateDefault creates the default setup configuration YAML file.
+func ConfigCreateDefault(dir, name string) error {
+	// Create directory
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return fmt.Errorf("creating directory at %q: %w", dir, err)
+	}
+
+	// Create file
+	if err := shared.CreateFile(dir, true, name, defaultConfig); err != nil {
+		return fmt.Errorf("creating config default file at %q: %w", dir, err)
+	}
+	return nil
 }

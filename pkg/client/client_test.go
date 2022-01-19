@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/client"
+	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
@@ -35,6 +36,18 @@ func TestCmdHelpTexts(t *testing.T) {
 			name:             "setup command",
 			input:            []string{"setup", "--help"},
 			outputStartsWith: []byte(setup.SetupHelp),
+		},
+
+		{
+			name:             "config command",
+			input:            []string{"config", "--help"},
+			outputStartsWith: []byte(config.ConfigHelp),
+		},
+
+		{
+			name:             "config create default",
+			input:            []string{"config-create-default", "--help"},
+			outputStartsWith: []byte(config.ConfigCreateDefaultHelp),
 		},
 
 		{

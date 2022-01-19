@@ -30,12 +30,12 @@ const (
 
 const (
 	// SetupHelp contains the short help text for the command.
-	SetupHelp = "Builds the required files for using Docker Compose or Docker Swarm"
+	SetupHelp = "Creates the required files for using Docker Compose or Docker Swarm"
 
 	// SetupHelpExtra contains the long help text for the command without the headline.
-	SetupHelpExtra = `This command creates a YAML file. It also creates the required secrets and
-directories for volumes containing persistent database and SSL certs. Everything
-is created in the given directory.`
+	SetupHelpExtra = `This command creates a container configuration YAML file. It also creates the
+required secrets and directories for volumes containing persistent database and
+SSL certs. Everything is created in the given directory.`
 
 	// SecretsDirName is the name of the directory for Docker Secrets.
 	SecretsDirName = "secrets"

@@ -19,7 +19,7 @@ import (
 
 const (
 	// TunnelHelp contains the short help text for the command.
-	TunnelHelp = "Creates tcp tunnels to the OpenSlides network"
+	TunnelHelp = "Creates TCP tunnels to the OpenSlides network"
 
 	// TunnelHelpExtra contains the long help text for the command without the headline.
 	TunnelHelpExtra = `Opens local ports to all services and creates

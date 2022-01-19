@@ -75,7 +75,7 @@ The `setup` command generates a Docker Compose YAML file (default filename:
 `docker-compose.yml`) with the container configuration for all services. This
 step can be configured with a (second) YAML formated configuration file.
 
-E. g. create a file `my-config.yml` like this:
+E. g. create a file `my-config.yml` with the following content:
 
     ---
     port: 9000
