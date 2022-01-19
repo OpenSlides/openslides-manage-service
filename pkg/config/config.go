@@ -281,7 +281,7 @@ func CmdCreateDefault() *cobra.Command {
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
 
-		if err := ConfigCreateDefault(dir, *name); err != nil {
+		if err := configCreateDefault(dir, *name); err != nil {
 			return fmt.Errorf("running ConfigCreateDefault(): %w", err)
 		}
 
@@ -290,8 +290,8 @@ func CmdCreateDefault() *cobra.Command {
 	return cmd
 }
 
-// ConfigCreateDefault creates the default setup configuration YAML file.
-func ConfigCreateDefault(dir, name string) error {
+// configCreateDefault creates the default setup configuration YAML file.
+func configCreateDefault(dir, name string) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
