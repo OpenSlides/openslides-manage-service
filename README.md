@@ -73,15 +73,12 @@ directory.
 
 The `setup` command generates a Docker Compose YAML file (default filename:
 `docker-compose.yml`) with the container configuration for all services. This
-step can be configured with a (second) YAML formated configuration file.
+step can be configured with a (second) YAML formated setup configuration file.
 
 E. g. create a file `my-config.yml` with the following content:
 
     ---
     port: 9000
-
-See the [default config](pkg/config/default-config.yml) for syntax and defaults
-of this file.
 
 After you have such a file remove your Docker Compose YAML file and rerun the
 `setup` command:
@@ -99,6 +96,13 @@ command. E. g. run:
     $ ./openslides config --config my-config.yml .
 
 This command will just rebuild your Docker Compose YAML file.
+
+To get the [default config](pkg/config/default-config.yml) run:
+
+    $ ./openslides config-create-default .
+
+So you get a file where you can see syntax and defaults and might be able to
+customize the steps above.
 
 
 ## SSL encryption
