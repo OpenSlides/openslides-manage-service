@@ -108,10 +108,10 @@ customize the steps above.
 ## SSL encryption
 
 The manage tool provides settable options for using SSL encryption, which can be
-set in a [custom YAML configuration
+set in the [custom YAML configuration
 file](#Configuration-of-the-generated-Docker-Compose-YAML-file).
 
-If you do not use any customization the `setup` command generates a self-signed
+If you do not use any customization, the `setup` command generates a self-signed
 certificate by default.
 
 If you want to use any other certificate you posses, just replace `cert_crt` and
