@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
@@ -19,20 +21,26 @@ const (
 
 	// SetHelpExtra contains the long help text for the command without
 	// the headline.
-	SetHelpExtra = `This command calls an OpenSlides backend action with the given payload. Only
-some actions to update organization or meeting settings are supportet.`
+	SetHelpExtra = `This command calls an OpenSlides backend action with the given YAML formatted
+payload. Provide a file or use - to read from stdin. Only some update actions
+are supported.`
 )
+
+var actionMap = map[string]string{
+	"organization": "organization.update",
+	"meeting":      "meeting.update",
+}
 
 // Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "set"
+	cmd.Use = "set action payload-file"
 	cmd.Short = SetHelp
 	cmd.Long = SetHelp + "\n\n" + SetHelpExtra
 	cmd.Args = cobra.ExactArgs(2)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		action := args[0]
-		fileName := args[0]
+		fileName := args[1]
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
@@ -58,21 +66,27 @@ type gRPCClient interface {
 }
 
 // Run calls respective procedure via given gRPC client.
-func Run(ctx context.Context, gc gRPCClient, action, payloadFile string) error {
-	actionMap := map[string]string{
-		"organization": "organization.update",
-	}
-
+func Run(ctx context.Context, gc gRPCClient, action, payloadFilename string) error {
 	actionName, ok := actionMap[action]
 	if !ok {
 		return fmt.Errorf("unknown action %q", action)
 	}
 
-	payload, err := os.ReadFile(payloadFile)
-	if err != nil {
-		return fmt.Errorf("reading payload file %q: %w", payloadFile, err)
+	var r io.Reader
+	if payloadFilename == "-" {
+		r = os.Stdin
+	} else {
+		f, err := os.Open(payloadFilename)
+		if err != nil {
+			return fmt.Errorf("opening payload file %q: %w", payloadFilename, err)
+		}
+		r = f
 	}
 
+	payload, err := io.ReadAll(r)
+	if err != nil {
+		return fmt.Errorf("reading payload: %w", err)
+	}
 	in := &proto.SetRequest{
 		Action:  actionName,
 		Payload: payload,
@@ -97,7 +111,13 @@ type action interface {
 // This function is the server side entrypoint for this package.
 func Set(ctx context.Context, in *proto.SetRequest, a action) (*proto.SetResponse, error) {
 	name := in.Action
-	result, err := a.Single(ctx, name, in.Payload)
+
+	c, err := yaml.YAMLToJSON(in.Payload)
+	if err != nil {
+		return nil, fmt.Errorf("converting YAML to JSON: %w", err)
+	}
+
+	result, err := a.Single(ctx, name, c)
 	if err != nil {
 		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}
