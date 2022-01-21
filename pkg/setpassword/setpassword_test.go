@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -69,8 +70,8 @@ func TestSetPassword(t *testing.T) {
 
 		err := setpassword.Run(ctx, mc, 62681321, "testvaluefoo jcigh")
 
-		if !errors.Is(err, myerror) {
-			t.Fatalf("setpassword.Run() returned '%v', expected error wrapping '%v'", err, myerror)
+		if !strings.Contains(err.Error(), "my error") {
+			t.Fatalf("setpassword.Run() should return error")
 		}
 	})
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/client"
 	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
@@ -60,6 +61,12 @@ func TestCmdHelpTexts(t *testing.T) {
 			name:             "set-password command",
 			input:            []string{"set-password", "--help"},
 			outputStartsWith: []byte(setpassword.SetPasswordHelp),
+		},
+
+		{
+			name:             "set",
+			input:            []string{"set", "--help"},
+			outputStartsWith: []byte(set.SetHelp),
 		},
 
 		{

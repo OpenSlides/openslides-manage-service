@@ -16,6 +16,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/action"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
@@ -109,6 +110,15 @@ func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*p
 	}
 	a := action.New(s.config.manageActionURL(), pw)
 	return setpassword.SetPassword(ctx, in, a)
+}
+
+func (s *srv) Set(ctx context.Context, in *proto.SetRequest) (*proto.SetResponse, error) {
+	pw, err := shared.AuthSecret(s.config.InternalAuthPasswordFile, s.config.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
+	}
+	a := action.New(s.config.manageActionURL(), pw)
+	return set.Set(ctx, in, a)
 }
 
 func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {

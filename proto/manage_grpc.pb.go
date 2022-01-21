@@ -22,6 +22,7 @@ type ManageClient interface {
 	InitialData(ctx context.Context, in *InitialDataRequest, opts ...grpc.CallOption) (*InitialDataResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
+	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
 	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error)
 }
 
@@ -69,6 +70,15 @@ func (c *manageClient) SetPassword(ctx context.Context, in *SetPasswordRequest, 
 	return out, nil
 }
 
+func (c *manageClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error) {
+	out := new(SetResponse)
+	err := c.cc.Invoke(ctx, "/Manage/Set", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *manageClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Manage_ServiceDesc.Streams[0], "/Manage/Tunnel", opts...)
 	if err != nil {
@@ -108,6 +118,7 @@ type ManageServer interface {
 	InitialData(context.Context, *InitialDataRequest) (*InitialDataResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
+	Set(context.Context, *SetRequest) (*SetResponse, error)
 	Tunnel(Manage_TunnelServer) error
 }
 
@@ -126,6 +137,9 @@ func (UnimplementedManageServer) CreateUser(context.Context, *CreateUserRequest)
 }
 func (UnimplementedManageServer) SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPassword not implemented")
+}
+func (UnimplementedManageServer) Set(context.Context, *SetRequest) (*SetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
 }
 func (UnimplementedManageServer) Tunnel(Manage_TunnelServer) error {
 	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
@@ -214,6 +228,24 @@ func _Manage_SetPassword_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Manage_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManageServer).Set(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/Set",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).Set(ctx, req.(*SetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Manage_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(ManageServer).Tunnel(&manageTunnelServer{stream})
 }
@@ -262,6 +294,10 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetPassword",
 			Handler:    _Manage_SetPassword_Handler,
+		},
+		{
+			MethodName: "Set",
+			Handler:    _Manage_Set_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

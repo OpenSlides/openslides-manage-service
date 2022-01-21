@@ -36,7 +36,7 @@ const (
 	ConfigCreateDefaultHelpExtra = `This command (re)creates the default setup configuration YAML file in the given directory.`
 )
 
-// Cmd returns the config subcommand.
+// Cmd returns the subcommand.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config directory",

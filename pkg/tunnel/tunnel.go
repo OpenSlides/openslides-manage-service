@@ -46,7 +46,7 @@ $ openslides tunnel -L localhost:8080:auth:9004
 `
 )
 
-// Cmd returns the set-password subcommand.
+// Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	services := map[string]string{
 		"backend-action":    ":9002:backend:9002",

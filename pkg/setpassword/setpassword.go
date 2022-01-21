@@ -9,6 +9,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 	SetPasswordHelpExtra = "This command sets the password of an user by a given user ID."
 )
 
-// Cmd returns the set-password subcommand.
+// Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Use = "set-password"
 	cmd.Short = SetPasswordHelp
@@ -63,7 +64,8 @@ func Run(ctx context.Context, gc gRPCClient, userID int64, password string) erro
 		Password: password,
 	}
 	if _, err := gc.SetPassword(ctx, in); err != nil {
-		return fmt.Errorf("setting password of user %d: %w", userID, err)
+		s, _ := status.FromError(err) // The ok value does not matter here.
+		return fmt.Errorf("calling manage service (setting password of user %d): %s", userID, s.Message())
 	}
 	return nil
 }
