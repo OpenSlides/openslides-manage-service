@@ -9,6 +9,7 @@ service Manage {
     rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
+    rpc Set(SetRequest) returns (SetResponse);
     rpc Tunnel(stream TunnelData) returns (stream TunnelData);
 }
 
@@ -48,6 +49,15 @@ message SetPasswordRequest {
 }
 
 message SetPasswordResponse {}
+
+message SetRequest {
+    string action = 1;
+    bytes payload = 2;
+}
+
+message SetResponse {
+    bytes payload = 1;
+}
 
 message TunnelData {
     bytes data = 1;

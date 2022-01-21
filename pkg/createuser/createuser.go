@@ -25,7 +25,7 @@ const (
 data including default password and organization management level.`
 )
 
-// Cmd returns the create-user subcommand.
+// Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Use = "create-user"
 	cmd.Short = CreateUserHelp

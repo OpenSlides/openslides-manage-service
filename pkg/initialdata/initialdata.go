@@ -15,6 +15,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -28,7 +29,7 @@ const (
 datastore is not empty.`
 )
 
-// Cmd returns the initial-data subcommand.
+// Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Use = "initial-data"
 	cmd.Short = InitialDataHelp
@@ -77,9 +78,9 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 
 	resp, err := gc.InitialData(ctx, req)
 	if err != nil {
-		return fmt.Errorf("setting initial data: %w", err)
+		s, _ := status.FromError(err) // The ok value does not matter here.
+		return fmt.Errorf("calling manage service (setting initial data): %s", s.Message())
 	}
-
 	if !resp.Initialized {
 		return fehler.ExitCode(2, fmt.Errorf("datastore contains data, initial data were NOT set"))
 	}

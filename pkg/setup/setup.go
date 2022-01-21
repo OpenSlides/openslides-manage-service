@@ -51,7 +51,7 @@ SSL certs. Everything is created in the given directory.`
 	ManageAuthPasswordFileName = "manage_auth_password"
 )
 
-// Cmd returns the setup subcommand.
+// Cmd returns the subcommand.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "setup directory",

@@ -10,6 +10,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
@@ -59,6 +60,7 @@ func RootCmd() *cobra.Command {
 		unaryConnection(initialdata.Cmd),
 		unaryConnection(setpassword.Cmd),
 		unaryConnection(createuser.Cmd),
+		unaryConnection(set.Cmd),
 		streamConnection(tunnel.Cmd),
 	)
 
