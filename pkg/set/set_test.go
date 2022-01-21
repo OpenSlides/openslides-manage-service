@@ -30,8 +30,8 @@ func (m *mockSetClient) Set(ctx context.Context, in *proto.SetRequest, opts ...g
 }
 
 func TestSet(t *testing.T) {
-	payload := `{"key":"test_string_boe7ahthu0Fie1Eghai4"}`
-	f, err := os.CreateTemp("", "action-payload.json")
+	payload := `---\nkey: test_string_boe7ahthu0Fie1Eghai4}`
+	f, err := os.CreateTemp("", "action-payload.yml")
 	if err != nil {
 		t.Fatalf("creating temporary file for payload: %v", err)
 	}
