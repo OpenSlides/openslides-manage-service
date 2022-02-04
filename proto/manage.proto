@@ -34,7 +34,7 @@ message CreateUserRequest {
     string default_password = 5 [ json_name = "default_password" ];
     string email = 6 [ json_name = "email" ];
     string organization_management_level = 7 [ json_name = "organization_management_level" ];
-    map<string,  committee__management_level = 8 [ json_name = "committee__management_level" ];
+    map<string, google.protobuf.ListValue> committee__management_level = 8 [ json_name = "committee__management_level" ];
     map<string, google.protobuf.ListValue> group__ids = 9 [ json_name = "group__ids" ];
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestCmd(t *testing.T) {
@@ -49,7 +50,7 @@ is_active: true
 default_password: my_new_password_weu6Aichaj
 email: my_new_emailaddress_ooduN6fuh7@ohth1Osa1I.com
 organization_management_level: superadmin
-committee_$_management_level: {"1": "can_manage"}
+committee_$_management_level: {"can_manage": ["1"]}
 group_$_ids: {"1": [1,2]}
 `, username)
 		testUserFile(t, username, user, "")
@@ -164,13 +165,16 @@ func TestCreateUserServerAll(t *testing.T) {
 	ma := new(mockAction)
 	ma.expUserID = expUserID
 	t.Run("create a user", func(t *testing.T) {
+		var ls []interface{}
+		ls = append(ls, "1")
+		l, _ := structpb.NewList(ls)
 		in := &proto.CreateUserRequest{
 			Username:                    "my_username_moh9Sep8Ae",
 			DefaultPassword:             "my_password_nah4Aigahp",
 			OrganizationManagementLevel: "superadmin",
 			IsActive:                    true,
-			Committee_ManagementLevel: map[string]string{
-				"1": "can_manage",
+			Committee_ManagementLevel: map[string]*structpb.ListValue{
+				"can_manage": l,
 			},
 		}
 		res, err := createuser.CreateUser(context.Background(), in, ma)
