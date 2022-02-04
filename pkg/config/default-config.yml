@@ -82,6 +82,8 @@ defaultEnvironment:
 
   OPENSLIDES_DEVELOPMENT: "false"
 
+  SYSTEM_URL: localhost:8000
+
 # You can extend or replace parts of the defaultEnvironment.
 #
 # Example:
