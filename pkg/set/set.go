@@ -97,7 +97,7 @@ func Run(ctx context.Context, gc gRPCClient, action, payloadFilename string) err
 		return fmt.Errorf("calling manage service (calling backend action): %s", s.Message())
 	}
 
-	fmt.Printf("Request was successful with following response: %s", string(resp.Payload))
+	fmt.Printf("Request was successful with following response: %s\n", string(resp.Payload))
 	return nil
 }
 
