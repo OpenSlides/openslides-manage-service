@@ -80,7 +80,6 @@ func (d *Conn) Filter(ctx context.Context, collection string, filter map[string]
 		collection, key, value, fieldsStr,
 	)
 	addr := d.readerURL.String() + filterSubpath
-	fmt.Printf("req: %v\n", reqBody)
 
 	respBody, err := sendReadRequest(ctx, addr, reqBody)
 	if err != nil {

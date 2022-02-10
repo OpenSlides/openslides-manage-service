@@ -18,12 +18,16 @@ const (
 	// GetHelpExtra contains the long help text for the command without
 	// the headline.
 	GetHelpExtra = `Provide a collection to list contained models.
-Use options to narrow down output.`
+Use options to narrow down output.
+
+Examples:
+  openslides get user --fields first_name,last_name --filter is_active=false
+  openslides get agenda_item --exists --filter closed=true`
 )
 
 // Cmd returns the get subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "get"
+	cmd.Use = "get collection"
 	cmd.Short = GetHelp
 	cmd.Long = GetHelp + "\n\n" + GetHelpExtra
 	cmd.Args = cobra.ExactArgs(1)
