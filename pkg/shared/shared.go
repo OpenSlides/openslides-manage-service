@@ -55,6 +55,26 @@ func fileExists(p string) (bool, error) {
 	return false, fmt.Errorf("checking existance of file %s: %w", p, err)
 }
 
+// InputOrFileOrStdin takes either a command line input or a filename (which can
+// be "-" so we read from stdin) and returns the content.
+func InputOrFileOrStdin(input, filename string) ([]byte, error) {
+	if input == "" && filename == "" {
+		return nil, fmt.Errorf("input and filename must not both be empty")
+	}
+	if input != "" && filename != "" {
+		return nil, fmt.Errorf("input or filename must be empty")
+	}
+
+	if input != "" {
+		return []byte(input), nil
+	}
+	p, err := ReadFromFileOrStdin(filename)
+	if err != nil {
+		return nil, fmt.Errorf("reading file: %w", err)
+	}
+	return p, nil
+}
+
 // ReadFromFileOrStdin reads the given file. If the filename is "-" it reads from stdin instead.
 func ReadFromFileOrStdin(filename string) ([]byte, error) {
 	var r io.Reader

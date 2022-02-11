@@ -44,22 +44,9 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		action := args[0]
 
-		var payload []byte
-		if len(args) == 1 {
-			if *payloadFile == "" {
-				return fmt.Errorf("missing payload or payload file")
-			}
-			p, err := shared.ReadFromFileOrStdin(*payloadFile)
-			if err != nil {
-				return fmt.Errorf("reading payload file: %w", err)
-			}
-			payload = p
-		} else {
-			// len(args) == 2
-			if *payloadFile != "" {
-				return fmt.Errorf("you must not provide both, payload and payload file")
-			}
-			payload = []byte(args[1])
+		payload, err := shared.InputOrFileOrStdin(args[1], *payloadFile)
+		if err != nil {
+			return fmt.Errorf("reading payload from positional argument or file or stdin: %w", err)
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())

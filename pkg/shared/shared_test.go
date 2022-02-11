@@ -134,3 +134,60 @@ func TestReadFromFileOrStdin(t *testing.T) {
 		}
 	})
 }
+
+func TestInputOrFileOrStdin(t *testing.T) {
+	t.Run("running TestInputOrFileOrStdin with both arguments", func(t *testing.T) {
+		hasErrMsg := "input or filename must be empty"
+		_, err := shared.InputOrFileOrStdin("some input", "some-file")
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), hasErrMsg) {
+			t.Fatalf("got error message %q, expected %q", err.Error(), hasErrMsg)
+		}
+	})
+
+	t.Run("running TestInputOrFileOrStdin with no arguments", func(t *testing.T) {
+		hasErrMsg := "input and filename must not both be empty"
+		_, err := shared.InputOrFileOrStdin("", "")
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), hasErrMsg) {
+			t.Fatalf("got error message %q, expected %q", err.Error(), hasErrMsg)
+		}
+	})
+
+	t.Run("running TestInputOrFileOrStdin with input", func(t *testing.T) {
+		expected := "some-string-icds59ifuisofuw09re"
+		got, err := shared.InputOrFileOrStdin(expected, "")
+		if err != nil {
+			t.Fatalf("error reading input: %v", err)
+		}
+		if !bytes.Equal(got, []byte(expected)) {
+			t.Fatalf("wrong content, got %q, expected %q", string(got), expected)
+		}
+
+	})
+
+	t.Run("running TestInputOrFileOrStdin with file", func(t *testing.T) {
+		expected := "test string A74832refssdjfAiyiechoo"
+		f, err := os.CreateTemp("", "somefile-*.txt")
+		if err != nil {
+			t.Fatalf("creating temporary file: %v", err)
+		}
+		defer os.Remove(f.Name())
+		f.WriteString(expected)
+		if err := f.Close(); err != nil {
+			t.Fatalf("closing temporary file: %v", err)
+		}
+
+		got, err := shared.InputOrFileOrStdin("", f.Name())
+		if err != nil {
+			t.Fatalf("error reading file: %v", err)
+		}
+		if !bytes.Equal(got, []byte(expected)) {
+			t.Fatalf("wrong content, got %q, expected %q", string(got), expected)
+		}
+	})
+}
