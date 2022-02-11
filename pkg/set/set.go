@@ -20,9 +20,10 @@ const (
 
 	// SetHelpExtra contains the long help text for the command without
 	// the headline.
-	SetHelpExtra = `This command calls an OpenSlides backend action with the given YAML formatted
-payload. Provide a file or use - to read from stdin. Only some update actions
-are supported.`
+	SetHelpExtra = `This command calls an OpenSlides backend action with the given YAML or JSON
+formatted payload. Provide the payload directly or use the --file flag with a
+file or use this flag with - to read from stdin. Only some update actions are
+supported.`
 )
 
 var actionMap = map[string]string{
@@ -37,7 +38,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Long = SetHelp + "\n\n" + SetHelpExtra
 	cmd.Args = cobra.RangeArgs(1, 2)
 
-	payloadFileHelpText := "..........................."
+	payloadFileHelpText := "YAML or JSON file with the payload; you can use - to provide the payload via stdin"
 	payloadFile := cmd.Flags().StringP("file", "f", "", payloadFileHelpText)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
