@@ -78,17 +78,16 @@ func Run(ctx context.Context, gc gRPCClient, action string, payload []byte) erro
 	if !ok {
 		return fmt.Errorf("unknown action %q", action)
 	}
-
 	in := &proto.SetRequest{
 		Action:  actionName,
 		Payload: payload,
 	}
+
 	resp, err := gc.Set(ctx, in)
 	if err != nil {
 		s, _ := status.FromError(err) // The ok value does not matter here.
 		return fmt.Errorf("calling manage service (calling backend action): %s", s.Message())
 	}
-
 	fmt.Printf("Request was successful with following response: %s\n", string(resp.Payload))
 	return nil
 }
