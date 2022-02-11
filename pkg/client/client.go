@@ -47,11 +47,12 @@ const RootHelp = `openslides is an admin tool to setup an OpenSlides instance an
 // RootCmd returns the root cobra command.
 func RootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "openslides",
-		Short:         "Swiss army knife for OpenSlides admins",
-		Long:          RootHelp,
-		SilenceErrors: true,
-		SilenceUsage:  true,
+		Use:               "openslides",
+		Short:             "Swiss army knife for OpenSlides admins",
+		Long:              RootHelp,
+		SilenceErrors:     true,
+		SilenceUsage:      true,
+		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 	}
 
 	cmd.AddCommand(
