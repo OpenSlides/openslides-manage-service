@@ -68,6 +68,7 @@ func InputOrFileOrStdin(input, filename string) ([]byte, error) {
 	if input != "" {
 		return []byte(input), nil
 	}
+
 	p, err := ReadFromFileOrStdin(filename)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)

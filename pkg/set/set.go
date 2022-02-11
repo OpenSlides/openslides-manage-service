@@ -42,8 +42,8 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	payloadFile := cmd.Flags().StringP("file", "f", "", payloadFileHelpText)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		args = append(args, "") // This is to ensure that the slice always has enough values.
 		action := args[0]
-
 		payload, err := shared.InputOrFileOrStdin(args[1], *payloadFile)
 		if err != nil {
 			return fmt.Errorf("reading payload from positional argument or file or stdin: %w", err)
