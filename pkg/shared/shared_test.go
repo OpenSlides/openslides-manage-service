@@ -1,6 +1,7 @@
 package shared_test
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path"
@@ -91,4 +92,45 @@ func testContentFile(t testing.TB, dir, name, expected string) {
 	if got != expected {
 		t.Fatalf("wrong content of file %q, got %q, expected %q", p, got, expected)
 	}
+}
+
+func TestReadFromFileOrStdin(t *testing.T) {
+	testString := "test string Aequoh2aey9Aiyiechoo"
+	f, err := os.CreateTemp("", "somefile-*.txt")
+	if err != nil {
+		t.Fatalf("creating temporary file: %v", err)
+	}
+	defer os.Remove(f.Name())
+	f.WriteString(testString)
+	if err := f.Close(); err != nil {
+		t.Fatalf("closing temporary file: %v", err)
+	}
+
+	t.Run("running ReadFromFileOrStdin() with regular file", func(t *testing.T) {
+		c, err := shared.ReadFromFileOrStdin(f.Name())
+		if err != nil {
+			t.Fatalf("error reading file: %v", err)
+		}
+		if !bytes.Equal(c, []byte(testString)) {
+			t.Fatalf("wrong content of file %q, got %q, expected %q", f.Name(), string(c), testString)
+		}
+	})
+
+	t.Run("running ReadFromFileOrStdin() with not existing file", func(t *testing.T) {
+		hasErrMsg := "no such file"
+		_, err := shared.ReadFromFileOrStdin("unknown_file")
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+		if !strings.Contains(err.Error(), hasErrMsg) {
+			t.Fatalf("got error message %q, expected %q", err.Error(), hasErrMsg)
+		}
+	})
+
+	t.Run("running ReadFromFileOrStdin() with - so reading from stdin", func(t *testing.T) {
+		_, err := shared.ReadFromFileOrStdin("-")
+		if err != nil {
+			t.Fatalf("error reading from stdin: %v", err)
+		}
+	})
 }

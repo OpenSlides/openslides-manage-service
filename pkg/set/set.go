@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -33,14 +32,34 @@ var actionMap = map[string]string{
 
 // Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "set action payload-file"
+	cmd.Use = "set action [payload]"
 	cmd.Short = SetHelp
 	cmd.Long = SetHelp + "\n\n" + SetHelpExtra
-	cmd.Args = cobra.ExactArgs(2)
+	cmd.Args = cobra.RangeArgs(1, 2)
+
+	payloadFileHelpText := "..........................."
+	payloadFile := cmd.Flags().StringP("file", "f", "", payloadFileHelpText)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		action := args[0]
-		fileName := args[1]
+
+		var payload []byte
+		if len(args) == 1 {
+			if *payloadFile == "" {
+				return fmt.Errorf("missing payload or payload file")
+			}
+			p, err := shared.ReadFromFileOrStdin(*payloadFile)
+			if err != nil {
+				return fmt.Errorf("reading payload file: %w", err)
+			}
+			payload = p
+		} else {
+			// len(args) == 2
+			if *payloadFile != "" {
+				return fmt.Errorf("you must not provide both, payload and payload file")
+			}
+			payload = []byte(args[1])
+		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
@@ -51,7 +70,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 		}
 		defer close()
 
-		if err := Run(ctx, cl, action, fileName); err != nil {
+		if err := Run(ctx, cl, action, payload); err != nil {
 			return fmt.Errorf("run backend action: %w", err)
 		}
 		return nil
@@ -66,25 +85,10 @@ type gRPCClient interface {
 }
 
 // Run calls respective procedure via given gRPC client.
-func Run(ctx context.Context, gc gRPCClient, action, payloadFilename string) error {
+func Run(ctx context.Context, gc gRPCClient, action string, payload []byte) error {
 	actionName, ok := actionMap[action]
 	if !ok {
 		return fmt.Errorf("unknown action %q", action)
-	}
-
-	var r io.Reader
-	if payloadFilename == "-" {
-		r = os.Stdin
-	} else {
-		f, err := os.Open(payloadFilename)
-		if err != nil {
-			return fmt.Errorf("opening payload file %q: %w", payloadFilename, err)
-		}
-		r = f
-	}
-	payload, err := io.ReadAll(r)
-	if err != nil {
-		return fmt.Errorf("reading payload: %w", err)
 	}
 
 	in := &proto.SetRequest{

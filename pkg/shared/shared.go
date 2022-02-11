@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -52,6 +53,25 @@ func fileExists(p string) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("checking existance of file %s: %w", p, err)
+}
+
+// ReadFromFileOrStdin reads the given file. If the filename is "-" it reads from stdin instead.
+func ReadFromFileOrStdin(filename string) ([]byte, error) {
+	var r io.Reader
+	if filename == "-" {
+		r = os.Stdin
+	} else {
+		f, err := os.Open(filename)
+		if err != nil {
+			return nil, fmt.Errorf("opening file %q: %w", filename, err)
+		}
+		r = f
+	}
+	content, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("reading payload: %w", err)
+	}
+	return content, nil
 }
 
 // AuthSecret returns a secret using the secret file as given in
