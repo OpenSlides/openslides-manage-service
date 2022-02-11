@@ -104,6 +104,9 @@ To get the [default config](pkg/config/default-config.yml) run:
 So you get a file where you can see syntax and defaults and might be able to
 customize the steps above.
 
+You may at least want to customize the `SYSTEM_URL`. The variable is used to get
+the correct URL in PDF or email templates.
+
 
 ## SSL encryption
 
@@ -118,23 +121,33 @@ If you want to use any other certificate you posses, just replace `cert_crt` and
 `cert_key` files in the `secrets` directory before starting Docker.
 
 If you want to disable SSL encryption, because you use OpenSlides behind your
-own proxy that provides SSL encryption, just  add the following line to your
+own proxy that provides SSL encryption, just add the following line to your
 YAML configuration file.
 
     enableLocalHTTPS: false
 
 If you run OpenSlides behind a publicly accessible domain, you can use caddys
 integrated certificate retrieval. Add the following lines to your YAML
-configuration file before running the setup command:
+configuration file and of course use your own domain instead of the example:
 
     enableAutoHTTPS: true
-    defaultEnvironment:
-      EXTERNAL_ADDRESS: openslides.example.com
-      # Use letsencrypt staging environment for testing
-      # ACME_ENDPOINT: https://acme-staging-v02.api.letsencrypt.org/directory
+    services:
+      proxy:
+        environment:
+          EXTERNAL_ADDRESS: openslides.example.com
+          # Use letsencrypt staging environment for testing
+          # ACME_ENDPOINT: https://acme-staging-v02.api.letsencrypt.org/directory
+
+Do not forget to [rebuild your Docker Compose YAML
+file](#Configuration-of-the-generated-Docker-Compose-YAML-file).
 
 See [the proxy service](https://github.com/OpenSlides/OpenSlides/blob/main/proxy) for
 details on provided methods for HTTPS activation.
+
+
+## Email
+
+TODO: Write this part of the README.
 
 
 ## Under the hood
