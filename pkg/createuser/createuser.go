@@ -32,6 +32,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Long = CreateUserHelp + "\n\n" + CreateUserHelpExtra
 	cmd.Args = cobra.NoArgs
 
+	// TODO: Let this read from stdin and also accept positional argument with user data in YAML oder JSON to be consistent with set command.
 	userFileHelpText := "custom YAML file with user data " +
 		"(required fields: username, default_password; " +
 		"extra fields: first_name, last_name, email, organization_management_level)"
