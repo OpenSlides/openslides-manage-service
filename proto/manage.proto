@@ -9,6 +9,7 @@ service Manage {
     rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
+    rpc Get(GetRequest) returns (GetResponse);
     rpc Set(SetRequest) returns (SetResponse);
     rpc Tunnel(stream TunnelData) returns (stream TunnelData);
 }
@@ -49,6 +50,17 @@ message SetPasswordRequest {
 }
 
 message SetPasswordResponse {}
+
+message GetRequest {
+    string collection = 1;
+    bool exists = 2;
+    map<string, string> filter = 3;
+    repeated string fields = 4;
+}
+
+message GetResponse {
+    string value = 1;
+}
 
 message SetRequest {
     string action = 1;

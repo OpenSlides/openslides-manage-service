@@ -15,6 +15,8 @@ import (
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/action"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
+	"github.com/OpenSlides/openslides-manage-service/pkg/datastorereader"
+	"github.com/OpenSlides/openslides-manage-service/pkg/get"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
@@ -110,6 +112,11 @@ func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*p
 	}
 	a := action.New(s.config.manageActionURL(), pw)
 	return setpassword.SetPassword(ctx, in, a)
+}
+
+func (s *srv) Get(ctx context.Context, in *proto.GetRequest) (*proto.GetResponse, error) {
+	ds := datastorereader.New(s.config.datastoreReaderURL())
+	return get.Get(ctx, in, ds)
 }
 
 func (s *srv) Set(ctx context.Context, in *proto.SetRequest) (*proto.SetResponse, error) {
@@ -253,16 +260,6 @@ func (c *Config) datastoreReaderURL() *url.URL {
 		Scheme: c.DatastoreReaderProtocol,
 		Host:   c.DatastoreReaderHost + ":" + c.DatastoreReaderPort,
 		Path:   "/internal/datastore/reader",
-	}
-	return &u
-}
-
-// datastoreWriterURL returns an URL object to the datastore writer service.
-func (c *Config) datastoreWriterURL() *url.URL {
-	u := url.URL{
-		Scheme: c.DatastoreWriterProtocol,
-		Host:   c.DatastoreWriterHost + ":" + c.DatastoreWriterPort,
-		Path:   "/internal/datastore/writer",
 	}
 	return &u
 }
