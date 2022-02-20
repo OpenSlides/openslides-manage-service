@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -21,29 +21,34 @@ const (
 
 	// CreateUserHelpExtra contains the long help text for the command without
 	// the headline.
-	CreateUserHelpExtra = `This command creates a new user with the given user
-data including default password and organization management level.`
+	CreateUserHelpExtra = `This command creates a new user with the given given YAML or JSON formatted user
+data including default password and organization management level. Provide the
+user data directly or use the --file flag with a file or use this flag with - to
+read from stdin.`
 )
 
 // Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "create-user"
+	cmd.Use = "create-user [user-data]"
 	cmd.Short = CreateUserHelp
 	cmd.Long = CreateUserHelp + "\n\n" + CreateUserHelpExtra
-	cmd.Args = cobra.NoArgs
+	cmd.Args = cobra.RangeArgs(0, 1)
 
-	// TODO: Let this read from stdin and also accept positional argument with user data in YAML oder JSON to be consistent with set command.
-	userFileHelpText := "custom YAML file with user data " +
+	userFileHelpText := "YAML or JSON file with user data " +
 		"(required fields: username, default_password; " +
-		"extra fields: first_name, last_name, email, organization_management_level)"
+		"extra fields: first_name, last_name, email, organization_management_level); " +
+		"you can use - to provide the payload via stdin"
 	userFile := cmd.Flags().StringP("file", "f", "", userFileHelpText)
-	cmd.MarkFlagRequired("file")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		args = append(args, "") // This is to ensure that the slice always has enough values.
+		userData, err := shared.InputOrFileOrStdin(args[0], *userFile)
+		if err != nil {
+			return fmt.Errorf("reading user data from positional argument or file or stdin: %w", err)
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
-
-		cmd.Flags()
 
 		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
 		if err != nil {
@@ -51,7 +56,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 		}
 		defer close()
 
-		if err := Run(ctx, cl, *userFile); err != nil {
+		if err := Run(ctx, cl, userData); err != nil {
 			return fmt.Errorf("creating user: %w", err)
 		}
 		return nil
@@ -66,26 +71,22 @@ type gRPCClient interface {
 }
 
 // Run calls respective procedure to set password of the given user.
-func Run(ctx context.Context, gc gRPCClient, userFile string) error {
-	userData, err := os.ReadFile(userFile)
-	if err != nil {
-		return fmt.Errorf("reading user file %q: %w", userFile, err)
-	}
+func Run(ctx context.Context, gc gRPCClient, userData []byte) error {
 
 	in := &proto.CreateUserRequest{}
 	if err := yaml.Unmarshal(userData, in); err != nil {
-		return fmt.Errorf("unmarshalling user YAML file: %w", err)
+		return fmt.Errorf("unmarshalling user data: %w", err)
 	}
 
 	if in.Username == "" {
-		return fmt.Errorf("missing username in user YAML file")
+		return fmt.Errorf("missing username in user data")
 	}
 	if in.DefaultPassword == "" {
-		return fmt.Errorf("missing default_password in user YAML file")
+		return fmt.Errorf("missing default_password in user data")
 	}
 	if in.OrganizationManagementLevel != "" {
 		if err := checkOrganizationManagementLevel(in.OrganizationManagementLevel); err != nil {
-			return fmt.Errorf("wrong value for organization_management_level in user YAML file: %w", err)
+			return fmt.Errorf("wrong value for organization_management_level in user data: %w", err)
 		}
 	}
 
