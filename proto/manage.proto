@@ -7,6 +7,7 @@ import "google/protobuf/struct.proto";
 service Manage {
     rpc CheckServer(CheckServerRequest) returns (CheckServerResponse);
     rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
+    rpc Migrations(MigrationsRequest) returns (MigrationsResponse);
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
     rpc Get(GetRequest) returns (GetResponse);
@@ -27,6 +28,14 @@ message InitialDataRequest {
 
 message InitialDataResponse {
     bool initialized = 1;
+}
+
+message MigrationsRequest {
+    string command = 1;
+}
+
+message MigrationsResponse {
+    bytes response = 1;
 }
 
 message CreateUserRequest {

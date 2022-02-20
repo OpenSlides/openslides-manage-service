@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type ManageClient interface {
 	CheckServer(ctx context.Context, in *CheckServerRequest, opts ...grpc.CallOption) (*CheckServerResponse, error)
 	InitialData(ctx context.Context, in *InitialDataRequest, opts ...grpc.CallOption) (*InitialDataResponse, error)
+	Migrations(ctx context.Context, in *MigrationsRequest, opts ...grpc.CallOption) (*MigrationsResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
@@ -52,6 +53,15 @@ func (c *manageClient) CheckServer(ctx context.Context, in *CheckServerRequest, 
 func (c *manageClient) InitialData(ctx context.Context, in *InitialDataRequest, opts ...grpc.CallOption) (*InitialDataResponse, error) {
 	out := new(InitialDataResponse)
 	err := c.cc.Invoke(ctx, "/Manage/InitialData", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *manageClient) Migrations(ctx context.Context, in *MigrationsRequest, opts ...grpc.CallOption) (*MigrationsResponse, error) {
+	out := new(MigrationsResponse)
+	err := c.cc.Invoke(ctx, "/Manage/Migrations", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +150,7 @@ func (c *manageClient) Health(ctx context.Context, in *HealthRequest, opts ...gr
 type ManageServer interface {
 	CheckServer(context.Context, *CheckServerRequest) (*CheckServerResponse, error)
 	InitialData(context.Context, *InitialDataRequest) (*InitialDataResponse, error)
+	Migrations(context.Context, *MigrationsRequest) (*MigrationsResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
@@ -157,6 +168,9 @@ func (UnimplementedManageServer) CheckServer(context.Context, *CheckServerReques
 }
 func (UnimplementedManageServer) InitialData(context.Context, *InitialDataRequest) (*InitialDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitialData not implemented")
+}
+func (UnimplementedManageServer) Migrations(context.Context, *MigrationsRequest) (*MigrationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Migrations not implemented")
 }
 func (UnimplementedManageServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
@@ -220,6 +234,24 @@ func _Manage_InitialData_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ManageServer).InitialData(ctx, req.(*InitialDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Manage_Migrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MigrationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManageServer).Migrations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/Migrations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).Migrations(ctx, req.(*MigrationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -354,6 +386,10 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InitialData",
 			Handler:    _Manage_InitialData_Handler,
+		},
+		{
+			MethodName: "Migrations",
+			Handler:    _Manage_Migrations_Handler,
 		},
 		{
 			MethodName: "CreateUser",

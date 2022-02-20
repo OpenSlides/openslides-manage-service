@@ -17,6 +17,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastorereader"
 	"github.com/OpenSlides/openslides-manage-service/pkg/get"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/migrations"
 	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
@@ -100,8 +101,18 @@ func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*p
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageActionURL(), pw)
+	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
 	return initialdata.InitialData(ctx, in, runDir, a)
+
+}
+
+func (s *srv) Migrations(ctx context.Context, in *proto.MigrationsRequest) (*proto.MigrationsResponse, error) {
+	pw, err := shared.AuthSecret(s.config.InternalAuthPasswordFile, s.config.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
+	}
+	a := action.New(s.config.manageBackenMigrationsURL(), pw, action.MigrationsRoute)
+	return migrations.Migrations(ctx, in, a)
 
 }
 
@@ -110,7 +121,7 @@ func (s *srv) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*pro
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageActionURL(), pw)
+	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
 	return createuser.CreateUser(ctx, in, a)
 }
 
@@ -119,7 +130,7 @@ func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*p
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageActionURL(), pw)
+	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
 	return setpassword.SetPassword(ctx, in, a)
 }
 
@@ -133,7 +144,7 @@ func (s *srv) Set(ctx context.Context, in *proto.SetRequest) (*proto.SetResponse
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageActionURL(), pw)
+	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
 	return set.Set(ctx, in, a)
 }
 
@@ -215,11 +226,13 @@ type Config struct {
 	Port                   string `env:"MANAGE_PORT,9008"`
 	ManageAuthPasswordFile string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
 
-	ActionProtocol string `env:"ACTION_PROTOCOL,http"`
-	ActionHost     string `env:"ACTION_HOST,backendAction"`
-	ActionPort     string `env:"ACTION_PORT,9002"`
-
-	ManageActionHost string `env:"MANAGE_ACTION_HOST,backendManage"`
+	// Hint: The env var for the host is MANAGE_ACTION_HOST but the env vars for
+	// protocol and port don't have the MANAGE_ prefix because the backend
+	// itself does not distiguish between an common backend container and a
+	// manage backend container. So protocol and port are the same for all backend containers.
+	ManageActionProtocol string `env:"ACTION_PROTOCOL,http"`
+	ManageActionHost     string `env:"MANAGE_ACTION_HOST,backendManage"`
+	ManageActionPort     string `env:"ACTION_PORT,9002"`
 
 	DatastoreReaderProtocol string `env:"DATASTORE_READER_PROTOCOL,http"`
 	DatastoreReaderHost     string `env:"DATASTORE_READER_HOST,datastore-reader"`
@@ -260,12 +273,22 @@ func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
 	return &c
 }
 
-// manageActionURL returns an URL object to the backend action service.
-func (c *Config) manageActionURL() *url.URL {
+// manageBackendActionURL returns an URL object to the backend action service with action route.
+func (c *Config) manageBackendActionURL() *url.URL {
 	u := url.URL{
-		Scheme: c.ActionProtocol,
-		Host:   c.ManageActionHost + ":" + c.ActionPort,
+		Scheme: c.ManageActionProtocol,
+		Host:   c.ManageActionHost + ":" + c.ManageActionPort,
 		Path:   "/internal/handle_request",
+	}
+	return &u
+}
+
+// manageBackenMigrationsURL returns an URL object to the backend action service with migrations route
+func (c *Config) manageBackenMigrationsURL() *url.URL {
+	u := url.URL{
+		Scheme: c.ManageActionProtocol,
+		Host:   c.ManageActionHost + ":" + c.ManageActionPort,
+		Path:   "/internal/migrations",
 	}
 	return &u
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/client"
 	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/migrations"
 	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
@@ -55,6 +56,12 @@ func TestCmdHelpTexts(t *testing.T) {
 			name:             "initial-data command",
 			input:            []string{"initial-data", "--help"},
 			outputStartsWith: []byte(initialdata.InitialDataHelp),
+		},
+
+		{
+			name:             "migrations command",
+			input:            []string{"migrations", "--help"},
+			outputStartsWith: []byte(migrations.MigrationsHelp),
 		},
 
 		{
