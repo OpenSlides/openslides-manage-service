@@ -12,6 +12,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/fehler"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -36,9 +37,19 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.Long = InitialDataHelp + "\n\n" + InitialDataHelpExtra
 	cmd.Args = cobra.NoArgs
 
-	dataFile := cmd.Flags().StringP("file", "f", "", "custom JSON file with initial data")
+	dataFileHelpText := "custom JSON file with initial data; you can use - to provide the data via stdin"
+	dataFile := cmd.Flags().StringP("file", "f", "", dataFileHelpText)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		var data []byte
+		if *dataFile != "" {
+			d, err := shared.ReadFromFileOrStdin(*dataFile)
+			if err != nil {
+				return fmt.Errorf("reading initial-data file: %w", err)
+			}
+			data = d
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
 
@@ -48,7 +59,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 		}
 		defer close()
 
-		if err := Run(ctx, cl, *dataFile); err != nil {
+		if err := Run(ctx, cl, data); err != nil {
 			return fmt.Errorf("setting initial data: %w", err)
 		}
 		return nil
@@ -63,17 +74,9 @@ type gRPCClient interface {
 }
 
 // Run calls respective procedure to set initial data to an empty database via given gRPC client.
-func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
-	var iniD []byte
-	if dataFile != "" {
-		content, err := os.ReadFile(dataFile)
-		if err != nil {
-			return fmt.Errorf("reading initial data file %q: %w", dataFile, err)
-		}
-		iniD = content
-	}
+func Run(ctx context.Context, gc gRPCClient, data []byte) error {
 	req := &proto.InitialDataRequest{
-		Data: iniD,
+		Data: data,
 	}
 
 	resp, err := gc.InitialData(ctx, req)
@@ -84,7 +87,6 @@ func Run(ctx context.Context, gc gRPCClient, dataFile string) error {
 	if !resp.Initialized {
 		return fehler.ExitCode(2, fmt.Errorf("datastore contains data, initial data were NOT set"))
 	}
-
 	fmt.Println("Initial data were set successfully.")
 	return nil
 }

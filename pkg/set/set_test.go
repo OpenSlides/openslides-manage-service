@@ -2,7 +2,6 @@ package set_test
 
 import (
 	"context"
-	"os"
 	"strings"
 	"testing"
 
@@ -31,20 +30,11 @@ func (m *mockSetClient) Set(ctx context.Context, in *proto.SetRequest, opts ...g
 
 func TestSet(t *testing.T) {
 	payload := `---\nkey: test_string_boe7ahthu0Fie1Eghai4}`
-	f, err := os.CreateTemp("", "action-payload.yml")
-	if err != nil {
-		t.Fatalf("creating temporary file for payload: %v", err)
-	}
-	defer os.Remove(f.Name())
-	f.WriteString(payload)
-	if err := f.Close(); err != nil {
-		t.Fatalf("closing temporary file for payload: %v", err)
-	}
 
 	t.Run("set organization settings", func(t *testing.T) {
 		mc := new(mockSetClient)
 		ctx := context.Background()
-		if err := set.Run(ctx, mc, "organization", f.Name()); err != nil {
+		if err := set.Run(ctx, mc, "organization", []byte(payload)); err != nil {
 			t.Fatalf("running set.Run() failed with error: %v", err)
 		}
 	})
@@ -54,7 +44,7 @@ func TestSet(t *testing.T) {
 		ctx := context.Background()
 
 		hasErrMsg := `unknown action "unknown action 7f79hefvvdfget"`
-		err := set.Run(ctx, mc, "unknown action 7f79hefvvdfget", f.Name())
+		err := set.Run(ctx, mc, "unknown action 7f79hefvvdfget", []byte(payload))
 		if err == nil {
 			t.Fatalf("running set.Run() with unknown action should return error but it does not")
 		}

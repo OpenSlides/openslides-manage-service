@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -21,9 +20,10 @@ const (
 
 	// SetHelpExtra contains the long help text for the command without
 	// the headline.
-	SetHelpExtra = `This command calls an OpenSlides backend action with the given YAML formatted
-payload. Provide a file or use - to read from stdin. Only some update actions
-are supported.`
+	SetHelpExtra = `This command calls an OpenSlides backend action with the given YAML or JSON
+formatted payload. Provide the payload directly or use the --file flag with a
+file or use this flag with - to read from stdin. Only some update actions are
+supported.`
 )
 
 var actionMap = map[string]string{
@@ -33,14 +33,21 @@ var actionMap = map[string]string{
 
 // Cmd returns the subcommand.
 func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "set action payload-file"
+	cmd.Use = "set action [payload]"
 	cmd.Short = SetHelp
 	cmd.Long = SetHelp + "\n\n" + SetHelpExtra
-	cmd.Args = cobra.ExactArgs(2)
+	cmd.Args = cobra.RangeArgs(1, 2)
+
+	payloadFileHelpText := "YAML or JSON file with the payload; you can use - to provide the payload via stdin"
+	payloadFile := cmd.Flags().StringP("file", "f", "", payloadFileHelpText)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		args = append(args, "") // This is to ensure that the slice always has enough values.
 		action := args[0]
-		fileName := args[1]
+		payload, err := shared.InputOrFileOrStdin(args[1], *payloadFile)
+		if err != nil {
+			return fmt.Errorf("reading payload from positional argument or file or stdin: %w", err)
+		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
 		defer cancel()
@@ -51,7 +58,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 		}
 		defer close()
 
-		if err := Run(ctx, cl, action, fileName); err != nil {
+		if err := Run(ctx, cl, action, payload); err != nil {
 			return fmt.Errorf("run backend action: %w", err)
 		}
 		return nil
@@ -66,37 +73,21 @@ type gRPCClient interface {
 }
 
 // Run calls respective procedure via given gRPC client.
-func Run(ctx context.Context, gc gRPCClient, action, payloadFilename string) error {
+func Run(ctx context.Context, gc gRPCClient, action string, payload []byte) error {
 	actionName, ok := actionMap[action]
 	if !ok {
 		return fmt.Errorf("unknown action %q", action)
 	}
-
-	var r io.Reader
-	if payloadFilename == "-" {
-		r = os.Stdin
-	} else {
-		f, err := os.Open(payloadFilename)
-		if err != nil {
-			return fmt.Errorf("opening payload file %q: %w", payloadFilename, err)
-		}
-		r = f
-	}
-	payload, err := io.ReadAll(r)
-	if err != nil {
-		return fmt.Errorf("reading payload: %w", err)
-	}
-
 	in := &proto.SetRequest{
 		Action:  actionName,
 		Payload: payload,
 	}
+
 	resp, err := gc.Set(ctx, in)
 	if err != nil {
 		s, _ := status.FromError(err) // The ok value does not matter here.
 		return fmt.Errorf("calling manage service (calling backend action): %s", s.Message())
 	}
-
 	fmt.Printf("Request was successful with following response: %s\n", string(resp.Payload))
 	return nil
 }

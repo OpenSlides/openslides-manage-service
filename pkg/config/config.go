@@ -270,13 +270,13 @@ func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 // CmdCreateDefault returns the config-create-default subcommand.
 func CmdCreateDefault() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "config-create-default",
+		Use:   "config-create-default directory",
 		Short: ConfigCreateDefaultHelp,
 		Long:  ConfigCreateDefaultHelp + "\n\n" + ConfigCreateDefaultHelpExtra,
 		Args:  cobra.ExactArgs(1),
 	}
 
-	name := cmd.Flags().StringP("file", "f", "config.yml", "name of the created file")
+	name := cmd.Flags().StringP("name", "n", "config.yml", "name of the created file")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]

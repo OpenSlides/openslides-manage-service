@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -97,20 +96,10 @@ organization_management_level: some_custom_invalid_string_fuu2Thaequ
 
 func testUserFile(t testing.TB, username, user, hasErrMsg string) {
 	t.Helper()
-	f, err := os.CreateTemp("", "user.yml")
-	if err != nil {
-		t.Fatalf("creating temporary file for user creation: %v", err)
-	}
-	defer os.Remove(f.Name())
-	f.WriteString(user)
-	if err := f.Close(); err != nil {
-		t.Fatalf("closing temporary file for user creation: %v", err)
-	}
-
 	mc := new(mockCreateUserClient)
 	mc.expectedUsername = username
 	ctx := context.Background()
-	err = createuser.Run(ctx, mc, f.Name())
+	err := createuser.Run(ctx, mc, []byte(user))
 
 	if hasErrMsg == "" {
 		if err != nil {

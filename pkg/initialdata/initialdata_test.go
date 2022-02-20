@@ -45,7 +45,7 @@ func TestInitialdata(t *testing.T) {
 		mc := new(mockInitialdataClient)
 		mc.expected = []byte("")
 		ctx := context.Background()
-		if err := initialdata.Run(ctx, mc, ""); err != nil {
+		if err := initialdata.Run(ctx, mc, nil); err != nil {
 			t.Fatalf("running initialdata.Run() failed with error: %v", err)
 		}
 		if !mc.called {
@@ -54,20 +54,10 @@ func TestInitialdata(t *testing.T) {
 	})
 	t.Run("custom initial data", func(t *testing.T) {
 		customIniD := `{"key":"test_string_phiC0ChaibieSoo9aezaigaiyof9ieVu"}`
-		f, err := os.CreateTemp("", "openslides-initial-data.json")
-		if err != nil {
-			t.Fatalf("creating temporary file for initial data: %v", err)
-		}
-		defer os.Remove(f.Name())
-		f.WriteString(customIniD)
-		if err := f.Close(); err != nil {
-			t.Fatalf("closing temporary file for initial data: %v", err)
-		}
-
 		mc := new(mockInitialdataClient)
 		mc.expected = []byte(customIniD)
 		ctx := context.Background()
-		if err := initialdata.Run(ctx, mc, f.Name()); err != nil {
+		if err := initialdata.Run(ctx, mc, []byte(customIniD)); err != nil {
 			t.Fatalf("running initialdata.Run() failed with error: %v", err)
 		}
 	})
