@@ -26,11 +26,14 @@ Examples:
 )
 
 // Cmd returns the get subcommand.
-func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "get collection"
-	cmd.Short = GetHelp
-	cmd.Long = GetHelp + "\n\n" + GetHelpExtra
-	cmd.Args = cobra.ExactArgs(1)
+func Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get collection",
+		Short: GetHelp,
+		Long:  GetHelp + "\n\n" + GetHelpExtra,
+		Args:  cobra.ExactArgs(1),
+	}
+	cp := connection.Unary(cmd)
 
 	existsHelpText := "check only for existance (requires --filter)"
 	exists := cmd.Flags().Bool("exists", false, existsHelpText)
@@ -52,10 +55,10 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 			return fmt.Errorf("only one filter is allowed")
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
+		ctx, cancel := context.WithTimeout(context.Background(), *cp.Timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
+		cl, close, err := connection.Dial(ctx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

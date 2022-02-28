@@ -47,7 +47,7 @@ $ openslides tunnel -L localhost:8080:auth:9004
 )
 
 // Cmd returns the subcommand.
-func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
+func Cmd() *cobra.Command {
 	services := map[string]string{
 		"backend-action":    ":9002:backend:9002",
 		"backend-presenter": ":9003:backend:9003",
@@ -66,11 +66,14 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 		serviceNames = append(serviceNames, service)
 	}
 
-	cmd.Use = "tunnel"
-	cmd.Short = TunnelHelp
-	cmd.Long = TunnelHelp + "\n\n" + TunnelHelpExtra
-	cmd.Args = cobra.OnlyValidArgs
-	cmd.ValidArgs = serviceNames
+	cmd := &cobra.Command{
+		Use:       "tunnel",
+		Short:     TunnelHelp,
+		Long:      TunnelHelp + "\n\n" + TunnelHelpExtra,
+		Args:      cobra.OnlyValidArgs,
+		ValidArgs: serviceNames,
+	}
+	cp := connection.Stream(cmd)
 
 	bindLocal := cmd.Flags().StringArrayP("bind", "L", nil, "[bind_address:]port:host:hostport")
 
@@ -78,7 +81,7 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 		ctx, cancel := contextWithInterrupt(context.Background())
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
+		cl, close, err := connection.Dial(ctx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

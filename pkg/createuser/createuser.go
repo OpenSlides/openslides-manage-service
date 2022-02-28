@@ -28,11 +28,14 @@ read from stdin.`
 )
 
 // Cmd returns the subcommand.
-func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "create-user [user-data]"
-	cmd.Short = CreateUserHelp
-	cmd.Long = CreateUserHelp + "\n\n" + CreateUserHelpExtra
-	cmd.Args = cobra.RangeArgs(0, 1)
+func Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create-user [user-data]",
+		Short: CreateUserHelp,
+		Long:  CreateUserHelp + "\n\n" + CreateUserHelpExtra,
+		Args:  cobra.RangeArgs(0, 1),
+	}
+	cp := connection.Unary(cmd)
 
 	userFileHelpText := "YAML or JSON file with user data " +
 		"(required fields: username, default_password; " +
@@ -47,10 +50,10 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 			return fmt.Errorf("reading user data from positional argument or file or stdin: %w", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
+		ctx, cancel := context.WithTimeout(context.Background(), *cp.Timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
+		cl, close, err := connection.Dial(ctx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}
