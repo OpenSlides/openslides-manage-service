@@ -22,11 +22,14 @@ const (
 )
 
 // Cmd returns the subcommand.
-func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "set-password"
-	cmd.Short = SetPasswordHelp
-	cmd.Long = SetPasswordHelp + "\n\n" + SetPasswordHelpExtra
-	cmd.Args = cobra.NoArgs
+func Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set-password",
+		Short: SetPasswordHelp,
+		Long:  SetPasswordHelp + "\n\n" + SetPasswordHelpExtra,
+		Args:  cobra.NoArgs,
+	}
+	cp := connection.Unary(cmd)
 
 	userID := cmd.Flags().Int64P("user_id", "u", 0, "ID of the user account")
 	cmd.MarkFlagRequired("user_id")
@@ -34,10 +37,10 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 	cmd.MarkFlagRequired("password")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
+		ctx, cancel := context.WithTimeout(context.Background(), *cp.Timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
+		cl, close, err := connection.Dial(ctx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

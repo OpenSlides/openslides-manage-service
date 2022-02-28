@@ -31,11 +31,14 @@ datastore is not empty.`
 )
 
 // Cmd returns the subcommand.
-func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "initial-data"
-	cmd.Short = InitialDataHelp
-	cmd.Long = InitialDataHelp + "\n\n" + InitialDataHelpExtra
-	cmd.Args = cobra.NoArgs
+func Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "initial-data",
+		Short: InitialDataHelp,
+		Long:  InitialDataHelp + "\n\n" + InitialDataHelpExtra,
+		Args:  cobra.NoArgs,
+	}
+	cp := connection.Unary(cmd)
 
 	dataFileHelpText := "custom JSON file with initial data; you can use - to provide the data via stdin"
 	dataFile := cmd.Flags().StringP("file", "f", "", dataFileHelpText)
@@ -50,10 +53,10 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 			data = d
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
+		ctx, cancel := context.WithTimeout(context.Background(), *cp.Timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
+		cl, close, err := connection.Dial(ctx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

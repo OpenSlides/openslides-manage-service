@@ -32,11 +32,14 @@ var actionMap = map[string]string{
 }
 
 // Cmd returns the subcommand.
-func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
-	cmd.Use = "set action [payload]"
-	cmd.Short = SetHelp
-	cmd.Long = SetHelp + "\n\n" + SetHelpExtra
-	cmd.Args = cobra.RangeArgs(1, 2)
+func Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set action [payload]",
+		Short: SetHelp,
+		Long:  SetHelp + "\n\n" + SetHelpExtra,
+		Args:  cobra.RangeArgs(1, 2),
+	}
+	cp := connection.Unary(cmd)
 
 	payloadFileHelpText := "YAML or JSON file with the payload; you can use - to provide the payload via stdin"
 	payloadFile := cmd.Flags().StringP("file", "f", "", payloadFileHelpText)
@@ -49,10 +52,10 @@ func Cmd(cmd *cobra.Command, cfg connection.Params) *cobra.Command {
 			return fmt.Errorf("reading payload from positional argument or file or stdin: %w", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout())
+		ctx, cancel := context.WithTimeout(context.Background(), *cp.Timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, cfg.Addr(), cfg.PasswordFile(), !cfg.NoSSL())
+		cl, close, err := connection.Dial(ctx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}

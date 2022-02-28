@@ -5,28 +5,31 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
+	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 const (
-	// DefaultAddr holds the default host and port to be used for the gRPC connection that is established by some commands.
-	DefaultAddr = "localhost:8000"
+	// defaultAddr holds the default host and port to be used for the gRPC connection that is established by some commands.
+	defaultAddr = "localhost:8000"
 
-	// DefaultTimeout holds the default timeout for the gRPC connection that is established by some commands.
-	DefaultTimeout = 5 * time.Second
+	// defaultTimeout holds the default timeout for the gRPC connection that is established by some commands.
+	defaultTimeout = 5 * time.Second
 )
 
 // Params provides the parameters for the connection to the manage server.
-type Params interface {
-	Addr() string
-	PasswordFile() string
-	Timeout() time.Duration
-	NoSSL() bool
+type Params struct {
+	Addr         *string
+	PasswordFile *string
+	Timeout      *time.Duration
+	NoSSL        *bool
 }
 
 // Dial creates a gRPC connection to the server.
@@ -58,4 +61,26 @@ func Dial(ctx context.Context, address, passwordFile string, ssl bool) (proto.Ma
 		return nil, nil, fmt.Errorf("creating gRPC client connection with grpc.DialContext(): %w", err)
 	}
 	return proto.NewManageClient(conn), conn.Close, nil
+}
+
+// Stream append parameters for a stream connection like address, passwordfile
+// and the noSSL flag to the given cobra command.
+func Stream(cmd *cobra.Command) Params {
+	addr := cmd.Flags().StringP("address", "a", defaultAddr, "address of the OpenSlides manage service")
+	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
+	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
+	noSSL := cmd.Flags().Bool("no-ssl", false, "use an unencrypted connection to manage service")
+	return Params{
+		Addr:         addr,
+		PasswordFile: passwordFile,
+		NoSSL:        noSSL,
+	}
+}
+
+// Unary provides parameters for an unary connection (like Stream but with
+// timeout additionally).
+func Unary(cmd *cobra.Command) Params {
+	p := Stream(cmd)
+	p.Timeout = cmd.Flags().DurationP("timeout", "t", defaultTimeout, "time to wait for the command's response")
+	return p
 }
