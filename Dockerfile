@@ -61,4 +61,4 @@ EXPOSE 9008
 
 ENTRYPOINT ["/server"]
 
-HEALTHCHECK --interval=5s CMD ["/healthcheck"]
+HEALTHCHECK CMD ["/healthcheck"]
