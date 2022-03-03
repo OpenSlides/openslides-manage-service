@@ -147,7 +147,26 @@ details on provided methods for HTTPS activation.
 
 ## Email
 
-TODO: Write this part of the README.
+To enable email support add the respective settings to your [custom YAML
+configuration file](#Configuration-of-the-generated-Docker-Compose-YAML-file)
+and do not forget to regenerate yor Docker Compose YAML file.
+
+    services:
+      backend:
+        environment:
+          EMAIL_HOST: my.mail.example.com
+          EMAIL_PORT: 465
+          EMAIL_HOST_USER: username
+          EMAIL_HOST_PASSWORD: password
+          EMAIL_CONNECTION_SECURITY: "SSL/TLS"  # This can also be "NONE" or "STARTTLS".
+          EMAIL_TIMEOUT: 5  # Timeout in seconds for blocking operations like the connection attempt.
+          EMAIL_ACCEPT_SELF_SIGNED_CERTIFICATE: "false"  # Or "true" of course.
+          DEFAULT_FROM_EMAIL: mail@my.mail.example.com
+
+You have to customize all of these environment variables according to your mail
+server settings. You may omit some of them if the
+[defaults](https://github.com/OpenSlides/openslides-backend/blob/main/openslides_backend/action/mixins/send_email_mixin.py)
+are sufficient for you.
 
 
 ## Under the hood
