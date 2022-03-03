@@ -6,34 +6,34 @@ import (
 	"os"
 	"time"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
+	"github.com/OpenSlides/openslides-manage-service/pkg/server"
 	"github.com/OpenSlides/openslides-manage-service/proto"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	host    = "localhost"
 	timeout = 1 * time.Second
 )
 
 func healthcheck() error {
+	cfg := server.ConfigFromEnv(os.LookupEnv)
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	port, ok := os.LookupEnv("MANAGE_PORT")
-	if !ok {
-		port = "9008"
-	}
-	conn, err := grpc.DialContext(ctx, host+port,
-		grpc.WithInsecure(),
-		grpc.WithBlock(),
+	cl, close, err := connection.Dial(
+		ctx,
+		"localhost:"+cfg.Port,
+		cfg.ManageAuthPasswordFile,
+		false,
 	)
 	if err != nil {
-		return fmt.Errorf("creating gRPC client connection with grpc.DialContext(): %w", err)
+		return fmt.Errorf("connecting to gRPC server: %w", err)
 	}
-	defer conn.Close()
+	defer close()
 
-	resp, err := proto.NewManageClient(conn).Health(ctx, &proto.HealthRequest{})
+	resp, err := cl.Health(ctx, &proto.HealthRequest{})
 	if err != nil {
 		s, _ := status.FromError(err) // The ok value does not matter here.
 		return fmt.Errorf("calling manage service: %s", s.Message())
@@ -47,6 +47,7 @@ func healthcheck() error {
 
 func main() {
 	if err := healthcheck(); err != nil {
+		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 }

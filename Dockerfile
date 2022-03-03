@@ -18,6 +18,7 @@ FROM base as builder
 
 RUN CGO_ENABLED=0 go build ./cmd/openslides
 RUN CGO_ENABLED=0 go build ./cmd/server
+RUN CGO_ENABLED=0 go build ./cmd/healthcheck
 
 
 # Test build.
@@ -45,12 +46,19 @@ ENTRYPOINT ["/openslides"]
 
 # Productive build server.
 FROM scratch
+
 LABEL org.opencontainers.image.title = "OpenSlides Manage Service"
 LABEL org.opencontainers.image.description = "Manage service and tool for OpenSlides which \
 provides some management commands to setup and control OpenSlides instances."
 LABEL org.opencontainers.image.licenses = "MIT"
 LABEL org.opencontainers.image.source = "https://github.com/OpenSlides/openslides-manage-service"
 LABEL org.opencontainers.image.documentation = "https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
+
+COPY --from=builder /root/healthcheck .
 COPY --from=builder /root/server .
+
 EXPOSE 9008
+
 ENTRYPOINT ["/server"]
+
+HEALTHCHECK --interval=5s CMD ["/healthcheck"]
