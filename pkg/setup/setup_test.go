@@ -482,7 +482,7 @@ func testDirectory(t testing.TB, dir, name string) {
 }
 
 const defaultDockerComposeYml = `---
-version: "3.7"
+version: "3.4"
 
 x-default-environment: &default-environment
   ACTION_HOST: backend
