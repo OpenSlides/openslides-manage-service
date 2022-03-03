@@ -132,6 +132,12 @@ func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
 	return tunnel.Tunnel(ts)
 }
 
+func (s *srv) Health(ctx context.Context, in *proto.HealthRequest) (*proto.HealthResponse, error) {
+	// Returns always true because the server is considered healthy if it is
+	// able to return this response.
+	return &proto.HealthResponse{Healthy: true}, nil
+}
+
 func authUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if err := info.Server.(*srv).serverAuth(ctx); err != nil {
 		return nil, fmt.Errorf("server authentication: %w", err)
