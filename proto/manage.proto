@@ -12,6 +12,7 @@ service Manage {
     rpc Get(GetRequest) returns (GetResponse);
     rpc Set(SetRequest) returns (SetResponse);
     rpc Tunnel(stream TunnelData) returns (stream TunnelData);
+    rpc Health(HealthRequest) returns (HealthResponse);
 }
 
 message CheckServerRequest {
@@ -73,4 +74,10 @@ message SetResponse {
 
 message TunnelData {
     bytes data = 1;
+}
+
+message HealthRequest{}
+
+message HealthResponse {
+    bool healthy = 1;
 }

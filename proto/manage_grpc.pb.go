@@ -25,6 +25,7 @@ type ManageClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
 	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error)
+	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
 
 type manageClient struct {
@@ -120,6 +121,15 @@ func (x *manageTunnelClient) Recv() (*TunnelData, error) {
 	return m, nil
 }
 
+func (c *manageClient) Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
+	out := new(HealthResponse)
+	err := c.cc.Invoke(ctx, "/Manage/Health", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ManageServer is the server API for Manage service.
 // All implementations should embed UnimplementedManageServer
 // for forward compatibility
@@ -131,6 +141,7 @@ type ManageServer interface {
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	Set(context.Context, *SetRequest) (*SetResponse, error)
 	Tunnel(Manage_TunnelServer) error
+	Health(context.Context, *HealthRequest) (*HealthResponse, error)
 }
 
 // UnimplementedManageServer should be embedded to have forward compatible implementations.
@@ -157,6 +168,9 @@ func (UnimplementedManageServer) Set(context.Context, *SetRequest) (*SetResponse
 }
 func (UnimplementedManageServer) Tunnel(Manage_TunnelServer) error {
 	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
+}
+func (UnimplementedManageServer) Health(context.Context, *HealthRequest) (*HealthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
 }
 
 // UnsafeManageServer may be embedded to opt out of forward compatibility for this service.
@@ -304,6 +318,24 @@ func (x *manageTunnelServer) Recv() (*TunnelData, error) {
 	return m, nil
 }
 
+func _Manage_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HealthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManageServer).Health(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/Health",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).Health(ctx, req.(*HealthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Manage_ServiceDesc is the grpc.ServiceDesc for Manage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -334,6 +366,10 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Set",
 			Handler:    _Manage_Set_Handler,
+		},
+		{
+			MethodName: "Health",
+			Handler:    _Manage_Health_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
