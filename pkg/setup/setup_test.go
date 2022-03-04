@@ -524,6 +524,7 @@ x-default-environment: &default-environment
   MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: "6379"
   OPENSLIDES_DEVELOPMENT: "false"
+  OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backend
   PRESENTER_PORT: "9003"
   SYSTEM_URL: localhost:8000

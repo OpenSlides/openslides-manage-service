@@ -80,6 +80,7 @@ defaultEnvironment:
 
   INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
 
+  OPENSLIDES_LOGLEVEL: info
   OPENSLIDES_DEVELOPMENT: "false"
 
   SYSTEM_URL: localhost:8000

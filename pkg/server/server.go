@@ -5,7 +5,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net"
 	"net/url"
 	"os"
@@ -31,6 +30,11 @@ const runDir = "/run"
 
 // Run starts the manage server.
 func Run(cfg *Config) error {
+	logger, err := shared.NewLogger(cfg.OpenSlidesLoglevel)
+	if err != nil {
+		return fmt.Errorf("creating logger: %w", err)
+	}
+
 	addr := ":" + cfg.Port
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -45,7 +49,7 @@ func Run(cfg *Config) error {
 			grpc.StreamServerInterceptor(authStreamInterceptor),
 		),
 	)
-	manageSrv, err := newServer(cfg)
+	manageSrv, err := newServer(cfg, logger)
 	if err != nil {
 		return fmt.Errorf("creating server object: %w", err)
 	}
@@ -56,7 +60,7 @@ func Run(cfg *Config) error {
 		grpcSrv.GracefulStop()
 	}()
 
-	log.Printf("Running manage service on %s\n", addr)
+	logger.Infof("Manage service is listening on %s\n", addr)
 	if err := grpcSrv.Serve(lis); err != nil {
 		return fmt.Errorf("running manage service: %w", err)
 	}
@@ -68,9 +72,10 @@ func Run(cfg *Config) error {
 type srv struct {
 	config *Config
 	pw     []byte
+	logger shared.Logger
 }
 
-func newServer(cfg *Config) (*srv, error) {
+func newServer(cfg *Config, logger shared.Logger) (*srv, error) {
 	pw, err := shared.AuthSecret(cfg.ManageAuthPasswordFile, cfg.OpenSlidesDevelopment)
 	if err != nil {
 		return nil, fmt.Errorf("getting server auth secret: %w", err)
@@ -78,6 +83,7 @@ func newServer(cfg *Config) (*srv, error) {
 	s := &srv{
 		config: cfg,
 		pw:     pw,
+		logger: logger,
 	}
 	return s, nil
 }
@@ -210,6 +216,7 @@ type Config struct {
 	InternalAuthPasswordFile string `env:"INTERNAL_AUTH_PASSWORD_FILE,/run/secrets/internal_auth_password"`
 
 	OpenSlidesDevelopment string `env:"OPENSLIDES_DEVELOPMENT,0"`
+	OpenSlidesLoglevel    string `env:"OPENSLIDES_LOGLEVEL,info"`
 }
 
 // ConfigFromEnv creates a Config object where the values are populated from the
