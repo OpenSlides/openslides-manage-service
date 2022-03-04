@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"reflect"
 	"strings"
+	"syscall"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/action"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
@@ -284,12 +285,12 @@ func (c *Config) datastoreReaderURL() *url.URL {
 // It listens on SIGINT and SIGTERM. If the signal is received for a second
 // time, the process is killed with statuscode 1.
 func waitForShutdown() {
-	sigint := make(chan os.Signal, 1)
+	sigs := make(chan os.Signal, 1)
 
-	signal.Notify(sigint, os.Interrupt)
-	<-sigint
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	<-sigs
 	go func() {
-		<-sigint
+		<-sigs
 		os.Exit(1)
 	}()
 }
