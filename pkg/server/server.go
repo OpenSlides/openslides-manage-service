@@ -220,17 +220,9 @@ type Config struct {
 
 	ManageActionHost string `env:"MANAGE_ACTION_HOST,backendManage"`
 
-	AuthProtocol string `env:"AUTH_PROTOCOL,http"`
-	AuthHost     string `env:"AUTH_HOST,auth"`
-	AuthPort     string `env:"AUTH_PORT,9004"`
-
 	DatastoreReaderProtocol string `env:"DATASTORE_READER_PROTOCOL,http"`
 	DatastoreReaderHost     string `env:"DATASTORE_READER_HOST,datastore-reader"`
 	DatastoreReaderPort     string `env:"DATASTORE_READER_PORT,9010"`
-
-	DatastoreWriterProtocol string `env:"DATASTORE_WRITER_PROTOCOL,http"`
-	DatastoreWriterHost     string `env:"DATASTORE_WRITER_HOST,datastore-writer"`
-	DatastoreWriterPort     string `env:"DATASTORE_WRITER_PORT,9011"`
 
 	InternalAuthPasswordFile string `env:"INTERNAL_AUTH_PASSWORD_FILE,/run/secrets/internal_auth_password"`
 
@@ -273,15 +265,6 @@ func (c *Config) manageActionURL() *url.URL {
 		Scheme: c.ActionProtocol,
 		Host:   c.ManageActionHost + ":" + c.ActionPort,
 		Path:   "/internal/handle_request",
-	}
-	return &u
-}
-
-// authURL returns an URL object to the auth service with empty path.
-func (c *Config) authURL() *url.URL {
-	u := url.URL{
-		Scheme: c.AuthProtocol,
-		Host:   c.AuthHost + ":" + c.AuthPort,
 	}
 	return &u
 }

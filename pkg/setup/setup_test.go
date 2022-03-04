@@ -549,6 +549,7 @@ services:
       - auth
       - media
       - icc
+      - vote
     environment:
       << : *default-environment
       ENABLE_LOCAL_HTTPS: 1
@@ -572,6 +573,7 @@ services:
       - auth
       - media
       - icc
+      - vote
     environment:
       << : *default-environment
     networks:
@@ -582,6 +584,8 @@ services:
     depends_on:
       - datastoreWriter
       - auth
+      - media
+      - vote
       - postgres
     environment:
       << : *default-environment
@@ -698,7 +702,6 @@ services:
   vote:
     image: ghcr.io/openslides/openslides/openslides-vote:latest
     depends_on:
-      - backendAction
       - datastoreReader
       - auth
       - autoupdate
@@ -726,8 +729,6 @@ services:
   media:
     image: ghcr.io/openslides/openslides/openslides-media:latest
     depends_on:
-      - backendAction
-      - backendPresenter
       - postgres
     environment:
       << : *default-environment
@@ -758,8 +759,6 @@ services:
     image: ghcr.io/openslides/openslides/openslides-manage:latest
     depends_on:
       - datastoreReader
-      - datastoreWriter
-      - auth
       - backendManage
     environment:
       << : *default-environment

@@ -18,6 +18,7 @@ services:
       - auth
       - media
       - icc
+      - vote
     {{- end }}
     environment:
       << : *default-environment
@@ -56,6 +57,7 @@ services:
       - auth
       - media
       - icc
+      - vote
     {{- end }}
     environment:
       << : *default-environment
@@ -74,6 +76,8 @@ services:
     depends_on:
       - datastoreWriter
       - auth
+      - media
+      - vote
       - postgres
     {{- end }}
     environment:
@@ -250,7 +254,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-vote:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - backendAction
       - datastoreReader
       - auth
       - autoupdate
@@ -291,8 +294,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-media:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - backendAction
-      - backendPresenter
       - postgres
     {{- end }}
     environment:
@@ -339,8 +340,6 @@ services:
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - datastoreReader
-      - datastoreWriter
-      - auth
       - backendManage
     {{- end }}
     environment:
