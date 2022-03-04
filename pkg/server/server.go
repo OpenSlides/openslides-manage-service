@@ -43,9 +43,11 @@ func Run(cfg *Config) error {
 
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			grpc.UnaryServerInterceptor(logUnaryInterceptor),
 			grpc.UnaryServerInterceptor(authUnaryInterceptor),
 		),
 		grpc.ChainStreamInterceptor(
+			grpc.StreamServerInterceptor(logStreamInterceptor),
 			grpc.StreamServerInterceptor(authStreamInterceptor),
 		),
 	)
@@ -144,6 +146,15 @@ func (s *srv) Health(ctx context.Context, in *proto.HealthRequest) (*proto.Healt
 	return &proto.HealthResponse{Healthy: true}, nil
 }
 
+func logUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	info.Server.(*srv).logger.Debugf("Incomming unary RPC for %s: %v", info.FullMethod, req)
+	resp, err := handler(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("calling handler: %w", err)
+	}
+	return resp, nil
+}
+
 func authUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if err := info.Server.(*srv).serverAuth(ctx); err != nil {
 		return nil, fmt.Errorf("server authentication: %w", err)
@@ -153,6 +164,14 @@ func authUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.Unary
 		return nil, fmt.Errorf("calling handler: %w", err)
 	}
 	return resp, nil
+}
+
+func logStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	serv.(*srv).logger.Debugf("Incomming streaming RPC for %s", info.FullMethod)
+	if err := handler(serv, ss); err != nil {
+		return fmt.Errorf("calling handler: %w", err)
+	}
+	return nil
 }
 
 func authStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
