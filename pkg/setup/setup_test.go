@@ -108,7 +108,7 @@ func TestCmd(t *testing.T) {
 defaults:
   containerRegistry: example.com/test_fahNae5i
 services:
-  backend:
+  backendAction:
     tag: 2.0.1
 `
 		if _, err := f.WriteString(customConfigContent); err != nil {
@@ -379,7 +379,7 @@ defaultEnvironment:
 		customConfig := `---
 filename: my-filename-shoPhie9Ax.yml
 services:
-  backend:
+  backendAction:
     environment:
       KEY_SKRIVESLDIERUFJ: test_iyoe8bahGh
 `
@@ -485,7 +485,7 @@ const defaultDockerComposeYml = `---
 version: "3.4"
 
 x-default-environment: &default-environment
-  ACTION_HOST: backend
+  ACTION_HOST: backendAction
   ACTION_PORT: "9002"
   AUTH_HOST: auth
   AUTH_PORT: "9004"
@@ -519,13 +519,13 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_USER: openslides
   MEDIA_HOST: media
   MEDIA_PORT: "9006"
-  MEDIA_PRESENTER_HOST: backend
+  MEDIA_PRESENTER_HOST: backendPresenter
   MEDIA_PRESENTER_PORT: "9003"
   MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: "6379"
   OPENSLIDES_DEVELOPMENT: "false"
   OPENSLIDES_LOGLEVEL: info
-  PRESENTER_HOST: backend
+  PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
   SYSTEM_URL: localhost:8000
   VOTE_DATABASE_HOST: postgres
@@ -543,7 +543,8 @@ services:
     image: ghcr.io/openslides/openslides/openslides-proxy:latest
     depends_on:
       - client
-      - backend
+      - backendAction
+      - backendPresenter
       - autoupdate
       - auth
       - media
@@ -565,7 +566,8 @@ services:
   client:
     image: ghcr.io/openslides/openslides/openslides-client:latest
     depends_on:
-      - backend
+      - backendAction
+      - backendPresenter
       - autoupdate
       - auth
       - media
@@ -575,7 +577,7 @@ services:
     networks:
       - frontend
 
-  backend:
+  backendAction:
     image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
       - datastoreWriter
@@ -583,6 +585,23 @@ services:
       - postgres
     environment:
       << : *default-environment
+      OPENSLIDES_BACKEND_COMPONENT: action
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
+  backendPresenter:
+    image: ghcr.io/openslides/openslides/openslides-backend:latest
+    depends_on:
+      - auth
+      - postgres
+    environment:
+      << : *default-environment
+      OPENSLIDES_BACKEND_COMPONENT: presenter
     networks:
       - frontend
       - data
@@ -598,6 +617,7 @@ services:
       - postgres
     environment:
       << : *default-environment
+      OPENSLIDES_BACKEND_COMPONENT: action
     networks:
       - data
     secrets:
@@ -678,7 +698,7 @@ services:
   vote:
     image: ghcr.io/openslides/openslides/openslides-vote:latest
     depends_on:
-      - backend
+      - backendAction
       - datastoreReader
       - auth
       - autoupdate
@@ -706,7 +726,8 @@ services:
   media:
     image: ghcr.io/openslides/openslides/openslides-media:latest
     depends_on:
-      - backend
+      - backendAction
+      - backendPresenter
       - postgres
     environment:
       << : *default-environment

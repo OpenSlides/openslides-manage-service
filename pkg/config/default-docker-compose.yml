@@ -12,7 +12,8 @@ services:
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - client
-      - backend
+      - backendAction
+      - backendPresenter
       - autoupdate
       - auth
       - media
@@ -49,7 +50,8 @@ services:
     image: {{ .ContainerRegistry }}/openslides-client:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - backend
+      - backendAction
+      - backendPresenter
       - autoupdate
       - auth
       - media
@@ -64,9 +66,9 @@ services:
   {{- end }}
 
 
-  {{- with .Services.backend }}
+  {{- with .Services.backendAction }}
 
-  backend:
+  backendAction:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
@@ -77,6 +79,31 @@ services:
     environment:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
+      OPENSLIDES_BACKEND_COMPONENT: action
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.backendPresenter }}
+
+  backendPresenter:
+    image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - auth
+      - postgres
+    {{- end }}
+    environment:
+      << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
+      OPENSLIDES_BACKEND_COMPONENT: presenter
     networks:
       - frontend
       - data
@@ -100,6 +127,7 @@ services:
     environment:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
+      OPENSLIDES_BACKEND_COMPONENT: action
     networks:
       - data
     secrets:
@@ -222,7 +250,7 @@ services:
     image: {{ .ContainerRegistry }}/openslides-vote:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - backend
+      - backendAction
       - datastoreReader
       - auth
       - autoupdate
@@ -263,7 +291,8 @@ services:
     image: {{ .ContainerRegistry }}/openslides-media:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - backend
+      - backendAction
+      - backendPresenter
       - postgres
     {{- end }}
     environment:

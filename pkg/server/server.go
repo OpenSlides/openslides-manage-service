@@ -215,7 +215,7 @@ type Config struct {
 	ManageAuthPasswordFile string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
 
 	ActionProtocol string `env:"ACTION_PROTOCOL,http"`
-	ActionHost     string `env:"ACTION_HOST,backend"`
+	ActionHost     string `env:"ACTION_HOST,backendAction"`
 	ActionPort     string `env:"ACTION_PORT,9002"`
 
 	ManageActionHost string `env:"MANAGE_ACTION_HOST,backendManage"`
