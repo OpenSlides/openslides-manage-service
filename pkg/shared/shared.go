@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path"
 	"strconv"
+	"strings"
 )
 
 // developmentPassword is the password used if environment variable
@@ -135,3 +137,58 @@ func (a BasicAuth) GetRequestMetadata(ctx context.Context, uri ...string) (map[s
 func (a BasicAuth) RequireTransportSecurity() bool {
 	return false
 }
+
+const (
+	lvlDebug    = 1
+	lvlInfo     = 2
+	lvlWarning  = 3
+	lvlError    = 4
+	lvlCritical = 5
+)
+
+// Logger is a logger that provides logging with respect to the log level.
+type Logger struct {
+	logger *log.Logger
+	lvl    int
+}
+
+// NewLogger returns a default logger with respect to the given log level.
+func NewLogger(level string) (Logger, error) {
+	lvl := 0
+	switch strings.ToLower(level) {
+	case "debug":
+		lvl = lvlDebug
+	case "info":
+		lvl = lvlInfo
+	case "warning":
+		lvl = lvlWarning
+	case "error":
+		lvl = lvlError
+	case "critical":
+		lvl = 5
+	default:
+		return Logger{}, fmt.Errorf("invalid log level %q", level)
+	}
+	l := Logger{
+		logger: log.Default(),
+		lvl:    lvl,
+	}
+	return l, nil
+
+}
+
+// Debugf calls logger.Printf but only in case of log level debug.
+func (l Logger) Debugf(format string, v ...interface{}) {
+	if l.lvl == lvlDebug {
+		l.logger.Printf("[DEBUG] "+format, v...)
+	}
+}
+
+// Infof calls logger.Printf but only in case of log level info or lower.
+func (l Logger) Infof(format string, v ...interface{}) {
+	if l.lvl <= lvlInfo {
+		l.logger.Printf("[INFO] "+format, v...)
+	}
+}
+
+// TODO: Add methods for warning, error and critical
