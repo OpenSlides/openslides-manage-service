@@ -22,6 +22,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/OpenSlides/openslides-manage-service/proto"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -284,12 +285,12 @@ func (c *Config) datastoreReaderURL() *url.URL {
 // It listens on SIGINT and SIGTERM. If the signal is received for a second
 // time, the process is killed with statuscode 1.
 func waitForShutdown() {
-	sigint := make(chan os.Signal, 1)
+	sigs := make(chan os.Signal, 1)
 
-	signal.Notify(sigint, os.Interrupt)
-	<-sigint
+	signal.Notify(sigs, unix.SIGINT, unix.SIGTERM)
+	<-sigs
 	go func() {
-		<-sigint
+		<-sigs
 		os.Exit(1)
 	}()
 }
