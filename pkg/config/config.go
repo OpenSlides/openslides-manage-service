@@ -230,7 +230,8 @@ func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 	allServices := []string{
 		"proxy",
 		"client",
-		"backend",
+		"backendAction",
+		"backendPresenter",
 		"backendManage",
 		"datastoreReader",
 		"datastoreWriter",

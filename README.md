@@ -152,7 +152,7 @@ configuration file](#Configuration-of-the-generated-Docker-Compose-YAML-file)
 and do not forget to regenerate yor Docker Compose YAML file.
 
     services:
-      backend:
+      backendAction:
         environment:
           EMAIL_HOST: my.mail.example.com
           EMAIL_PORT: 465

@@ -20,9 +20,9 @@ defaults:
 # These environment variables are injected into every OpenSlides service
 # via YAML merge type (https://yaml.org/type/merge.html).
 defaultEnvironment:
-  ACTION_HOST: backend
+  ACTION_HOST: backendAction
   ACTION_PORT: 9002
-  PRESENTER_HOST: backend
+  PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: 9003
 
   DATASTORE_READER_HOST: datastoreReader
@@ -65,7 +65,7 @@ defaultEnvironment:
   MEDIA_DATABASE_USER: openslides
   MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   MEDIA_BLOCK_SIZE: 4096
-  MEDIA_PRESENTER_HOST: backend
+  MEDIA_PRESENTER_HOST: backendPresenter
   MEDIA_PRESENTER_PORT: 9003
 
   ICC_HOST: icc

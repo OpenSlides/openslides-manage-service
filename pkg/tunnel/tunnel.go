@@ -49,8 +49,8 @@ $ openslides tunnel -L localhost:8080:auth:9004
 // Cmd returns the subcommand.
 func Cmd() *cobra.Command {
 	services := map[string]string{
-		"backend-action":    ":9002:backend:9002",
-		"backend-presenter": ":9003:backend:9003",
+		"backend-action":    ":9002:backendAction:9002",
+		"backend-presenter": ":9003:backendPresenter:9003",
 		"auth":              ":9004:auth:9004",
 		"media":             ":9006:media:9006",
 		"icc":               ":9007:icc:9007",
