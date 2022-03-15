@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"reflect"
 	"strings"
-	"syscall"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/action"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
@@ -23,6 +22,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/OpenSlides/openslides-manage-service/proto"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -287,7 +287,7 @@ func (c *Config) datastoreReaderURL() *url.URL {
 func waitForShutdown() {
 	sigs := make(chan os.Signal, 1)
 
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, unix.SIGINT, unix.SIGTERM)
 	<-sigs
 	go func() {
 		<-sigs
