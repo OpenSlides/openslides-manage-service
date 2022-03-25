@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,7 @@ const (
 
 	defaultInterval  = 1 * time.Second
 	withIntervalFlag = true
+	migrationRunning = "migration_running"
 )
 
 // Cmd returns the subcommand.
@@ -144,7 +146,7 @@ func Run(ctx context.Context, gc gRPCClient, command string, interval time.Durat
 	}
 	fmt.Printf(mR.String())
 
-	if interval == 0 || mR.Status != 1 {
+	if interval == 0 || !mR.Running() {
 		return nil
 	}
 
@@ -155,7 +157,7 @@ func Run(ctx context.Context, gc gRPCClient, command string, interval time.Durat
 			return fmt.Errorf("running migrations command: %w", err)
 		}
 		fmt.Printf(mR.String())
-		if mR.Status != 1 {
+		if !mR.Running() {
 			break
 		}
 	}
@@ -163,17 +165,80 @@ func Run(ctx context.Context, gc gRPCClient, command string, interval time.Durat
 	return nil
 }
 
-type migrationResponse struct {
+type migrationResponse interface {
+	String() string
+	Running() bool
+}
+
+type migrationStatsResponse struct {
+	Success bool            `json:"success"`
+	Stats   json.RawMessage `json:"stats"`
+}
+
+func (mR migrationStatsResponse) String() string {
+
+	var b bytes.Buffer
+	if err := json.Indent(&b, mR.Stats, "", "  "); err != nil {
+		panic("HUH")
+	}
+	return fmt.Sprintf("Success: %t\nStats: %s\n", mR.Success, b.String())
+
+}
+
+func (mr migrationStatsResponse) Running() bool {
+	return false // TODO
+}
+
+type migrationOthersResponse struct {
 	Success   bool   `json:"success"`
-	Status    int    `json:"status"`
+	Status    string `json:"status"`
 	Output    string `json:"output"`
 	Exception string `json:"exception"`
 }
 
-func (mR migrationResponse) String() string {
-	return fmt.Sprintf(
-		"Success: %t\nStatus: %d\nOutput: %s\nException: %s\n",
-		mR.Success, mR.Status, mR.Output, mR.Exception)
+// enum MigrationState {
+//     MIGRATION_RUNNING = "migration_running"
+//     MIGRATION_REQUIRED = "migration_required"
+//     FINALIZATION_REQUIRED = "finalization_required"
+//     NO_MIGRATION_REQUIRED = "no_migration_required"
+// }
+
+// {
+//     "success": true,
+//     "status"?: MigrationState,
+//     "output"?: str,
+//     "exception"?: str,
+// }
+
+// {
+//     "success": True,
+//     "stats": {
+//         "status": MigrationState,
+//         "current_migration_index": int,
+//         "target_migration_index": int,
+//         "positions": int,
+//         "events": int,
+//         "partially_migrated_positions": int,
+//         "fully_migrated_positions": int,
+//     }
+// }
+
+func (mR migrationOthersResponse) String() string {
+	result := fmt.Sprintf("Success: %t\n", mR.Success)
+	if mR.Status != "" {
+		result += fmt.Sprintf("Status: %s\n", mR.Status)
+	}
+	if mR.Output != "" {
+		result += fmt.Sprintf("Output: %s", mR.Output)
+	}
+	if mR.Exception != "" {
+		result += fmt.Sprintf("nException: %s\n", mR.Exception)
+	}
+	return result
+}
+
+func (mR migrationOthersResponse) Running() bool {
+	return mR.Status == migrationRunning
 }
 
 func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string) (migrationResponse, error) {
@@ -184,14 +249,19 @@ func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string) (migra
 	resp, err := gc.Migrations(ctx, req)
 	if err != nil {
 		s, _ := status.FromError(err) // The ok value does not matter here.
-		return migrationResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
+		return migrationOthersResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
 	}
-
-	var mR migrationResponse
+	if command == "stats" {
+		var mR migrationStatsResponse
+		if err := json.Unmarshal(resp.Response, &mR); err != nil {
+			return migrationStatsResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
+		}
+		return mR, nil
+	}
+	var mR migrationOthersResponse
 	if err := json.Unmarshal(resp.Response, &mR); err != nil {
-		return migrationResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
+		return migrationOthersResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
 	}
-
 	return mR, nil
 }
 
