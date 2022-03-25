@@ -144,7 +144,11 @@ func Run(ctx context.Context, gc gRPCClient, command string, interval time.Durat
 	if err != nil {
 		return fmt.Errorf("running migrations command: %w", err)
 	}
-	fmt.Printf(mR.String())
+	out, err := mR.String()
+	if err != nil {
+		return fmt.Errorf("parsing migrations response: %w", err)
+	}
+	fmt.Printf(out)
 
 	if interval == 0 || !mR.Running() {
 		return nil
@@ -156,7 +160,11 @@ func Run(ctx context.Context, gc gRPCClient, command string, interval time.Durat
 		if err != nil {
 			return fmt.Errorf("running migrations command: %w", err)
 		}
-		fmt.Printf(mR.String())
+		out, err := mR.String()
+		if err != nil {
+			return fmt.Errorf("parsing migrations response: %w", err)
+		}
+		fmt.Printf(out)
 		if !mR.Running() {
 			break
 		}
@@ -165,35 +173,35 @@ func Run(ctx context.Context, gc gRPCClient, command string, interval time.Durat
 	return nil
 }
 
-type migrationResponse interface {
-	String() string
-	Running() bool
-}
+// type migrationResponse interface {
+// 	String() (string, error)
+// 	Running() bool
+// }
 
-type migrationStatsResponse struct {
-	Success bool            `json:"success"`
-	Stats   json.RawMessage `json:"stats"`
-}
+// type migrationStatsResponse struct {
+// 	Success bool            `json:"success"`
+// 	Stats   json.RawMessage `json:"stats"`
+// }
 
-func (mR migrationStatsResponse) String() string {
+// func (mR migrationStatsResponse) String() (string, error) {
+// 	var b bytes.Buffer
+// 	if err := json.Indent(&b, mR.Stats, "", "  "); err != nil {
+// 		panic(err)
+// 	}
+// 	return fmt.Sprintf("Success: %t\nStats: %s\n", mR.Success, b.String()), nil
 
-	var b bytes.Buffer
-	if err := json.Indent(&b, mR.Stats, "", "  "); err != nil {
-		panic("HUH")
-	}
-	return fmt.Sprintf("Success: %t\nStats: %s\n", mR.Success, b.String())
+// }
 
-}
-
-func (mr migrationStatsResponse) Running() bool {
-	return false // TODO
-}
+// func (mR migrationStatsResponse) Running() bool {
+// 	return false // TODO
+// }
 
 type migrationOthersResponse struct {
-	Success   bool   `json:"success"`
-	Status    string `json:"status"`
-	Output    string `json:"output"`
-	Exception string `json:"exception"`
+	Success   bool            `json:"success"`
+	Status    string          `json:"status"`
+	Output    string          `json:"output"`
+	Exception string          `json:"exception"`
+	Stats     json.RawMessage `json:"stats"`
 }
 
 // enum MigrationState {
@@ -223,7 +231,7 @@ type migrationOthersResponse struct {
 //     }
 // }
 
-func (mR migrationOthersResponse) String() string {
+func (mR migrationOthersResponse) String() (string, error) {
 	result := fmt.Sprintf("Success: %t\n", mR.Success)
 	if mR.Status != "" {
 		result += fmt.Sprintf("Status: %s\n", mR.Status)
@@ -232,16 +240,23 @@ func (mR migrationOthersResponse) String() string {
 		result += fmt.Sprintf("Output: %s", mR.Output)
 	}
 	if mR.Exception != "" {
-		result += fmt.Sprintf("nException: %s\n", mR.Exception)
+		result += fmt.Sprintf("Exception: %s\n", mR.Exception)
 	}
-	return result
+	if mR.Stats != nil {
+		var b bytes.Buffer
+		if err := json.Indent(&b, mR.Stats, "", "  "); err != nil {
+			panic(err)
+		}
+		result += fmt.Sprintf("Stats: %s\n", b.String())
+	}
+	return result, nil
 }
 
 func (mR migrationOthersResponse) Running() bool {
 	return mR.Status == migrationRunning
 }
 
-func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string) (migrationResponse, error) {
+func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string) (migrationOthersResponse, error) {
 	req := &proto.MigrationsRequest{
 		Command: command,
 	}
@@ -251,13 +266,13 @@ func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string) (migra
 		s, _ := status.FromError(err) // The ok value does not matter here.
 		return migrationOthersResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
 	}
-	if command == "stats" {
-		var mR migrationStatsResponse
-		if err := json.Unmarshal(resp.Response, &mR); err != nil {
-			return migrationStatsResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
-		}
-		return mR, nil
-	}
+	// if command == "stats" {
+	// 	var mR migrationStatsResponse
+	// 	if err := json.Unmarshal(resp.Response, &mR); err != nil {
+	// 		return migrationStatsResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
+	// 	}
+	// 	return mR, nil
+	// }
 	var mR migrationOthersResponse
 	if err := json.Unmarshal(resp.Response, &mR); err != nil {
 		return migrationOthersResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
