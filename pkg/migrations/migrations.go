@@ -178,8 +178,8 @@ func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.
 			fmt.Printf(out)
 		} else {
 			out, c := mR.OutputSince(outCount)
-			outCount = c
 			fmt.Printf(out)
+			outCount = c
 		}
 
 		if !mR.Running() {

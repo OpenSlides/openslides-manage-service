@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/migrations"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -42,7 +43,8 @@ func TestMigrations(t *testing.T) {
 		mc.expected = "stats"
 		mc.response = []byte(`{"success": true, "stats": {}}`)
 		ctx := context.Background()
-		if err := migrations.Run(ctx, mc, "stats", nil); err != nil {
+		timeout := 1 * time.Second
+		if err := migrations.Run(ctx, mc, "stats", nil, &timeout); err != nil {
 			t.Fatalf("running migrations.Run() failed with error: %v", err)
 		}
 		if !mc.called {
