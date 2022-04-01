@@ -195,6 +195,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - data
+    user: {{ $.User }}
     secrets:
       - postgres_password
     volumes:

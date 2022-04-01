@@ -12,6 +12,8 @@ disableDependsOn: false
 enableLocalHTTPS: true
 enableAutoHTTPS: false
 
+user: 1000:985  # TODO: Use empty string here and determine it in the config.go code ... Norman DO IT!!!
+
 # Defaults for all OpenSlides services.
 defaults:
   containerRegistry: ghcr.io/openslides/openslides

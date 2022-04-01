@@ -1,14 +1,15 @@
 package migrations
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
@@ -97,7 +98,7 @@ func statsCmd() *cobra.Command {
 func progressCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "progress",
-		Short: "...TODO...",
+		Short: "Query the progress of a currently running migration command.",
 		Args:  cobra.NoArgs,
 	}
 	return setupMigrationCmd(cmd, !withIntervalFlag)
@@ -106,24 +107,26 @@ func progressCmd() *cobra.Command {
 func setupMigrationCmd(cmd *cobra.Command, withInterval bool) *cobra.Command {
 	cp := connection.Unary(cmd)
 
-	var interval time.Duration
+	var interval *time.Duration
 	if withInterval {
 		intervalHelpText := "interval of progress calls on running migrations, " +
 			"set 0 to disable progress and let the command return immediately"
-		interval = *cmd.Flags().Duration("interval", defaultInterval, intervalHelpText)
+		interval = cmd.Flags().Duration("interval", defaultInterval, intervalHelpText)
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), *cp.Timeout)
+		ctx := context.Background()
+
+		dialCtx, cancel := context.WithTimeout(ctx, *cp.Timeout)
 		defer cancel()
 
-		cl, close, err := connection.Dial(ctx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
+		cl, close, err := connection.Dial(dialCtx, *cp.Addr, *cp.PasswordFile, !*cp.NoSSL)
 		if err != nil {
 			return fmt.Errorf("connecting to gRPC server: %w", err)
 		}
 		defer close()
 
-		if err := Run(ctx, cl, cmd.Use, interval); err != nil {
+		if err := Run(ctx, cl, cmd.Use, interval, cp.Timeout); err != nil {
 			return fmt.Errorf("running migrations command %q: %w", cmd.Use, err)
 		}
 		return nil
@@ -139,32 +142,46 @@ type gRPCClient interface {
 }
 
 // Run calls respective procedure to run migrations command via given gRPC client.
-func Run(ctx context.Context, gc gRPCClient, command string, interval time.Duration) error {
-	mR, err := runMigrationsCmd(ctx, gc, command)
+func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.Duration, timeoutFlag *time.Duration) error {
+	mR, err := runMigrationsCmd(ctx, gc, command, *timeoutFlag)
 	if err != nil {
 		return fmt.Errorf("running migrations command: %w", err)
 	}
-	out, err := mR.String()
+	mRText, err := mR.String()
 	if err != nil {
 		return fmt.Errorf("parsing migrations response: %w", err)
 	}
-	fmt.Printf(out)
+	fmt.Printf(mRText)
 
+	var interval time.Duration
+	if intervalFlag != nil {
+		interval = *intervalFlag
+	}
 	if interval == 0 || !mR.Running() {
 		return nil
 	}
 
+	outCount := 0
+	fmt.Print("\nProgress:\n")
 	for {
 		time.Sleep(interval)
-		mR, err := runMigrationsCmd(ctx, gc, "progress")
+		mR, err := runMigrationsCmd(ctx, gc, "progress", *timeoutFlag)
 		if err != nil {
 			return fmt.Errorf("running migrations command: %w", err)
 		}
-		out, err := mR.String()
-		if err != nil {
-			return fmt.Errorf("parsing migrations response: %w", err)
+
+		if mR.Exception != "" || !mR.Success {
+			out, err := mR.String()
+			if err != nil {
+				return fmt.Errorf("parsing migrations response: %w", err)
+			}
+			fmt.Printf(out)
+		} else {
+			out, c := mR.OutputSince(outCount)
+			outCount = c
+			fmt.Printf(out)
 		}
-		fmt.Printf(out)
+
 		if !mR.Running() {
 			break
 		}
@@ -173,30 +190,7 @@ func Run(ctx context.Context, gc gRPCClient, command string, interval time.Durat
 	return nil
 }
 
-// type migrationResponse interface {
-// 	String() (string, error)
-// 	Running() bool
-// }
-
-// type migrationStatsResponse struct {
-// 	Success bool            `json:"success"`
-// 	Stats   json.RawMessage `json:"stats"`
-// }
-
-// func (mR migrationStatsResponse) String() (string, error) {
-// 	var b bytes.Buffer
-// 	if err := json.Indent(&b, mR.Stats, "", "  "); err != nil {
-// 		panic(err)
-// 	}
-// 	return fmt.Sprintf("Success: %t\nStats: %s\n", mR.Success, b.String()), nil
-
-// }
-
-// func (mR migrationStatsResponse) Running() bool {
-// 	return false // TODO
-// }
-
-type migrationOthersResponse struct {
+type migrationResponse struct {
 	Success   bool            `json:"success"`
 	Status    string          `json:"status"`
 	Output    string          `json:"output"`
@@ -204,78 +198,49 @@ type migrationOthersResponse struct {
 	Stats     json.RawMessage `json:"stats"`
 }
 
-// enum MigrationState {
-//     MIGRATION_RUNNING = "migration_running"
-//     MIGRATION_REQUIRED = "migration_required"
-//     FINALIZATION_REQUIRED = "finalization_required"
-//     NO_MIGRATION_REQUIRED = "no_migration_required"
-// }
-
-// {
-//     "success": true,
-//     "status"?: MigrationState,
-//     "output"?: str,
-//     "exception"?: str,
-// }
-
-// {
-//     "success": True,
-//     "stats": {
-//         "status": MigrationState,
-//         "current_migration_index": int,
-//         "target_migration_index": int,
-//         "positions": int,
-//         "events": int,
-//         "partially_migrated_positions": int,
-//         "fully_migrated_positions": int,
-//     }
-// }
-
-func (mR migrationOthersResponse) String() (string, error) {
-	result := fmt.Sprintf("Success: %t\n", mR.Success)
-	if mR.Status != "" {
-		result += fmt.Sprintf("Status: %s\n", mR.Status)
+func (mR migrationResponse) String() (string, error) {
+	// TODO: This in one call
+	j, err := json.Marshal(mR)
+	if err != nil {
+		return "", fmt.Errorf("marshalling JSON: %w", err)
 	}
-	if mR.Output != "" {
-		result += fmt.Sprintf("Output: %s", mR.Output)
+	y, err := yaml.JSONToYAML(j)
+	if err != nil {
+		return "", fmt.Errorf("JSON to YAML: %w", err)
 	}
-	if mR.Exception != "" {
-		result += fmt.Sprintf("Exception: %s\n", mR.Exception)
-	}
-	if mR.Stats != nil {
-		var b bytes.Buffer
-		if err := json.Indent(&b, mR.Stats, "", "  "); err != nil {
-			panic(err)
-		}
-		result += fmt.Sprintf("Stats: %s\n", b.String())
-	}
-	return result, nil
+	return string(y), nil
 }
 
-func (mR migrationOthersResponse) Running() bool {
+func (mR migrationResponse) Running() bool {
 	return mR.Status == migrationRunning
 }
 
-func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string) (migrationOthersResponse, error) {
+func (mR migrationResponse) OutputSince(lines int) (string, int) {
+	s := strings.Split(strings.TrimSpace(mR.Output), "\n")
+	out := strings.Join(s[lines:], "\n")
+	if lines < len(s) {
+		out += "\n"
+	}
+	return out, len(s)
+}
+
+func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string, timeout time.Duration) (migrationResponse, error) {
+	migrCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	req := &proto.MigrationsRequest{
 		Command: command,
 	}
 
-	resp, err := gc.Migrations(ctx, req)
+	resp, err := gc.Migrations(migrCtx, req)
 	if err != nil {
 		s, _ := status.FromError(err) // The ok value does not matter here.
-		return migrationOthersResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
+		return migrationResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
 	}
-	// if command == "stats" {
-	// 	var mR migrationStatsResponse
-	// 	if err := json.Unmarshal(resp.Response, &mR); err != nil {
-	// 		return migrationStatsResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
-	// 	}
-	// 	return mR, nil
-	// }
-	var mR migrationOthersResponse
+
+	var mR migrationResponse
 	if err := json.Unmarshal(resp.Response, &mR); err != nil {
-		return migrationOthersResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
+		return migrationResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
 	}
 	return mR, nil
 }

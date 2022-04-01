@@ -173,6 +173,8 @@ type YmlConfig struct {
 	EnableLocalHTTPS *bool `yaml:"enableLocalHTTPS"`
 	EnableAutoHTTPS  *bool `yaml:"enableAutoHTTPS"`
 
+	User string `yaml:"user"`
+
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
 		Tag               string `yaml:"tag"`

@@ -42,7 +42,7 @@ func TestMigrations(t *testing.T) {
 		mc.expected = "stats"
 		mc.response = []byte(`{"success": true, "stats": {}}`)
 		ctx := context.Background()
-		if err := migrations.Run(ctx, mc, "stats", 0); err != nil {
+		if err := migrations.Run(ctx, mc, "stats", nil); err != nil {
 			t.Fatalf("running migrations.Run() failed with error: %v", err)
 		}
 		if !mc.called {
