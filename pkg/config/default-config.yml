@@ -13,7 +13,6 @@ disableDependsOn: false
 enableLocalHTTPS: true
 enableAutoHTTPS: false
 
-
 # Defaults for all OpenSlides services.
 defaults:
   containerRegistry: ghcr.io/openslides/openslides
@@ -109,8 +108,7 @@ services:
 #     tag: my-tag
 #   autoupdate:
 #     containerRegistry: example.com/my-registry
-#
-#
+
 # You can also extend or replace parts of the environment.
 #
 # Example:
@@ -119,8 +117,7 @@ services:
 #   datastoreReader:
 #     environment
 #       NUM_WORKERS: 8
-#
-#
+
 # You can also define some additional content for all services. This will just
 # add the object to the respective service blob.
 #
