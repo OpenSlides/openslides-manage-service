@@ -6,13 +6,13 @@ filename: docker-compose.yml
 host: 127.0.0.1
 port: 8000
 
-# General options affecting the whole application (i.e. every service)
+# General global options
+postgresContainerUser: ""  # Empty strings here means that the service will detect the caller's user and group id.
 disablePostgres: false
 disableDependsOn: false
 enableLocalHTTPS: true
 enableAutoHTTPS: false
 
-user: 1000:985  # TODO: Use empty string here and determine it in the config.go code ... Norman DO IT!!!
 
 # Defaults for all OpenSlides services.
 defaults:
@@ -110,6 +110,7 @@ services:
 #   autoupdate:
 #     containerRegistry: example.com/my-registry
 #
+#
 # You can also extend or replace parts of the environment.
 #
 # Example:
@@ -118,6 +119,7 @@ services:
 #   datastoreReader:
 #     environment
 #       NUM_WORKERS: 8
+#
 #
 # You can also define some additional content for all services. This will just
 # add the object to the respective service blob.

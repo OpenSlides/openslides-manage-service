@@ -173,7 +173,7 @@ type YmlConfig struct {
 	EnableLocalHTTPS *bool `yaml:"enableLocalHTTPS"`
 	EnableAutoHTTPS  *bool `yaml:"enableAutoHTTPS"`
 
-	User string `yaml:"user"`
+	PostgresContainerUser string `yaml:"postgresContainerUser"`
 
 	Defaults struct {
 		ContainerRegistry string `yaml:"containerRegistry"`
@@ -226,6 +226,11 @@ func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 		if err := mergo.Merge(config, c, mergo.WithOverride, mergo.WithTransformers(&nullTransformer{})); err != nil {
 			return nil, fmt.Errorf("merging config files: %w", err)
 		}
+	}
+
+	// Add default PostgresContainerUser
+	if config.PostgresContainerUser == "" {
+		config.PostgresContainerUser = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 	}
 
 	// Fill services

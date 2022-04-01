@@ -147,7 +147,7 @@ func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.
 	if err != nil {
 		return fmt.Errorf("running migrations command: %w", err)
 	}
-	mRText, err := mR.String()
+	mRText, err := mR.Yaml()
 	if err != nil {
 		return fmt.Errorf("parsing migrations response: %w", err)
 	}
@@ -171,7 +171,7 @@ func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.
 		}
 
 		if mR.Exception != "" || !mR.Success {
-			out, err := mR.String()
+			out, err := mR.Yaml()
 			if err != nil {
 				return fmt.Errorf("parsing migrations response: %w", err)
 			}
@@ -190,7 +190,9 @@ func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.
 	return nil
 }
 
-type migrationResponse struct {
+// MigrationResponse handles the JSON response from the backend when calling
+// migrations commands.
+type MigrationResponse struct {
 	Success   bool            `json:"success"`
 	Status    string          `json:"status"`
 	Output    string          `json:"output"`
@@ -198,24 +200,26 @@ type migrationResponse struct {
 	Stats     json.RawMessage `json:"stats"`
 }
 
-func (mR migrationResponse) String() (string, error) {
-	// TODO: This in one call
-	j, err := json.Marshal(mR)
+// Yaml returns the migrations command reponse formatted in YAML for proper
+// display.
+func (mR MigrationResponse) Yaml() (string, error) {
+	y, err := yaml.Marshal(mR)
 	if err != nil {
-		return "", fmt.Errorf("marshalling JSON: %w", err)
-	}
-	y, err := yaml.JSONToYAML(j)
-	if err != nil {
-		return "", fmt.Errorf("JSON to YAML: %w", err)
+		return "", fmt.Errorf("marshalling to YAML: %w", err)
 	}
 	return string(y), nil
 }
 
-func (mR migrationResponse) Running() bool {
+// Running returns True if the migration command returns status
+// "migration_running".
+func (mR MigrationResponse) Running() bool {
 	return mR.Status == migrationRunning
 }
 
-func (mR migrationResponse) OutputSince(lines int) (string, int) {
+// OutputSince provides the content of the migrations response output. The
+// number of given lines where omitted and we also get the number of lines of
+// the rest of the content.
+func (mR MigrationResponse) OutputSince(lines int) (string, int) {
 	s := strings.Split(strings.TrimSpace(mR.Output), "\n")
 	out := strings.Join(s[lines:], "\n")
 	if lines < len(s) {
@@ -224,7 +228,7 @@ func (mR migrationResponse) OutputSince(lines int) (string, int) {
 	return out, len(s)
 }
 
-func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string, timeout time.Duration) (migrationResponse, error) {
+func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string, timeout time.Duration) (MigrationResponse, error) {
 	migrCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -235,12 +239,12 @@ func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string, timeou
 	resp, err := gc.Migrations(migrCtx, req)
 	if err != nil {
 		s, _ := status.FromError(err) // The ok value does not matter here.
-		return migrationResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
+		return MigrationResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
 	}
 
-	var mR migrationResponse
+	var mR MigrationResponse
 	if err := json.Unmarshal(resp.Response, &mR); err != nil {
-		return migrationResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
+		return MigrationResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
 	}
 	return mR, nil
 }

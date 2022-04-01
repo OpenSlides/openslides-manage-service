@@ -2,6 +2,7 @@ package migrations_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -49,6 +50,52 @@ func TestMigrations(t *testing.T) {
 		}
 		if !mc.called {
 			t.Fatalf("gRPC client was not called")
+		}
+	})
+}
+
+func TestMigrationsResponse(t *testing.T) {
+	output := "First line\nSecond line\nThird line\n"
+	mR := migrations.MigrationResponse{
+		Output:  output,
+		Success: true,
+		Status:  "some status",
+		Stats:   json.RawMessage([]byte(`{"some_key": "some value"}`)),
+	}
+
+	t.Run("method Running()", func(t *testing.T) {
+		if mR.Running() {
+			t.Fatalf("method Running() should return false, but it returns true")
+		}
+	})
+
+	t.Run("method Yaml()", func(t *testing.T) {
+		expected := `exception: ""
+output: |
+  First line
+  Second line
+  Third line
+stats:
+  some_key: some value
+status: some status
+success: true
+`
+		got, err := mR.Yaml()
+		if err != nil {
+			t.Fatalf("method Yaml() returned error: %v", err)
+		}
+		if got != expected {
+			t.Fatalf("method Yaml(): expected %s, got %s", expected, got)
+		}
+	})
+
+	t.Run("method OutputSince()", func(t *testing.T) {
+		got, next := mR.OutputSince(0)
+		if got != output {
+			t.Fatalf("method OutputSince(): expected output %s, returned %s", output, got)
+		}
+		if next != 3 {
+			t.Fatalf("method OutputSince(): expected 3 lines, returned %d", next)
 		}
 	})
 }

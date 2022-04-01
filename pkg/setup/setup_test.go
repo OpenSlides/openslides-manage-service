@@ -2,6 +2,7 @@ package setup_test
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -25,7 +26,7 @@ func TestCmd(t *testing.T) {
 		}
 
 		secDir := path.Join(testDir, setup.SecretsDirName)
-		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml())
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
@@ -48,7 +49,7 @@ func TestCmd(t *testing.T) {
 		}
 
 		secDir := path.Join(testDir, setup.SecretsDirName)
-		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml())
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
@@ -198,7 +199,7 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
-		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml())
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
@@ -236,7 +237,7 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
-		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, testDir, "docker-compose.yml", defaultDockerComposeYml())
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
@@ -259,7 +260,7 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(dir, setup.SecretsDirName)
-		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml)
+		testContentFile(t, dir, "docker-compose.yml", defaultDockerComposeYml())
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
 		testKeyFile(t, secDir, "manage_auth_password")
@@ -481,7 +482,8 @@ func testDirectory(t testing.TB, dir, name string) {
 	}
 }
 
-const defaultDockerComposeYml = `---
+func defaultDockerComposeYml() string {
+	return fmt.Sprintf(`---
 version: "3.4"
 
 x-default-environment: &default-environment
@@ -664,6 +666,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - data
+    user: %s
     secrets:
       - postgres_password
     volumes:
@@ -794,7 +797,8 @@ secrets:
     file: ./secrets/cert_crt
   cert_key:
     file: ./secrets/cert_key
-`
+`, fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()))
+}
 
 func TestSetupNoDirectory(t *testing.T) {
 	hasErrMsg := "not a directory"
