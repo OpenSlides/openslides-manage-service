@@ -7,7 +7,7 @@ host: 127.0.0.1
 port: 8000
 
 # General global options
-postgresContainerUser: ""  # Empty strings here means that the service will detect the caller's user and group id.
+postgresContainerUser: ""  # Must be of form <uid>:<gid>, empty strings means the service will detect the caller's user and group id.
 disablePostgres: false
 disableDependsOn: false
 enableLocalHTTPS: true
