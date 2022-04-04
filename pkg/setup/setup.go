@@ -15,6 +15,7 @@ import (
 	"math/big"
 	"os"
 	"path"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
@@ -196,11 +197,11 @@ func createCerts(dir string, force bool) error {
 		return fmt.Errorf("generating serial number: %w", err)
 	}
 	templ := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject:      pkix.Name{Organization: []string{"OpenSlides"}},
-		DNSNames:     []string{"localhost"},
-		//NotBefore:             time.Now(),
-		//NotAfter:              time.Now().Add(90 * 24 * time.Hour),
+		SerialNumber:          serialNumber,
+		Subject:               pkix.Name{Organization: []string{"OpenSlides"}},
+		DNSNames:              []string{"localhost"},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(30, 0, 0),
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,

@@ -16,18 +16,34 @@ import (
 type Conn struct {
 	URL                  *url.URL
 	internalAuthPassword []byte
+	route                string
 }
 
+const (
+	// ActionRoute is used to mark the connection to be usable for a route to an
+	// action (called action_route or internal_action_route in the backend).
+	ActionRoute = "action"
+
+	// MigrationsRoute is used to mark the connection to be usable for a route
+	// to the migrations handler.
+	MigrationsRoute = "migrations"
+)
+
 // New returns a new connection to the backend action service.
-func New(url *url.URL, pw []byte) *Conn {
+func New(url *url.URL, pw []byte, route string) *Conn {
 	c := new(Conn)
 	c.URL = url
 	c.internalAuthPassword = pw
+	c.route = route
 	return c
 }
 
 // Single sends a request to backend action service with a single action.
 func (c *Conn) Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error) {
+	if c.route != ActionRoute {
+		return nil, fmt.Errorf("invalid route for this connection; expected %q, got %q", ActionRoute, c.route)
+	}
+
 	addr := c.URL.String()
 	reqBody := []struct {
 		Action string          `json:"action"`
@@ -56,7 +72,7 @@ func (c *Conn) Single(ctx context.Context, name string, data json.RawMessage) (j
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("sending request to backend action service at %s: %w", addr, err)
+		return nil, fmt.Errorf("sending request to backend action service at %q: %w", addr, err)
 	}
 	defer resp.Body.Close()
 
@@ -88,5 +104,56 @@ func (c *Conn) Single(ctx context.Context, name string, data json.RawMessage) (j
 	}
 
 	return content.Results[0], nil
+}
 
+// Migrations sends the given migrations command to the backend.
+func (c *Conn) Migrations(ctx context.Context, command string) (json.RawMessage, error) {
+	if c.route != MigrationsRoute {
+		return nil, fmt.Errorf("invalid route for this connection; expected %q, got %q", MigrationsRoute, c.route)
+	}
+
+	addr := c.URL.String()
+	reqBody := struct {
+		Cmd string `json:"cmd"`
+	}{
+		Cmd: command,
+	}
+	encodedBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling request body: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", addr, bytes.NewReader(encodedBody))
+	if err != nil {
+		return nil, fmt.Errorf("creating request to backend action service: %w", err)
+	}
+	creds := shared.BasicAuth{
+		Password: c.internalAuthPassword,
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(shared.AuthHeader, creds.EncPassword())
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sending request to backend action service at %q: %w", addr, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("[can not read body]")
+		}
+		return nil, fmt.Errorf("got response %q: %q", resp.Status, body)
+	}
+
+	encodedResp, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	if !json.Valid(encodedResp) {
+		return nil, fmt.Errorf("response body does not contain valid JSON, got %q", string(encodedResp))
+	}
+
+	return json.RawMessage(encodedResp), nil
 }

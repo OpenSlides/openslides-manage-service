@@ -6,7 +6,8 @@ filename: docker-compose.yml
 host: 127.0.0.1
 port: 8000
 
-# General options affecting the whole application (i.e. every service)
+# General global options
+postgresContainerUser: ""  # Must be of form <uid>:<gid>, empty strings means the service will detect the caller's user and group id.
 disablePostgres: false
 disableDependsOn: false
 enableLocalHTTPS: true
@@ -107,7 +108,7 @@ services:
 #     tag: my-tag
 #   autoupdate:
 #     containerRegistry: example.com/my-registry
-#
+
 # You can also extend or replace parts of the environment.
 #
 # Example:
@@ -116,7 +117,7 @@ services:
 #   datastoreReader:
 #     environment
 #       NUM_WORKERS: 8
-#
+
 # You can also define some additional content for all services. This will just
 # add the object to the respective service blob.
 #

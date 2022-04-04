@@ -8,6 +8,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/get"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
+	"github.com/OpenSlides/openslides-manage-service/pkg/migrations"
 	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
@@ -57,6 +58,7 @@ func RootCmd() *cobra.Command {
 		config.Cmd(),
 		config.CmdCreateDefault(),
 		initialdata.Cmd(),
+		migrations.Cmd(),
 		setpassword.Cmd(),
 		get.Cmd(),
 		createuser.Cmd(),
