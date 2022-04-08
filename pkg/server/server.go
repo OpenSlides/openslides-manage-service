@@ -148,6 +148,10 @@ func (s *srv) Set(ctx context.Context, in *proto.SetRequest) (*proto.SetResponse
 	return set.Set(ctx, in, a)
 }
 
+func (s *srv) Version(ctx context.Context, in *proto.VersionRequest) (*proto.VersionResponse, error) {
+	return nil, nil
+}
+
 func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
 	return tunnel.Tunnel(ts)
 }

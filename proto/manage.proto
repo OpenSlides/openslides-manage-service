@@ -5,88 +5,76 @@ option go_package = "github.com/OpenSlides/openslides-manage-service/proto";
 import "google/protobuf/struct.proto";
 
 service Manage {
-    rpc CheckServer(CheckServerRequest) returns (CheckServerResponse);
-    rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
-    rpc Migrations(MigrationsRequest) returns (MigrationsResponse);
-    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-    rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
-    rpc Get(GetRequest) returns (GetResponse);
-    rpc Set(SetRequest) returns (SetResponse);
-    rpc Tunnel(stream TunnelData) returns (stream TunnelData);
-    rpc Health(HealthRequest) returns (HealthResponse);
+  rpc CheckServer(CheckServerRequest) returns (CheckServerResponse);
+  rpc InitialData(InitialDataRequest) returns (InitialDataResponse);
+  rpc Migrations(MigrationsRequest) returns (MigrationsResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Set(SetRequest) returns (SetResponse);
+  rpc Version(VersionRequest) returns (VersionResponse);
+  rpc Tunnel(stream TunnelData) returns (stream TunnelData);
+  rpc Health(HealthRequest) returns (HealthResponse);
 }
 
-message CheckServerRequest {
-    bool skipClient = 1;
-}
+message CheckServerRequest { bool skipClient = 1; }
 
 message CheckServerResponse {}
 
-message InitialDataRequest {
-    bytes data = 1;
-}
+message InitialDataRequest { bytes data = 1; }
 
-message InitialDataResponse {
-    bool initialized = 1;
-}
+message InitialDataResponse { bool initialized = 1; }
 
-message MigrationsRequest {
-    string command = 1;
-}
+message MigrationsRequest { string command = 1; }
 
-message MigrationsResponse {
-    bytes response = 1;
-}
+message MigrationsResponse { bytes response = 1; }
 
 message CreateUserRequest {
-    string username = 1 [ json_name = "username" ];
-    string first_name = 2 [ json_name = "first_name" ];
-    string last_name = 3 [ json_name = "last_name" ];
-    bool is_active = 4 [ json_name = "is_active" ];
-    string default_password = 5 [ json_name = "default_password" ];
-    string email = 6 [ json_name = "email" ];
-    string organization_management_level = 7 [ json_name = "organization_management_level" ];
-    map<string, google.protobuf.ListValue> committee__management_level = 8 [ json_name = "committee__management_level" ];
-    map<string, google.protobuf.ListValue> group__ids = 9 [ json_name = "group__ids" ];
+  string username = 1 [ json_name = "username" ];
+  string first_name = 2 [ json_name = "first_name" ];
+  string last_name = 3 [ json_name = "last_name" ];
+  bool is_active = 4 [ json_name = "is_active" ];
+  string default_password = 5 [ json_name = "default_password" ];
+  string email = 6 [ json_name = "email" ];
+  string organization_management_level = 7
+      [ json_name = "organization_management_level" ];
+  map<string, google.protobuf.ListValue> committee__management_level = 8
+      [ json_name = "committee__management_level" ];
+  map<string, google.protobuf.ListValue> group__ids = 9
+      [ json_name = "group__ids" ];
 }
 
-message CreateUserResponse {
-    int64 userID = 1;
-}
+message CreateUserResponse { int64 userID = 1; }
 
 message SetPasswordRequest {
-    int64 userID = 1;
-    string password = 2;
+  int64 userID = 1;
+  string password = 2;
 }
 
 message SetPasswordResponse {}
 
 message GetRequest {
-    string collection = 1;
-    bool exists = 2;
-    map<string, string> filter = 3;
-    repeated string fields = 4;
+  string collection = 1;
+  bool exists = 2;
+  map<string, string> filter = 3;
+  repeated string fields = 4;
 }
 
-message GetResponse {
-    string value = 1;
-}
+message GetResponse { string value = 1; }
 
 message SetRequest {
-    string action = 1;
-    bytes payload = 2;
+  string action = 1;
+  bytes payload = 2;
 }
 
-message SetResponse {
-    bytes payload = 1;
-}
+message SetResponse { bytes payload = 1; }
 
-message TunnelData {
-    bytes data = 1;
-}
+message VersionRequest {}
 
-message HealthRequest{}
+message VersionResponse { string version = 1; }
 
-message HealthResponse {
-    bool healthy = 1;
-}
+message TunnelData { bytes data = 1; }
+
+message HealthRequest {}
+
+message HealthResponse { bool healthy = 1; }

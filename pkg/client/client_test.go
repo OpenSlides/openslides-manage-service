@@ -13,6 +13,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
+	"github.com/OpenSlides/openslides-manage-service/pkg/version"
 )
 
 func TestRunClient(t *testing.T) {
@@ -74,6 +75,12 @@ func TestCmdHelpTexts(t *testing.T) {
 			name:             "set",
 			input:            []string{"set", "--help"},
 			outputStartsWith: []byte(set.SetHelp),
+		},
+
+		{
+			name:             "version",
+			input:            []string{"version", "--help"},
+			outputStartsWith: []byte(version.VersionHelp),
 		},
 
 		{

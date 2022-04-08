@@ -29,6 +29,7 @@ type ManageClient interface {
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...grpc.CallOption) (*SetPasswordResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
+	Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*VersionResponse, error)
 	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error)
 	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
@@ -104,6 +105,15 @@ func (c *manageClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.Cal
 	return out, nil
 }
 
+func (c *manageClient) Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*VersionResponse, error) {
+	out := new(VersionResponse)
+	err := c.cc.Invoke(ctx, "/Manage/Version", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *manageClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Manage_ServiceDesc.Streams[0], "/Manage/Tunnel", opts...)
 	if err != nil {
@@ -155,6 +165,7 @@ type ManageServer interface {
 	SetPassword(context.Context, *SetPasswordRequest) (*SetPasswordResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	Set(context.Context, *SetRequest) (*SetResponse, error)
+	Version(context.Context, *VersionRequest) (*VersionResponse, error)
 	Tunnel(Manage_TunnelServer) error
 	Health(context.Context, *HealthRequest) (*HealthResponse, error)
 }
@@ -183,6 +194,9 @@ func (UnimplementedManageServer) Get(context.Context, *GetRequest) (*GetResponse
 }
 func (UnimplementedManageServer) Set(context.Context, *SetRequest) (*SetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
+}
+func (UnimplementedManageServer) Version(context.Context, *VersionRequest) (*VersionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Version not implemented")
 }
 func (UnimplementedManageServer) Tunnel(Manage_TunnelServer) error {
 	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
@@ -328,6 +342,24 @@ func _Manage_Set_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Manage_Version_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManageServer).Version(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Manage/Version",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManageServer).Version(ctx, req.(*VersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Manage_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(ManageServer).Tunnel(&manageTunnelServer{stream})
 }
@@ -406,6 +438,10 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Set",
 			Handler:    _Manage_Set_Handler,
+		},
+		{
+			MethodName: "Version",
+			Handler:    _Manage_Version_Handler,
 		},
 		{
 			MethodName: "Health",
