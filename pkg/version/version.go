@@ -3,6 +3,9 @@ package version
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -65,4 +68,38 @@ func Run(ctx context.Context, gc gRPCClient) error {
 	}
 	fmt.Printf(resp.Version)
 	return nil
+}
+
+// Server
+
+// Version retrieves the version tag from the client container.
+// This function is the server side entrypoint for this package.
+func Version(ctx context.Context, in *proto.VersionRequest, clientVersionURL *url.URL) (*proto.VersionResponse, error) {
+
+	addr := clientVersionURL.String()
+	req, err := http.NewRequestWithContext(ctx, "GET", addr, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request to client service: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sending request to client service at %q: %w", addr, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("[can not read body]")
+		}
+		return nil, fmt.Errorf("got response %q: %q", resp.Status, body)
+	}
+
+	encodedResp, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	return &proto.VersionResponse{Version: string(encodedResp)}, nil
 }

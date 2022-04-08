@@ -55,6 +55,14 @@ func TestSystemInTotal(t *testing.T) {
 			t.Fatalf("executing command returns error %v", err)
 		}
 	})
+
+	t.Run("version", func(t *testing.T) {
+		cmd := client.RootCmd()
+		cmd.SetArgs([]string{"version", "--password-file", path.Join(dir, "secrets", "manage_auth_password")})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("executing command returns error %v", err)
+		}
+	})
 }
 
 func setupTestDir(t testing.TB) string {
