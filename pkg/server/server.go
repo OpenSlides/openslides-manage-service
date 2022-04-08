@@ -310,7 +310,7 @@ func (c *Config) datastoreReaderURL() *url.URL {
 
 // clientVersionURL returns an URL object to the client service.
 func (c *Config) clientVersionURL() *url.URL {
-	u := url.URL{
+	u := url.URL{ // TODO: Protocol, host and port should be retrieved from environment variables.
 		Scheme: "http",
 		Host:   "client:9001",
 		Path:   "/assets/version.txt",

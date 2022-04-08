@@ -20,7 +20,7 @@ const (
 
 	// VersionHelpExtra contains the long help text for the command without
 	// the headline.
-	VersionHelpExtra = ``
+	VersionHelpExtra = `The version tag is created during client image build.`
 )
 
 // Cmd returns the subcommand.
@@ -66,7 +66,8 @@ func Run(ctx context.Context, gc gRPCClient) error {
 		s, _ := status.FromError(err) // The ok value does not matter here.
 		return fmt.Errorf("calling manage service (retrieving version): %s", s.Message())
 	}
-	fmt.Printf(resp.Version)
+
+	fmt.Println(resp.Version)
 	return nil
 }
 
@@ -75,7 +76,6 @@ func Run(ctx context.Context, gc gRPCClient) error {
 // Version retrieves the version tag from the client container.
 // This function is the server side entrypoint for this package.
 func Version(ctx context.Context, in *proto.VersionRequest, clientVersionURL *url.URL) (*proto.VersionResponse, error) {
-
 	addr := clientVersionURL.String()
 	req, err := http.NewRequestWithContext(ctx, "GET", addr, nil)
 	if err != nil {
