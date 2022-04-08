@@ -12,7 +12,6 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
-	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/OpenSlides/openslides-manage-service/pkg/version"
 	"github.com/spf13/cobra"
 )
@@ -65,7 +64,6 @@ func RootCmd() *cobra.Command {
 		createuser.Cmd(),
 		set.Cmd(),
 		version.Cmd(),
-		tunnel.Cmd(),
 	)
 
 	return cmd

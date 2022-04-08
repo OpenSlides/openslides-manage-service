@@ -30,7 +30,6 @@ type ManageClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
 	Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*VersionResponse, error)
-	Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error)
 	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
 
@@ -114,37 +113,6 @@ func (c *manageClient) Version(ctx context.Context, in *VersionRequest, opts ...
 	return out, nil
 }
 
-func (c *manageClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (Manage_TunnelClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Manage_ServiceDesc.Streams[0], "/Manage/Tunnel", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &manageTunnelClient{stream}
-	return x, nil
-}
-
-type Manage_TunnelClient interface {
-	Send(*TunnelData) error
-	Recv() (*TunnelData, error)
-	grpc.ClientStream
-}
-
-type manageTunnelClient struct {
-	grpc.ClientStream
-}
-
-func (x *manageTunnelClient) Send(m *TunnelData) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *manageTunnelClient) Recv() (*TunnelData, error) {
-	m := new(TunnelData)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *manageClient) Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
 	out := new(HealthResponse)
 	err := c.cc.Invoke(ctx, "/Manage/Health", in, out, opts...)
@@ -166,7 +134,6 @@ type ManageServer interface {
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	Set(context.Context, *SetRequest) (*SetResponse, error)
 	Version(context.Context, *VersionRequest) (*VersionResponse, error)
-	Tunnel(Manage_TunnelServer) error
 	Health(context.Context, *HealthRequest) (*HealthResponse, error)
 }
 
@@ -197,9 +164,6 @@ func (UnimplementedManageServer) Set(context.Context, *SetRequest) (*SetResponse
 }
 func (UnimplementedManageServer) Version(context.Context, *VersionRequest) (*VersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Version not implemented")
-}
-func (UnimplementedManageServer) Tunnel(Manage_TunnelServer) error {
-	return status.Errorf(codes.Unimplemented, "method Tunnel not implemented")
 }
 func (UnimplementedManageServer) Health(context.Context, *HealthRequest) (*HealthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
@@ -360,32 +324,6 @@ func _Manage_Version_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Manage_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ManageServer).Tunnel(&manageTunnelServer{stream})
-}
-
-type Manage_TunnelServer interface {
-	Send(*TunnelData) error
-	Recv() (*TunnelData, error)
-	grpc.ServerStream
-}
-
-type manageTunnelServer struct {
-	grpc.ServerStream
-}
-
-func (x *manageTunnelServer) Send(m *TunnelData) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *manageTunnelServer) Recv() (*TunnelData, error) {
-	m := new(TunnelData)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func _Manage_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthRequest)
 	if err := dec(in); err != nil {
@@ -448,13 +386,6 @@ var Manage_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Manage_Health_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "Tunnel",
-			Handler:       _Manage_Tunnel_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/manage.proto",
 }
