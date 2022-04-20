@@ -67,7 +67,7 @@ func Run(ctx context.Context, gc gRPCClient) error {
 		return fmt.Errorf("calling manage service (retrieving version): %s", s.Message())
 	}
 
-	fmt.Println(resp.Version)
+	fmt.Print(resp.Version)
 	return nil
 }
 
