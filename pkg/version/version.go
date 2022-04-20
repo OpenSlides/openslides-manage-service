@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/proto"
@@ -67,7 +68,7 @@ func Run(ctx context.Context, gc gRPCClient) error {
 		return fmt.Errorf("calling manage service (retrieving version): %s", s.Message())
 	}
 
-	fmt.Print(resp.Version)
+	fmt.Println(strings.TrimSpace(resp.Version))
 	return nil
 }
 
