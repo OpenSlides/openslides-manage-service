@@ -22,6 +22,7 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
+	"github.com/OpenSlides/openslides-manage-service/pkg/version"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
@@ -146,6 +147,10 @@ func (s *srv) Set(ctx context.Context, in *proto.SetRequest) (*proto.SetResponse
 	}
 	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
 	return set.Set(ctx, in, a)
+}
+
+func (s *srv) Version(ctx context.Context, in *proto.VersionRequest) (*proto.VersionResponse, error) {
+	return version.Version(ctx, in, s.config.clientVersionURL())
 }
 
 func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
@@ -299,6 +304,16 @@ func (c *Config) datastoreReaderURL() *url.URL {
 		Scheme: c.DatastoreReaderProtocol,
 		Host:   c.DatastoreReaderHost + ":" + c.DatastoreReaderPort,
 		Path:   "/internal/datastore/reader",
+	}
+	return &u
+}
+
+// clientVersionURL returns an URL object to the client service.
+func (c *Config) clientVersionURL() *url.URL {
+	u := url.URL{ // TODO: Protocol, host and port should be retrieved from environment variables.
+		Scheme: "http",
+		Host:   "client:9001",
+		Path:   "/assets/version.txt",
 	}
 	return &u
 }
