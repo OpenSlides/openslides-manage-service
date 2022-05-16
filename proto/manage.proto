@@ -13,7 +13,6 @@ service Manage {
   rpc Get(GetRequest) returns (GetResponse);
   rpc Set(SetRequest) returns (SetResponse);
   rpc Version(VersionRequest) returns (VersionResponse);
-  rpc Tunnel(stream TunnelData) returns (stream TunnelData);
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
@@ -72,8 +71,6 @@ message SetResponse { bytes payload = 1; }
 message VersionRequest {}
 
 message VersionResponse { string version = 1; }
-
-message TunnelData { bytes data = 1; }
 
 message HealthRequest {}
 

@@ -21,7 +21,6 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
-	"github.com/OpenSlides/openslides-manage-service/pkg/tunnel"
 	"github.com/OpenSlides/openslides-manage-service/pkg/version"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"golang.org/x/sys/unix"
@@ -48,10 +47,6 @@ func Run(cfg *Config) error {
 		grpc.ChainUnaryInterceptor(
 			grpc.UnaryServerInterceptor(logUnaryInterceptor),
 			grpc.UnaryServerInterceptor(authUnaryInterceptor),
-		),
-		grpc.ChainStreamInterceptor(
-			grpc.StreamServerInterceptor(logStreamInterceptor),
-			grpc.StreamServerInterceptor(authStreamInterceptor),
 		),
 	)
 	manageSrv, err := newServer(cfg, logger)
@@ -153,10 +148,6 @@ func (s *srv) Version(ctx context.Context, in *proto.VersionRequest) (*proto.Ver
 	return version.Version(ctx, in, s.config.clientVersionURL())
 }
 
-func (s *srv) Tunnel(ts proto.Manage_TunnelServer) error {
-	return tunnel.Tunnel(ts)
-}
-
 func (s *srv) Health(ctx context.Context, in *proto.HealthRequest) (*proto.HealthResponse, error) {
 	// Returns always true because the server is considered healthy if it is
 	// able to return this response.
@@ -181,24 +172,6 @@ func authUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.Unary
 		return nil, fmt.Errorf("calling handler: %w", err)
 	}
 	return resp, nil
-}
-
-func logStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	serv.(*srv).logger.Debugf("Incomming streaming RPC for %s", info.FullMethod)
-	if err := handler(serv, ss); err != nil {
-		return fmt.Errorf("calling handler: %w", err)
-	}
-	return nil
-}
-
-func authStreamInterceptor(serv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	if err := serv.(*srv).serverAuth(ss.Context()); err != nil {
-		return fmt.Errorf("server authentication: %w", err)
-	}
-	if err := handler(serv, ss); err != nil {
-		return fmt.Errorf("calling handler: %w", err)
-	}
-	return nil
 }
 
 func (s *srv) serverAuth(ctx context.Context) error {

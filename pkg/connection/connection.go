@@ -63,24 +63,18 @@ func Dial(ctx context.Context, address, passwordFile string, ssl bool) (proto.Ma
 	return proto.NewManageClient(conn), conn.Close, nil
 }
 
-// Stream append parameters for a stream connection like address, passwordfile
-// and the noSSL flag to the given cobra command.
-func Stream(cmd *cobra.Command) Params {
+// Unary provides parameters for an unary connection like address, passwordfile,
+// timeout and the noSSL flag to the given cobra command.
+func Unary(cmd *cobra.Command) Params {
 	addr := cmd.Flags().StringP("address", "a", defaultAddr, "address of the OpenSlides manage service")
 	defaultPasswordFile := path.Join(".", setup.SecretsDirName, setup.ManageAuthPasswordFileName)
 	passwordFile := cmd.Flags().String("password-file", defaultPasswordFile, "file with password for authorization to manage service, not usable in development mode")
 	noSSL := cmd.Flags().Bool("no-ssl", false, "use an unencrypted connection to manage service")
+	timeout := cmd.Flags().DurationP("timeout", "t", defaultTimeout, "time to wait for the command's response")
 	return Params{
 		Addr:         addr,
 		PasswordFile: passwordFile,
 		NoSSL:        noSSL,
+		Timeout:      timeout,
 	}
-}
-
-// Unary provides parameters for an unary connection (like Stream but with
-// timeout additionally).
-func Unary(cmd *cobra.Command) Params {
-	p := Stream(cmd)
-	p.Timeout = cmd.Flags().DurationP("timeout", "t", defaultTimeout, "time to wait for the command's response")
-	return p
 }
