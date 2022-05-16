@@ -59,9 +59,9 @@ func RootCmd() *cobra.Command {
 		config.CmdCreateDefault(),
 		initialdata.Cmd(),
 		migrations.Cmd(),
+		createuser.Cmd(),
 		setpassword.Cmd(),
 		get.Cmd(),
-		createuser.Cmd(),
 		set.Cmd(),
 		version.Cmd(),
 	)
