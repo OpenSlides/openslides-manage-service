@@ -27,6 +27,10 @@ const (
 	// MigrationsRoute is used to mark the connection to be usable for a route
 	// to the migrations handler.
 	MigrationsRoute = "migrations"
+
+	// HealthRoute is used to mark the connection to be usable for a route to
+	// the backend with a health request.
+	HealthRoute = "health"
 )
 
 // New returns a new connection to the backend action service.
@@ -123,6 +127,49 @@ func (c *Conn) Migrations(ctx context.Context, command string) (json.RawMessage,
 		return nil, fmt.Errorf("marshalling request body: %w", err)
 	}
 	req, err := http.NewRequestWithContext(ctx, "POST", addr, bytes.NewReader(encodedBody))
+	if err != nil {
+		return nil, fmt.Errorf("creating request to backend action service: %w", err)
+	}
+	creds := shared.BasicAuth{
+		Password: c.internalAuthPassword,
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(shared.AuthHeader, creds.EncPassword())
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sending request to backend action service at %q: %w", addr, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("[can not read body]")
+		}
+		return nil, fmt.Errorf("got response %q: %q", resp.Status, body)
+	}
+
+	encodedResp, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	if !json.Valid(encodedResp) {
+		return nil, fmt.Errorf("response body does not contain valid JSON, got %q", string(encodedResp))
+	}
+
+	return json.RawMessage(encodedResp), nil
+}
+
+// Health sends the health request to the backend.
+func (c *Conn) Health(ctx context.Context) (json.RawMessage, error) {
+	if c.route != HealthRoute {
+		return nil, fmt.Errorf("invalid route for this connection; expected %q, got %q", HealthRoute, c.route)
+	}
+
+	addr := c.URL.String()
+	req, err := http.NewRequestWithContext(ctx, "GET", addr, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request to backend action service: %w", err)
 	}

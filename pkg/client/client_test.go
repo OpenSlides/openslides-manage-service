@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/checkserver"
 	"github.com/OpenSlides/openslides-manage-service/pkg/client"
 	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
@@ -52,6 +53,12 @@ func TestCmdHelpTexts(t *testing.T) {
 			name:             "config create default",
 			input:            []string{"config-create-default", "--help"},
 			outputStartsWith: []byte(config.ConfigCreateDefaultHelp),
+		},
+
+		{
+			name:             "check-server command",
+			input:            []string{"check-server", "--help"},
+			outputStartsWith: []byte(checkserver.CheckServerHelp),
 		},
 
 		{

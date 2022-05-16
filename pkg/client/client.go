@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/checkserver"
 	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/get"
@@ -57,6 +58,7 @@ func RootCmd() *cobra.Command {
 		setup.Cmd(),
 		config.Cmd(),
 		config.CmdCreateDefault(),
+		checkserver.Cmd(),
 		initialdata.Cmd(),
 		migrations.Cmd(),
 		createuser.Cmd(),

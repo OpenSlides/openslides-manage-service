@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/action"
+	"github.com/OpenSlides/openslides-manage-service/pkg/checkserver"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastorereader"
 	"github.com/OpenSlides/openslides-manage-service/pkg/get"
@@ -88,8 +89,14 @@ func newServer(cfg *Config, logger shared.Logger) (*srv, error) {
 	return s, nil
 }
 
-func (s *srv) CheckServer(context.Context, *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
-	return nil, fmt.Errorf("currently not implemented")
+func (s *srv) CheckServer(ctx context.Context, in *proto.CheckServerRequest) (*proto.CheckServerResponse, error) {
+	pw, err := shared.AuthSecret(s.config.InternalAuthPasswordFile, s.config.OpenSlidesDevelopment)
+	if err != nil {
+		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
+	}
+	a := action.New(s.config.manageBackendHealthURL(), pw, action.HealthRoute)
+	return checkserver.CheckServer(ctx, in, a), nil // CheckServer does not return an error for better handling in the client.
+
 }
 
 func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*proto.InitialDataResponse, error) {
@@ -107,7 +114,7 @@ func (s *srv) Migrations(ctx context.Context, in *proto.MigrationsRequest) (*pro
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageBackenMigrationsURL(), pw, action.MigrationsRoute)
+	a := action.New(s.config.manageBackendMigrationsURL(), pw, action.MigrationsRoute)
 	return migrations.Migrations(ctx, in, a)
 
 }
@@ -251,7 +258,8 @@ func ConfigFromEnv(loockup func(string) (string, bool)) *Config {
 	return &c
 }
 
-// manageBackendActionURL returns an URL object to the backend action service with action route.
+// manageBackendActionURL returns an URL object to the backend action service
+// with action route.
 func (c *Config) manageBackendActionURL() *url.URL {
 	u := url.URL{
 		Scheme: c.ManageActionProtocol,
@@ -261,12 +269,24 @@ func (c *Config) manageBackendActionURL() *url.URL {
 	return &u
 }
 
-// manageBackenMigrationsURL returns an URL object to the backend action service with migrations route
-func (c *Config) manageBackenMigrationsURL() *url.URL {
+// manageBackendMigrationsURL returns an URL object to the backend action
+// service with migrations route.
+func (c *Config) manageBackendMigrationsURL() *url.URL {
 	u := url.URL{
 		Scheme: c.ManageActionProtocol,
 		Host:   c.ManageActionHost + ":" + c.ManageActionPort,
 		Path:   "/internal/migrations",
+	}
+	return &u
+}
+
+// manageBackendHealthURL returns an URL object to the backend action service
+// with health route.
+func (c *Config) manageBackendHealthURL() *url.URL {
+	u := url.URL{
+		Scheme: c.ManageActionProtocol,
+		Host:   c.ManageActionHost + ":" + c.ManageActionPort,
+		Path:   "/system/action/health",
 	}
 	return &u
 }
