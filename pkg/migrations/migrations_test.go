@@ -89,6 +89,31 @@ success: true
 		}
 	})
 
+	t.Run("method GetOutput()", func(t *testing.T) {
+		expected := `First line
+Second line
+Third line
+`
+		got, err := mR.GetOutput()
+		if err != nil {
+			t.Fatalf("method GetOutput() returned error: %v", err)
+		}
+		if got != expected {
+			t.Fatalf("method GetOutput(): expected %s, got %s", expected, got)
+		}
+	})
+
+	t.Run("method GetStats()", func(t *testing.T) {
+		expected := `some_key: some value`
+		got, err := mR.GetStats()
+		if err != nil {
+			t.Fatalf("method GetStats() returned error: %v", err)
+		}
+		if got != expected {
+			t.Fatalf("method GetStats(): expected %s, got %s", expected, got)
+		}
+	})
+
 	t.Run("method OutputSince()", func(t *testing.T) {
 		got, next := mR.OutputSince(0)
 		if got != output {
