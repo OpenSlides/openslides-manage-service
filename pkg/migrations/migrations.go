@@ -177,7 +177,7 @@ func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.
 			return fmt.Errorf("running migrations command: %w", err)
 		}
 
-		if mR.Exception != "" || !mR.Success {
+		if mR.Faulty() {
 			out, err := mR.GetOutput()
 			if err != nil {
 				return fmt.Errorf("parsing migrations response: %w", err)
