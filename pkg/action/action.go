@@ -27,6 +27,10 @@ const (
 	// MigrationsRoute is used to mark the connection to be usable for a route
 	// to the migrations handler.
 	MigrationsRoute = "migrations"
+
+	// HealthRoute is used to mark the connection to be usable for a route to
+	// the backend with a health request.
+	HealthRoute = "health"
 )
 
 // New returns a new connection to the backend action service.
@@ -44,7 +48,6 @@ func (c *Conn) Single(ctx context.Context, name string, data json.RawMessage) (j
 		return nil, fmt.Errorf("invalid route for this connection; expected %q, got %q", ActionRoute, c.route)
 	}
 
-	addr := c.URL.String()
 	reqBody := []struct {
 		Action string          `json:"action"`
 		Data   json.RawMessage `json:"data"`
@@ -60,43 +63,21 @@ func (c *Conn) Single(ctx context.Context, name string, data json.RawMessage) (j
 	}
 	// Hint: encodedBody is something like
 	// [{"action": "user.create", "data": [{"username": "foo", ...}, {"username": "bar", ...}]}]
-	req, err := http.NewRequestWithContext(ctx, "POST", addr, bytes.NewReader(encodedBody))
-	if err != nil {
-		return nil, fmt.Errorf("creating request to backend action service: %w", err)
-	}
-	creds := shared.BasicAuth{
-		Password: c.internalAuthPassword,
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(shared.AuthHeader, creds.EncPassword())
 
-	resp, err := http.DefaultClient.Do(req)
+	res, err := requestWithPassword(ctx, "POST", c.URL.String(), c.internalAuthPassword, bytes.NewReader(encodedBody))
 	if err != nil {
-		return nil, fmt.Errorf("sending request to backend action service at %q: %w", addr, err)
+		return nil, fmt.Errorf("sending request: %w", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			body = []byte("[can not read body]")
-		}
-		return nil, fmt.Errorf("got response %q: %q", resp.Status, body)
-	}
-
-	encodedResp, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("reading response body: %w", err)
-	}
-	// Hint: encodedResp is something like
+	// Hint: res is something like
 	// {"success": ..., "message": ..., "results": [[{"id": 42}, {"id": 42}]]}
 	// depending on the respective action
+
 	var content struct {
 		Success bool              `json:"success"`
 		Message string            `json:"message"`
 		Results []json.RawMessage // We deconstruct only the outer list and forward the inner list to the caller.
 	}
-	if err := json.Unmarshal(encodedResp, &content); err != nil {
+	if err := json.Unmarshal(res, &content); err != nil {
 		return nil, fmt.Errorf("unmarshalling response body: %w", err)
 	}
 	if len(content.Results) != 1 {
@@ -112,7 +93,6 @@ func (c *Conn) Migrations(ctx context.Context, command string) (json.RawMessage,
 		return nil, fmt.Errorf("invalid route for this connection; expected %q, got %q", MigrationsRoute, c.route)
 	}
 
-	addr := c.URL.String()
 	reqBody := struct {
 		Cmd string `json:"cmd"`
 	}{
@@ -122,12 +102,34 @@ func (c *Conn) Migrations(ctx context.Context, command string) (json.RawMessage,
 	if err != nil {
 		return nil, fmt.Errorf("marshalling request body: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", addr, bytes.NewReader(encodedBody))
+
+	res, err := requestWithPassword(ctx, "POST", c.URL.String(), c.internalAuthPassword, bytes.NewReader(encodedBody))
+	if err != nil {
+		return nil, fmt.Errorf("sending request: %w", err)
+	}
+	return res, nil
+}
+
+// Health sends the health request to the backend.
+func (c *Conn) Health(ctx context.Context) (json.RawMessage, error) {
+	if c.route != HealthRoute {
+		return nil, fmt.Errorf("invalid route for this connection; expected %q, got %q", HealthRoute, c.route)
+	}
+
+	res, err := requestWithPassword(ctx, "GET", c.URL.String(), c.internalAuthPassword, nil)
+	if err != nil {
+		return nil, fmt.Errorf("sending request: %w", err)
+	}
+	return res, nil
+}
+
+func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
+	req, err := http.NewRequestWithContext(ctx, method, addr, body)
 	if err != nil {
 		return nil, fmt.Errorf("creating request to backend action service: %w", err)
 	}
 	creds := shared.BasicAuth{
-		Password: c.internalAuthPassword,
+		Password: pw,
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(shared.AuthHeader, creds.EncPassword())

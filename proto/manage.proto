@@ -16,9 +16,9 @@ service Manage {
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
-message CheckServerRequest { bool skipClient = 1; }
+message CheckServerRequest {}
 
-message CheckServerResponse {}
+message CheckServerResponse { bool ready = 1; }
 
 message InitialDataRequest { bytes data = 1; }
 
