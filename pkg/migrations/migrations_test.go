@@ -69,6 +69,12 @@ func TestMigrationsResponse(t *testing.T) {
 		}
 	})
 
+	t.Run("method Faulty()", func(t *testing.T) {
+		if mR.Faulty() {
+			t.Fatalf("method Faulty() should return false, but it returns true")
+		}
+	})
+
 	t.Run("method Yaml()", func(t *testing.T) {
 		expected := `exception: ""
 output: |
@@ -104,7 +110,8 @@ Third line
 	})
 
 	t.Run("method GetStats()", func(t *testing.T) {
-		expected := `some_key: some value`
+		expected := `some_key: some value
+`
 		got, err := mR.GetStats()
 		if err != nil {
 			t.Fatalf("method GetStats() returned error: %v", err)
