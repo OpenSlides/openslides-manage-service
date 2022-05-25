@@ -147,22 +147,29 @@ func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.
 	if err != nil {
 		return fmt.Errorf("running migrations command: %w", err)
 	}
-	mRText, err := mR.Yaml()
-	if err != nil {
-		return fmt.Errorf("parsing migrations response: %w", err)
-	}
-	fmt.Printf(mRText)
 
 	var interval time.Duration
 	if intervalFlag != nil {
 		interval = *intervalFlag
 	}
 	if interval == 0 || !mR.Running() {
+		var mRText string
+		var err error
+		// when calling any command but 'stats' the fields besides 'output' only clutter our output.
+		if command == "stats" {
+			mRText, err = mR.GetStats()
+		} else {
+			mRText, err = mR.GetOutput()
+		}
+		if err != nil {
+			return fmt.Errorf("parsing migrations response: %w", err)
+		}
+		fmt.Print(mRText)
 		return nil
 	}
 
 	outCount := 0
-	fmt.Print("\nProgress:\n")
+	fmt.Print("Progress:\n")
 	for {
 		time.Sleep(interval)
 		mR, err := runMigrationsCmd(ctx, gc, "progress", *timeoutFlag)
@@ -170,15 +177,15 @@ func Run(ctx context.Context, gc gRPCClient, command string, intervalFlag *time.
 			return fmt.Errorf("running migrations command: %w", err)
 		}
 
-		if mR.Exception != "" || !mR.Success {
-			out, err := mR.Yaml()
+		if mR.Faulty() {
+			out, err := mR.GetOutput()
 			if err != nil {
 				return fmt.Errorf("parsing migrations response: %w", err)
 			}
-			fmt.Printf(out)
+			fmt.Print(out)
 		} else {
 			out, c := mR.OutputSince(outCount)
-			fmt.Printf(out)
+			fmt.Print(out)
 			outCount = c
 		}
 
@@ -200,6 +207,30 @@ type MigrationResponse struct {
 	Stats     json.RawMessage `json:"stats"`
 }
 
+// GetOutput parses and returns the output field of the migrations commands
+// reponse for proper display.
+// If the reponse conveys an error happened, all fields are returned.
+func (mR MigrationResponse) GetOutput() (string, error) {
+	if mR.Faulty() {
+		return mR.Yaml()
+	}
+	return mR.Output, nil
+}
+
+// GetStats parses and returns the stats field of the migrations commands
+// reponse for proper display.
+// If the reponse conveys an error happened, all fields are returned.
+func (mR MigrationResponse) GetStats() (string, error) {
+	if mR.Faulty() {
+		return mR.Yaml()
+	}
+	y, err := yaml.Marshal(mR.Stats)
+	if err != nil {
+		return "", fmt.Errorf("marshalling to YAML: %w", err)
+	}
+	return string(y), nil
+}
+
 // Yaml returns the migrations command reponse formatted in YAML for proper
 // display.
 func (mR MigrationResponse) Yaml() (string, error) {
@@ -208,6 +239,12 @@ func (mR MigrationResponse) Yaml() (string, error) {
 		return "", fmt.Errorf("marshalling to YAML: %w", err)
 	}
 	return string(y), nil
+}
+
+// Faulty returns True if the migration command returns success false or any
+// exception string.
+func (mR MigrationResponse) Faulty() bool {
+	return !mR.Success || mR.Exception != ""
 }
 
 // Running returns True if the migration command returns status
@@ -244,7 +281,7 @@ func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string, timeou
 
 	var mR MigrationResponse
 	if err := json.Unmarshal(resp.Response, &mR); err != nil {
-		return MigrationResponse{}, fmt.Errorf("decoding migration response %q: %w", string(resp.Response), err)
+		return MigrationResponse{}, fmt.Errorf("unmarshalling migration response %q: %w", string(resp.Response), err)
 	}
 	return mR, nil
 }

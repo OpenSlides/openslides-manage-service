@@ -70,7 +70,7 @@ func Run(ctx context.Context, gc gRPCClient) error {
 		}
 	}
 
-	// We reach this line only if the check server request was successfuls and
+	// We reach this line only if the check server request was successful and
 	// the context was not canceled (e. g. deadline exceeded).
 	fmt.Println("Server is ready.")
 	return nil
