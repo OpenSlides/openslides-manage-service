@@ -665,7 +665,6 @@ services:
       POSTGRES_DB: openslides
       POSTGRES_USER: openslides
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      PGDATA: /var/lib/postgresql/data/pgdata
     networks:
       - data
     user: %s
