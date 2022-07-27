@@ -9,7 +9,6 @@
 docker-compose.yml
 config.yml
 secrets/
-db-data/
 /inst
 
 # Misc

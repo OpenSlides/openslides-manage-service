@@ -199,8 +199,6 @@ services:
     user: {{ $.PostgresContainerUser }}
     secrets:
       - postgres_password
-    volumes:
-      - ./db-data:/var/lib/postgresql/data
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}{{- end }}
 
