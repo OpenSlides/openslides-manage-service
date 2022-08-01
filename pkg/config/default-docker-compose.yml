@@ -194,6 +194,8 @@ services:
       POSTGRES_DB: openslides
       POSTGRES_USER: openslides
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - data
     secrets:
@@ -359,6 +361,12 @@ networks:
     internal: true
   data:
     internal: true
+
+
+{{- if not (checkFlag .DisablePostgres) }}
+volumes:
+  postgres-data:
+{{- end }}
 
 secrets:
   auth_token_key:
