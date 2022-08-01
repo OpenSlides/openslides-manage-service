@@ -647,7 +647,6 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     networks:
       - data
-    user: %s
     secrets:
       - postgres_password
 
@@ -775,7 +774,7 @@ secrets:
     file: ./secrets/cert_crt
   cert_key:
     file: ./secrets/cert_key
-`, fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()))
+`)
 }
 
 func TestSetupNoDirectory(t *testing.T) {
