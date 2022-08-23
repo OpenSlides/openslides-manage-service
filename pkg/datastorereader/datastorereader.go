@@ -29,22 +29,8 @@ func New(readerURL *url.URL) *Conn {
 }
 
 // Exists does check if a collection object with given id exists.
-func (d *Conn) Exists(ctx context.Context, collection string, filter map[string]string) (bool, error) {
-	var key, value string
-	for k, v := range filter {
-		key, value = k, v
-	}
-	reqBody := fmt.Sprintf(
-		`{
-			"collection": "%s",
-			"filter": {
-				"field": "%s",
-				"value": "%s",
-				"operator": "="
-			}
-		}`,
-		collection, key, value,
-	)
+func (d *Conn) Exists(ctx context.Context, collection string, filter string) (bool, error) {
+	reqBody := makeRequestBody(collection, filter, "")
 	addr := d.readerURL.String() + existsSubpath
 
 	respBody, err := sendReadRequest(ctx, addr, reqBody)
@@ -62,23 +48,8 @@ func (d *Conn) Exists(ctx context.Context, collection string, filter map[string]
 }
 
 // Filter searches for the fitting model and also restricts to fields if provided
-func (d *Conn) Filter(ctx context.Context, collection string, filter map[string]string, fields []string) (string, error) {
-	var key, value string
-	for k, v := range filter {
-		key, value = k, v
-	}
-	fieldsStr := getFieldsString(fields)
-	reqBody := fmt.Sprintf(
-		`{
-			"collection": "%s",
-			"filter": {
-				"field": "%s",
-				"value": "%s",
-				"operator": "="
-			}%s
-		}`,
-		collection, key, value, fieldsStr,
-	)
+func (d *Conn) Filter(ctx context.Context, collection string, filter string, fields string) (string, error) {
+	reqBody := makeRequestBody(collection, filter, fields)
 	addr := d.readerURL.String() + filterSubpath
 
 	respBody, err := sendReadRequest(ctx, addr, reqBody)
@@ -96,14 +67,8 @@ func (d *Conn) Filter(ctx context.Context, collection string, filter map[string]
 }
 
 // GetAll gets all models in the given collection as json object
-func (d *Conn) GetAll(ctx context.Context, collection string, fields []string) (string, error) {
-	fieldsStr := getFieldsString(fields)
-	reqBody := fmt.Sprintf(
-		`{
-			"collection": "%s"%s
-		}`,
-		collection, fieldsStr,
-	)
+func (d *Conn) GetAll(ctx context.Context, collection string, fields string) (string, error) {
+	reqBody := makeRequestBody(collection, "", fields)
 	addr := d.readerURL.String() + getAllSubpath
 
 	respBody, err := sendReadRequest(ctx, addr, reqBody)
@@ -148,13 +113,13 @@ func sendReadRequest(ctx context.Context, addr string, reqBody string) ([]byte, 
 	return respBody, nil
 }
 
-// constructs the fields string used in ds request from the fields array
-func getFieldsString(fields []string) string {
-	str := ""
-	if len(fields) > 0 {
-		str = ", \"mapped_fields\": [" +
-			"\"" + strings.Join(fields, "\", \"") + "\"" +
-			"]"
+func makeRequestBody(collection string, filter string, fields string) string {
+	body := fmt.Sprintf(`"collection": "%s"`, collection)
+	if filter != "" {
+		body += fmt.Sprintf(`, "filter": %s`, filter)
 	}
-	return str
+	if fields != "" {
+		body += fmt.Sprintf(`, "mapped_fields": %s`, fields)
+	}
+	return fmt.Sprintf(`{ %s }`, body)
 }
