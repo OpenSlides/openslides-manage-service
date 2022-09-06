@@ -139,7 +139,7 @@ services:
       - auth_cookie_key
       - internal_auth_password
       - postgres_password
-    {{- with .AdditionalContent }}{{ marshalContent . }}{{- end }}
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
 
