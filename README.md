@@ -44,10 +44,9 @@ Now have a look at the `docker-compose.yml` and customize it if you want. Then
 run:
 
     $ docker-compose pull
-    $ docker-compose up
+    $ docker-compose up -d
 
-Wait until all services are available. Then run in a second terminal in the same
-directory:
+Wait until all services are available. Then run:
 
     $ ./openslides initial-data
 
