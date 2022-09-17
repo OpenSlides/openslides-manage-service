@@ -54,6 +54,20 @@ directory:
 Now open https://localhost:8000, login with superuser credentials (default
 username and password: `superadmin`) and have fun.
 
+Normally you want OpenSlides be reachable from outside your local machine. You
+have several options to achieve this:
+
+1. Use a [custom YAML configuration
+   file](#Configuration-of-the-generated-Docker-Compose-YAML-file) to change
+   `host` to a public device (e. g. `0.0.0.0`). If you also want to change the
+   `port`, keep in mind that port numbers less than 1024 normally need root
+   privileges on Unix systems.
+
+2. Use a proxy server like Apache HTTP Server or Nginx. In this case your proxy
+   should handle SSL-encryption and you should disable OpenSlides local
+   SSL-encryption (see [respective section below](#SSL-encryption)).
+
+
 
 ## Stop the server and remove the containers
 
