@@ -216,14 +216,13 @@ services:
     environment:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
-      MESSAGING: redis
-      AUTH: ticket
     networks:
       - frontend
       - data
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
@@ -263,8 +262,6 @@ services:
     environment:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
-      MESSAGING: redis
-      AUTH: ticket
     networks:
       - frontend
       - data
@@ -322,14 +319,13 @@ services:
     environment:
       << : *default-environment
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
-      MESSAGING: redis
-      AUTH: ticket
     networks:
       - frontend
       - data
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
