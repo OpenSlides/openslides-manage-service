@@ -679,14 +679,13 @@ services:
       - redis
     environment:
       << : *default-environment
-      MESSAGING: redis
-      AUTH: ticket
     networks:
       - frontend
       - data
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - postgres_password
 
   auth:
     image: ghcr.io/openslides/openslides/openslides-auth:latest
@@ -711,8 +710,6 @@ services:
       - redis
     environment:
       << : *default-environment
-      MESSAGING: redis
-      AUTH: ticket
     networks:
       - frontend
       - data
@@ -749,14 +746,13 @@ services:
       - redis
     environment:
       << : *default-environment
-      MESSAGING: redis
-      AUTH: ticket
     networks:
       - frontend
       - data
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - postgres_password
 
   manage:
     image: ghcr.io/openslides/openslides/openslides-manage:latest
