@@ -16,7 +16,7 @@ enableAutoHTTPS: false
 # Defaults for all OpenSlides services.
 defaults:
   containerRegistry: ghcr.io/openslides/openslides
-  tag: 4.0.0
+  tag: latest
 
 # These environment variables are injected into every OpenSlides service
 # via YAML merge type (https://yaml.org/type/merge.html).

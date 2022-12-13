@@ -28,8 +28,6 @@ services:
 `
 
 func TestSystemInTotal(t *testing.T) {
-	t.Skip()
-
 	if ok, _ := strconv.ParseBool(os.Getenv(systemTest)); !ok {
 		// Error value does not matter here. In case of an error ok is false and
 		// this is the expected behavior.
