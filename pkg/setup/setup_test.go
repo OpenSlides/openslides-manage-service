@@ -123,7 +123,7 @@ services:
 		}
 
 		secDir := path.Join(testDir, setup.SecretsDirName)
-		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-proxy:4.0.0")
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-proxy:latest")
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_fahNae5i/openslides-backend:2.0.1")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
@@ -319,7 +319,7 @@ services:
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
 		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
-		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-client:4.0.0")
+		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-client:latest")
 		testFileContains(t, testDir, myFileName, "ports:\n      - 127.0.0.1:8001:8000")
 		testFileContains(t, testDir, myFileName, "image: postgres:11")
 		testFileNotContains(t, testDir, myFileName, "cert_crt")
@@ -542,7 +542,7 @@ x-default-environment: &default-environment
 
 services:
   proxy:
-    image: ghcr.io/openslides/openslides/openslides-proxy:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-proxy:latest
     depends_on:
       - client
       - backendAction
@@ -567,7 +567,7 @@ services:
       - cert_key
 
   client:
-    image: ghcr.io/openslides/openslides/openslides-client:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-client:latest
     depends_on:
       - backendAction
       - backendPresenter
@@ -582,7 +582,7 @@ services:
       - frontend
 
   backendAction:
-    image: ghcr.io/openslides/openslides/openslides-backend:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
       - datastoreWriter
       - auth
@@ -601,7 +601,7 @@ services:
       - postgres_password
 
   backendPresenter:
-    image: ghcr.io/openslides/openslides/openslides-backend:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
       - auth
       - postgres
@@ -617,7 +617,7 @@ services:
       - postgres_password
 
   backendManage:
-    image: ghcr.io/openslides/openslides/openslides-backend:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
       - datastoreWriter
       - postgres
@@ -633,7 +633,7 @@ services:
       - postgres_password
 
   datastoreReader:
-    image: ghcr.io/openslides/openslides/openslides-datastore-reader:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
     depends_on:
       - postgres
     environment:
@@ -645,7 +645,7 @@ services:
       - postgres_password
 
   datastoreWriter:
-    image: ghcr.io/openslides/openslides/openslides-datastore-writer:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-datastore-writer:latest
     depends_on:
       - postgres
       - redis
@@ -673,7 +673,7 @@ services:
       - ./db-data:/var/lib/postgresql/data
 
   autoupdate:
-    image: ghcr.io/openslides/openslides/openslides-autoupdate:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-autoupdate:latest
     depends_on:
       - datastoreReader
       - redis
@@ -688,7 +688,7 @@ services:
       - postgres_password
 
   auth:
-    image: ghcr.io/openslides/openslides/openslides-auth:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-auth:latest
     depends_on:
       - datastoreReader
       - redis
@@ -702,7 +702,7 @@ services:
       - auth_cookie_key
 
   vote:
-    image: ghcr.io/openslides/openslides/openslides-vote:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-vote:latest
     depends_on:
       - datastoreReader
       - auth
@@ -727,7 +727,7 @@ services:
       - data
 
   media:
-    image: ghcr.io/openslides/openslides/openslides-media:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-media:latest
     depends_on:
       - postgres
     environment:
@@ -739,7 +739,7 @@ services:
       - postgres_password
 
   icc:
-    image: ghcr.io/openslides/openslides/openslides-icc:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-icc:latest
     depends_on:
       - datastoreReader
       - postgres
@@ -755,7 +755,7 @@ services:
       - postgres_password
 
   manage:
-    image: ghcr.io/openslides/openslides/openslides-manage:4.0.0
+    image: ghcr.io/openslides/openslides/openslides-manage:latest
     depends_on:
       - datastoreReader
       - backendManage

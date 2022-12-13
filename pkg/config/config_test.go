@@ -73,7 +73,7 @@ defaults:
 		if err := config.Config(testDir, nil, c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
-		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Aeghies3me/openslides-proxy:4.0.0")
+		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Aeghies3me/openslides-proxy:latest")
 	})
 
 	t.Run("running config.Config() using a custom config twice 2", func(t *testing.T) {
