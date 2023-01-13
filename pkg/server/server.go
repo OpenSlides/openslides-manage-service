@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/OpenSlides/openslides-manage-service/pkg/action"
+	"github.com/OpenSlides/openslides-manage-service/pkg/backendaction"
 	"github.com/OpenSlides/openslides-manage-service/pkg/checkserver"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
 	"github.com/OpenSlides/openslides-manage-service/pkg/datastorereader"
@@ -94,7 +94,7 @@ func (s *srv) CheckServer(ctx context.Context, in *proto.CheckServerRequest) (*p
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageBackendHealthURL(), pw, action.HealthRoute)
+	a := backendaction.New(s.config.manageBackendHealthURL(), pw, backendaction.HealthRoute)
 	return checkserver.CheckServer(ctx, in, a), nil // CheckServer does not return an error for better handling in the client.
 
 }
@@ -104,7 +104,7 @@ func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*p
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
+	a := backendaction.New(s.config.manageBackendActionURL(), pw, backendaction.ActionRoute)
 	return initialdata.InitialData(ctx, in, runDir, a)
 
 }
@@ -114,7 +114,7 @@ func (s *srv) Migrations(ctx context.Context, in *proto.MigrationsRequest) (*pro
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageBackendMigrationsURL(), pw, action.MigrationsRoute)
+	a := backendaction.New(s.config.manageBackendMigrationsURL(), pw, backendaction.MigrationsRoute)
 	return migrations.Migrations(ctx, in, a)
 
 }
@@ -124,7 +124,7 @@ func (s *srv) CreateUser(ctx context.Context, in *proto.CreateUserRequest) (*pro
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
+	a := backendaction.New(s.config.manageBackendActionURL(), pw, backendaction.ActionRoute)
 	return createuser.CreateUser(ctx, in, a)
 }
 
@@ -133,7 +133,7 @@ func (s *srv) SetPassword(ctx context.Context, in *proto.SetPasswordRequest) (*p
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
+	a := backendaction.New(s.config.manageBackendActionURL(), pw, backendaction.ActionRoute)
 	return setpassword.SetPassword(ctx, in, a)
 }
 
@@ -147,7 +147,7 @@ func (s *srv) Set(ctx context.Context, in *proto.SetRequest) (*proto.SetResponse
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
-	a := action.New(s.config.manageBackendActionURL(), pw, action.ActionRoute)
+	a := backendaction.New(s.config.manageBackendActionURL(), pw, backendaction.ActionRoute)
 	return set.Set(ctx, in, a)
 }
 

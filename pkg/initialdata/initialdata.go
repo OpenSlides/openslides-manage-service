@@ -98,12 +98,12 @@ func Run(ctx context.Context, gc gRPCClient, data []byte) error {
 
 const datastoreNotEmptyMsg = "Datastore is not empty"
 
-type action interface {
+type backendAction interface {
 	Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error)
 }
 
 // InitialData sets initial data in the datastore.
-func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, a action) (*proto.InitialDataResponse, error) {
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, ba backendAction) (*proto.InitialDataResponse, error) {
 	initialData := in.Data
 	if initialData == nil {
 		// The backend expects at least an empty object.
@@ -125,7 +125,7 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath stri
 		return nil, fmt.Errorf("marshalling action data: %w", err)
 	}
 
-	if _, err := a.Single(ctx, name, data); err != nil {
+	if _, err := ba.Single(ctx, name, data); err != nil {
 		// There is no action result in success case.
 		if strings.Contains(err.Error(), datastoreNotEmptyMsg) {
 			return &proto.InitialDataResponse{Initialized: false}, nil
@@ -134,7 +134,7 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath stri
 	}
 
 	p := path.Join(runPath, setup.SecretsDirName, setup.SuperadminFileName)
-	if err := SetSuperadminPassword(ctx, p, a); err != nil {
+	if err := SetSuperadminPassword(ctx, p, ba); err != nil {
 		return nil, fmt.Errorf("setting superadmin password: %w", err)
 	}
 
@@ -142,12 +142,12 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath stri
 }
 
 // SetSuperadminPassword sets the first password for the superadmin according to respective secret.
-func SetSuperadminPassword(ctx context.Context, superadminSecretFile string, a action) error {
+func SetSuperadminPassword(ctx context.Context, superadminSecretFile string, ba backendAction) error {
 	sapw, err := os.ReadFile(superadminSecretFile)
 	if err != nil {
 		return fmt.Errorf("reading file %q: %w", superadminSecretFile, err)
 	}
-	if err := setpassword.Execute(ctx, 1, string(sapw), a); err != nil {
+	if err := setpassword.Execute(ctx, 1, string(sapw), ba); err != nil {
 		return fmt.Errorf("setting superadmin password: %w", err)
 	}
 	return nil

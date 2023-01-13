@@ -118,13 +118,13 @@ func Run(ctx context.Context, gc gRPCClient, action string, payload []byte) erro
 
 // Server
 
-type action interface {
+type backendAction interface {
 	Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error)
 }
 
 // Set calls the given backend action with the given payload.
 // This function is the server side entrypoint for this package.
-func Set(ctx context.Context, in *proto.SetRequest, a action) (*proto.SetResponse, error) {
+func Set(ctx context.Context, in *proto.SetRequest, ba backendAction) (*proto.SetResponse, error) {
 	name := in.Action
 
 	c, err := yaml.YAMLToJSON(in.Payload)
@@ -132,7 +132,7 @@ func Set(ctx context.Context, in *proto.SetRequest, a action) (*proto.SetRespons
 		return nil, fmt.Errorf("converting YAML to JSON: %w", err)
 	}
 
-	result, err := a.Single(ctx, name, c)
+	result, err := ba.Single(ctx, name, c)
 	if err != nil {
 		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}

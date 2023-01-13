@@ -1,4 +1,4 @@
-package action_test
+package backendaction_test
 
 import "testing"
 
