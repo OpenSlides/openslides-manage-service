@@ -32,7 +32,6 @@ func TestCmd(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("executing setup.Cmd() with new directory with --force flag", func(t *testing.T) {
@@ -55,7 +54,6 @@ func TestCmd(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("executing setup.Cmd() with new directory with --template flag", func(t *testing.T) {
@@ -89,7 +87,6 @@ func TestCmd(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("executing setup.Cmd() with new directory with --config flag", func(t *testing.T) {
@@ -130,7 +127,6 @@ services:
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("executing setup.Cmd() with new directory with --config flag twice", func(t *testing.T) {
@@ -182,7 +178,6 @@ defaults:
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 }
@@ -205,7 +200,6 @@ func TestSetupCommon(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("running setup.Setup() twice without changing existant files", func(t *testing.T) {
@@ -229,7 +223,6 @@ func TestSetupCommon(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("running setup.Setup() with force flag with changing existant files", func(t *testing.T) {
@@ -243,7 +236,6 @@ func TestSetupCommon(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 }
 
@@ -266,7 +258,6 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, dir, "db-data")
 	})
 }
 
@@ -289,7 +280,6 @@ func TestSetupExternalTemplate(t *testing.T) {
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 }
 
@@ -328,7 +318,6 @@ services:
 		testKeyFile(t, secDir, "manage_auth_password")
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
-		testDirectory(t, testDir, "db-data")
 	})
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory using another custom config", func(t *testing.T) {
@@ -470,15 +459,6 @@ func testPasswordFile(t testing.TB, dir, name string) {
 	p := path.Join(dir, name)
 	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("file %q does not exist, expected existance", p)
-	}
-}
-
-func testDirectory(t testing.TB, dir, name string) {
-	t.Helper()
-
-	subdir := path.Join(dir, name)
-	if _, err := os.Stat(subdir); err != nil {
-		t.Fatalf("missing (sub-)directory %q", subdir)
 	}
 }
 
@@ -665,14 +645,12 @@ services:
       POSTGRES_DB: openslides
       POSTGRES_USER: openslides
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - data
-    user: %s
     secrets:
       - postgres_password
-    volumes:
-      - ./db-data:/var/lib/postgresql/data
 
   autoupdate:
     image: ghcr.io/openslides/openslides/openslides-autoupdate:latest
@@ -781,6 +759,9 @@ networks:
   data:
     internal: true
 
+volumes:
+  postgres-data:
+
 secrets:
   auth_token_key:
     file: ./secrets/auth_token_key
@@ -798,7 +779,7 @@ secrets:
     file: ./secrets/cert_crt
   cert_key:
     file: ./secrets/cert_key
-`, fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()))
+`)
 }
 
 func TestSetupNoDirectory(t *testing.T) {

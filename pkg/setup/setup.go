@@ -24,7 +24,6 @@ import (
 
 const (
 	subDirPerms  fs.FileMode = 0770
-	dbDirName                = "db-data"
 	certCertName             = "cert_crt"
 	certKeyName              = "cert_key"
 )
@@ -138,14 +137,6 @@ func Setup(dir string, force bool, tplFile []byte, configFiles [][]byte) error {
 	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
-	}
-
-	// Create database directory
-	// Attention: For unknown reason it is not possible to use perms 0770 here. Docker Compose does not like it ...
-	if !*cfg.DisablePostgres {
-		if err := os.MkdirAll(path.Join(dir, dbDirName), 0777); err != nil {
-			return fmt.Errorf("creating database directory at %q: %w", dir, err)
-		}
 	}
 
 	return nil
