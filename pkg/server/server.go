@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/action"
 	"github.com/OpenSlides/openslides-manage-service/pkg/backendaction"
 	"github.com/OpenSlides/openslides-manage-service/pkg/checkserver"
 	"github.com/OpenSlides/openslides-manage-service/pkg/createuser"
@@ -19,7 +20,6 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/get"
 	"github.com/OpenSlides/openslides-manage-service/pkg/initialdata"
 	"github.com/OpenSlides/openslides-manage-service/pkg/migrations"
-	"github.com/OpenSlides/openslides-manage-service/pkg/set"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/pkg/version"
@@ -142,13 +142,13 @@ func (s *srv) Get(ctx context.Context, in *proto.GetRequest) (*proto.GetResponse
 	return get.Get(ctx, in, ds)
 }
 
-func (s *srv) Set(ctx context.Context, in *proto.SetRequest) (*proto.SetResponse, error) {
+func (s *srv) Action(ctx context.Context, in *proto.ActionRequest) (*proto.ActionResponse, error) {
 	pw, err := shared.AuthSecret(s.config.InternalAuthPasswordFile, s.config.OpenSlidesDevelopment)
 	if err != nil {
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
 	a := backendaction.New(s.config.manageBackendActionURL(), pw, backendaction.ActionRoute)
-	return set.Set(ctx, in, a)
+	return action.Action(ctx, in, a)
 }
 
 func (s *srv) Version(ctx context.Context, in *proto.VersionRequest) (*proto.VersionResponse, error) {

@@ -22,17 +22,17 @@ func TestCmd(t *testing.T) {
 
 // Client tests
 
-type mockSetClient struct{}
+type mockActionClient struct{}
 
-func (m *mockSetClient) Set(ctx context.Context, in *proto.SetRequest, opts ...grpc.CallOption) (*proto.SetResponse, error) {
-	return &proto.SetResponse{}, nil
+func (m *mockActionClient) Action(ctx context.Context, in *proto.ActionRequest, opts ...grpc.CallOption) (*proto.ActionResponse, error) {
+	return &proto.ActionResponse{}, nil
 }
 
 func TestSet(t *testing.T) {
 	payload := `---\nkey: test_string_boe7ahthu0Fie1Eghai4}`
 
 	t.Run("set organization settings", func(t *testing.T) {
-		mc := new(mockSetClient)
+		mc := new(mockActionClient)
 		ctx := context.Background()
 		if err := set.Run(ctx, mc, "organization", []byte(payload)); err != nil {
 			t.Fatalf("running set.Run() failed with error: %v", err)
@@ -40,7 +40,7 @@ func TestSet(t *testing.T) {
 	})
 
 	t.Run("set with unknown action", func(t *testing.T) {
-		mc := new(mockSetClient)
+		mc := new(mockActionClient)
 		ctx := context.Background()
 
 		hasErrMsg := `unknown action "unknown action 7f79hefvvdfget"`
