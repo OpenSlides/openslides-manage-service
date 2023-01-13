@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
@@ -22,13 +24,23 @@ const (
 	// the headline.
 	SetHelpExtra = `This command calls an OpenSlides backend action with the given YAML or JSON
 formatted payload. Provide the payload directly or use the --file flag with a
-file or use this flag with - to read from stdin. Only some update actions are
-supported.`
+file or use this flag with - to read from stdin. Only the following update actions are
+supported:
+    `
 )
 
 var actionMap = map[string]string{
-	"organization": "organization.update",
-	"meeting":      "meeting.update",
+	"agenda_item":      "agenda_item.update",
+	"committee":        "committee.update",
+	"group":            "group.update",
+	"meeting":          "meeting.update",
+	"motion":           "motion.update",
+	"organization_tag": "organization_tag.update",
+	"organization":     "organization.update",
+	"projector":        "projector.update",
+	"theme":            "theme.update",
+	"topic":            "topic.update",
+	"user":             "user.update",
 }
 
 // Cmd returns the subcommand.
@@ -36,7 +48,7 @@ func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set action [payload]",
 		Short: SetHelp,
-		Long:  SetHelp + "\n\n" + SetHelpExtra,
+		Long:  SetHelp + "\n\n" + SetHelpExtra + strings.Join(helpTextActionList(), "\n    "),
 		Args:  cobra.RangeArgs(1, 2),
 	}
 	cp := connection.Unary(cmd)
@@ -67,6 +79,15 @@ func Cmd() *cobra.Command {
 		return nil
 	}
 	return cmd
+}
+
+func helpTextActionList() []string {
+	actions := make([]string, 0, len(actionMap))
+	for a := range actionMap {
+		actions = append(actions, a)
+	}
+	sort.Strings(actions)
+	return actions
 }
 
 // Client
