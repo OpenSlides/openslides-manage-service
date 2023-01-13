@@ -75,21 +75,21 @@ func Run(ctx context.Context, gc gRPCClient, userID int64, password string) erro
 
 // Server
 
-type action interface {
+type backendAction interface {
 	Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error)
 }
 
 // SetPassword gets the hash and sets the password for the given user.
 // This function is the server side entrypoint for this package.
-func SetPassword(ctx context.Context, in *proto.SetPasswordRequest, a action) (*proto.SetPasswordResponse, error) {
-	if err := Execute(ctx, in.UserID, in.Password, a); err != nil {
+func SetPassword(ctx context.Context, in *proto.SetPasswordRequest, ba backendAction) (*proto.SetPasswordResponse, error) {
+	if err := Execute(ctx, in.UserID, in.Password, ba); err != nil {
 		return nil, fmt.Errorf("setting password for user %d: %w", in.UserID, err)
 	}
 	return &proto.SetPasswordResponse{}, nil
 }
 
 // Execute gets the hash and sets the password for the given user.
-func Execute(ctx context.Context, userID int64, password string, a action) error {
+func Execute(ctx context.Context, userID int64, password string, ba backendAction) error {
 	name := "user.set_password"
 	payload := []struct {
 		ID       int64  `json:"id"`
@@ -104,7 +104,7 @@ func Execute(ctx context.Context, userID int64, password string, a action) error
 	if err != nil {
 		return fmt.Errorf("marshalling action data: %w", err)
 	}
-	if _, err := a.Single(ctx, name, data); err != nil {
+	if _, err := ba.Single(ctx, name, data); err != nil {
 		// There is no action result in success case.
 		return fmt.Errorf("requesting backend action %q: %w", name, err)
 	}

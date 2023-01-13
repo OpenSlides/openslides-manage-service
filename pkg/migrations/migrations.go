@@ -288,13 +288,13 @@ func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string, timeou
 
 // Server
 
-type action interface {
+type backendAction interface {
 	Migrations(ctx context.Context, command string) (json.RawMessage, error)
 }
 
 // Migrations runs a migrations command.
-func Migrations(ctx context.Context, in *proto.MigrationsRequest, a action) (*proto.MigrationsResponse, error) {
-	result, err := a.Migrations(ctx, in.Command)
+func Migrations(ctx context.Context, in *proto.MigrationsRequest, ba backendAction) (*proto.MigrationsResponse, error) {
+	result, err := ba.Migrations(ctx, in.Command)
 	if err != nil {
 		return nil, fmt.Errorf("requesting backend migrations command %q: %w", in.Command, err)
 	}

@@ -78,13 +78,13 @@ func Run(ctx context.Context, gc gRPCClient) error {
 
 // Server
 
-type action interface {
+type backendAction interface {
 	Health(context.Context) (json.RawMessage, error)
 }
 
 // CheckServer sends a health request to backend manage service.
-func CheckServer(ctx context.Context, in *proto.CheckServerRequest, a action) *proto.CheckServerResponse {
-	_, err := a.Health(ctx)
+func CheckServer(ctx context.Context, in *proto.CheckServerRequest, ba backendAction) *proto.CheckServerResponse {
+	_, err := ba.Health(ctx)
 	if err != nil {
 		// Special error handling here: We do not return the (wrapped) error but
 		// a response with falsy value.

@@ -115,20 +115,20 @@ func checkOrganizationManagementLevel(v string) error {
 
 // Server
 
-type action interface {
+type backendAction interface {
 	Single(ctx context.Context, name string, data json.RawMessage) (json.RawMessage, error)
 }
 
 // CreateUser creates the given user.
 // This function is the server side entrypoint for this package.
-func CreateUser(ctx context.Context, in *proto.CreateUserRequest, a action) (*proto.CreateUserResponse, error) {
+func CreateUser(ctx context.Context, in *proto.CreateUserRequest, ba backendAction) (*proto.CreateUserResponse, error) {
 	name := "user.create"
 	payload := []*proto.CreateUserRequest{in}
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling action data: %w", err)
 	}
-	result, err := a.Single(ctx, name, transform(data))
+	result, err := ba.Single(ctx, name, transform(data))
 	if err != nil {
 		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}
