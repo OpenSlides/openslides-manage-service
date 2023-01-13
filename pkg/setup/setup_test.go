@@ -595,6 +595,7 @@ services:
     networks:
       - frontend
       - data
+      - email
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -626,6 +627,7 @@ services:
       OPENSLIDES_BACKEND_COMPONENT: action
     networks:
       - data
+      - email
     secrets:
       - auth_token_key
       - auth_cookie_key
@@ -771,6 +773,9 @@ services:
 
 networks:
   uplink:
+    internal: false
+  email:
+    internal: false
   frontend:
     internal: true
   data:
