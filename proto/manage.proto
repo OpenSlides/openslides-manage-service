@@ -11,7 +11,7 @@ service Manage {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse);
   rpc Get(GetRequest) returns (GetResponse);
-  rpc Set(SetRequest) returns (SetResponse);
+  rpc Action(ActionRequest) returns (ActionResponse);
   rpc Version(VersionRequest) returns (VersionResponse);
   rpc Health(HealthRequest) returns (HealthResponse);
 }
@@ -62,12 +62,12 @@ message GetRequest {
 
 message GetResponse { string value = 1; }
 
-message SetRequest {
+message ActionRequest {
   string action = 1;
   bytes payload = 2;
 }
 
-message SetResponse { bytes payload = 1; }
+message ActionResponse { bytes payload = 1; }
 
 message VersionRequest {}
 
