@@ -364,6 +364,7 @@ networks:
 
 
 {{- if not (checkFlag .DisablePostgres) }}
+
 volumes:
   postgres-data:
 {{- end }}

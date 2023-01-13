@@ -758,6 +758,7 @@ networks:
     internal: true
   data:
     internal: true
+
 volumes:
   postgres-data:
 
