@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 )
 
 func TestCmd(t *testing.T) {
@@ -741,6 +742,7 @@ services:
       - backendManage
     environment:
       << : *default-environment
+      OPENSLIDES_INSTANCE_CONFIGURATION_FILE_VERSION: %s
     networks:
       - frontend
       - data
@@ -779,7 +781,7 @@ secrets:
     file: ./secrets/cert_crt
   cert_key:
     file: ./secrets/cert_key
-`)
+`, shared.OpenSlidesInstanceConfigurationFileVersion)
 }
 
 func TestSetupNoDirectory(t *testing.T) {

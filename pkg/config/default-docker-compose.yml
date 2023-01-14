@@ -341,6 +341,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      OPENSLIDES_INSTANCE_CONFIGURATION_FILE_VERSION: {{ $.OpenSlidesInstanceConfigurationFileVersion }}
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend

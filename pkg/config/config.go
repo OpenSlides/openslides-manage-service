@@ -148,8 +148,13 @@ func CreateYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
+	cfgWithVersion := ymlConfigWithVersion{
+		*cfg,
+		shared.OpenSlidesInstanceConfigurationFileVersion,
+	}
+
 	var res bytes.Buffer
-	if err := tmpl.Execute(&res, cfg); err != nil {
+	if err := tmpl.Execute(&res, cfgWithVersion); err != nil {
 		return fmt.Errorf("executing template %v: %w", tmpl, err)
 	}
 
@@ -181,6 +186,11 @@ type YmlConfig struct {
 	DefaultEnvironment map[string]string `yaml:"defaultEnvironment"`
 
 	Services map[string]service `yaml:"services"`
+}
+
+type ymlConfigWithVersion struct {
+	YmlConfig
+	OpenSlidesInstanceConfigurationFileVersion string
 }
 
 type service struct {
