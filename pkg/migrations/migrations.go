@@ -26,6 +26,8 @@ const (
 	defaultInterval  = 1 * time.Second
 	withIntervalFlag = true
 	migrationRunning = "migration_running"
+
+	maxCallRecvMsgSize = 1073741824 // corresponds to 1 GB
 )
 
 // Cmd returns the subcommand.
@@ -273,7 +275,11 @@ func runMigrationsCmd(ctx context.Context, gc gRPCClient, command string, timeou
 		Command: command,
 	}
 
-	resp, err := gc.Migrations(migrCtx, req)
+	resp, err := gc.Migrations(
+		migrCtx,
+		req,
+		grpc.MaxCallRecvMsgSize(maxCallRecvMsgSize),
+	)
 	if err != nil {
 		s, _ := status.FromError(err) // The ok value does not matter here.
 		return MigrationResponse{}, fmt.Errorf("calling manage service (running migrations command): %s", s.Message())
