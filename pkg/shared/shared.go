@@ -14,11 +14,11 @@ import (
 	"strings"
 )
 
-// OpenSlidesInstanceConfigurationFileVersion is the hardcoded version of the
-// Docker Compose YAML file. The manage service compares this number with the
-// value of the OPENSLIDES_INSTANCE_CONFIGURATION_FILE_VERSION environment
-// variable.
-const OpenSlidesInstanceConfigurationFileVersion = "v001"
+// OpenSlidesContainerConfigurationFileVersion is the hardcoded version of our
+// container configuration YAML file (default is docker-compose.yml). The manage
+// service compares this number with the value of the
+// OPENSLIDES_CONTAINER_CONFIGURATION_FILE_VERSION environment variable.
+const OpenSlidesContainerConfigurationFileVersion = "v001"
 
 // developmentPassword is the password used if environment variable
 // OPENSLIDES_DEVELOPMENT is set to one of the following values: 1, t, T, TRUE,

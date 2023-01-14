@@ -1,5 +1,5 @@
 ---
-# Name of the generated YAML file.
+# Name of the generated container configuration YAML file.
 filename: docker-compose.yml
 
 # The OpenSlides proxy service listens on this address.

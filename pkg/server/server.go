@@ -72,12 +72,12 @@ func Run(cfg *Config) error {
 }
 
 func checkConfigFileWarning(logger shared.Logger, cfg *Config) {
-	if shared.OpenSlidesInstanceConfigurationFileVersion != cfg.OpenSlidesInstanceConfigurationFileVersion {
-		msg := fmt.Sprintf("Wrong value for environment variable OPENSLIDES_INSTANCE_CONFIGURATION_FILE_VERSION. "+
-			"Expected %q, got %q. Your configuration file (per default your docker-compose.yml) might be out of date. "+
+	if shared.OpenSlidesContainerConfigurationFileVersion != cfg.OpenSlidesContainerConfigurationFileVersion {
+		msg := fmt.Sprintf("Wrong value for environment variable OPENSLIDES_CONTAINER_CONFIGURATION_FILE_VERSION. "+
+			"Expected %q, got %q. Your container configuration YAML file (per default your docker-compose.yml) might be out of date. "+
 			"Try to update or regenerate the file with the current version of the openslides tool.",
-			shared.OpenSlidesInstanceConfigurationFileVersion,
-			cfg.OpenSlidesInstanceConfigurationFileVersion,
+			shared.OpenSlidesContainerConfigurationFileVersion,
+			cfg.OpenSlidesContainerConfigurationFileVersion,
 		)
 		logger.Warningf(msg)
 	}
@@ -242,7 +242,7 @@ type Config struct {
 	OpenSlidesDevelopment string `env:"OPENSLIDES_DEVELOPMENT,0"`
 	OpenSlidesLoglevel    string `env:"OPENSLIDES_LOGLEVEL,info"`
 
-	OpenSlidesInstanceConfigurationFileVersion string `env:"OPENSLIDES_INSTANCE_CONFIGURATION_FILE_VERSION"`
+	OpenSlidesContainerConfigurationFileVersion string `env:"OPENSLIDES_CONTAINER_CONFIGURATION_FILE_VERSION"`
 }
 
 // ConfigFromEnv creates a Config object where the values are populated from the
