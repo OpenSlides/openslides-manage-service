@@ -512,10 +512,10 @@ x-default-environment: &default-environment
   OPENSLIDES_DEVELOPMENT: "false"
   OPENSLIDES_LOGLEVEL: info
   OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate/restrict_fqids
-  OPENSLIDES_SEARCH_HOST: search
   OPENSLIDES_SEARCH_PORT: "9050"
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  SEARCH_SERVICE_HOST: search
   SECRETS_PATH: /run/secrets
   SYSTEM_URL: localhost:8000
   VOTE_DATABASE_HOST: postgres

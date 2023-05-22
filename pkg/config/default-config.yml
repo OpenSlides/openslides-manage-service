@@ -48,7 +48,7 @@ defaultEnvironment:
   OPENSLIDES_DB_PASSWORD: secret:postgres_password
   OPENSLIDES_DB: openslides
 
-  OPENSLIDES_SEARCH_HOST: search
+  SEARCH_SERVICE_HOST: search
   OPENSLIDES_SEARCH_PORT: 9050
   OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate/restrict_fqids
 
