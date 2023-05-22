@@ -505,10 +505,18 @@ x-default-environment: &default-environment
   MEDIA_PRESENTER_PORT: "9003"
   MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: "6379"
+  OPENSLIDES_DB: openslides
+  OPENSLIDES_DB_HOST: postgres
+  OPENSLIDES_DB_PASSWORD: secret:postgres_password
+  OPENSLIDES_DB_USER: openslides
   OPENSLIDES_DEVELOPMENT: "false"
   OPENSLIDES_LOGLEVEL: info
+  OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate/restrict_fqids
+  OPENSLIDES_SEARCH_PORT: "9050"
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  SEARCH_SERVICE_HOST: search
+  SECRETS_PATH: /run/secrets
   SYSTEM_URL: localhost:8000
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_NAME: openslides
@@ -528,6 +536,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -552,6 +561,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -657,6 +667,22 @@ services:
     depends_on:
       - datastoreReader
       - redis
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
+  search:
+    image: ghcr.io/openslides/openslides/openslides-search:latest
+    depends_on:
+      - datastoreReader
+      - postgres
+      - autoupdate
     environment:
       << : *default-environment
     networks:

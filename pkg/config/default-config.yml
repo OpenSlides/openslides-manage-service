@@ -41,6 +41,17 @@ defaultEnvironment:
   AUTH_HOST: auth
   AUTH_PORT: 9004
 
+  SECRETS_PATH: /run/secrets
+
+  OPENSLIDES_DB_HOST: postgres
+  OPENSLIDES_DB_USER: openslides
+  OPENSLIDES_DB_PASSWORD: secret:postgres_password
+  OPENSLIDES_DB: openslides
+
+  SEARCH_SERVICE_HOST: search
+  OPENSLIDES_SEARCH_PORT: 9050
+  OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate/restrict_fqids
+
   VOTE_HOST: vote
   VOTE_PORT: 9013
   VOTE_DATABASE_HOST: postgres
