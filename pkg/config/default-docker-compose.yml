@@ -15,6 +15,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -54,6 +55,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -212,6 +214,30 @@ services:
     depends_on:
       - datastoreReader
       - redis
+    {{- end }}
+    environment:
+      << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
+  {{- end }}
+
+
+  {{- with .Services.search }}
+
+  search:
+    image: {{ .ContainerRegistry }}/openslides-search:{{ .Tag }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - datastoreReader
+      - postgres
+      - autoupdate
     {{- end }}
     environment:
       << : *default-environment
