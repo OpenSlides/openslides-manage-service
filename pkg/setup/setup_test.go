@@ -699,7 +699,7 @@ services:
       - postgres_password
 
   redis:
-    image: redis:latest
+    image: redis:alpine
     command: redis-server --save ""
     environment:
       << : *default-environment
