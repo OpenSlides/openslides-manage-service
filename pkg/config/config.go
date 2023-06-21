@@ -1,3 +1,15 @@
+/*
+Package config provides commands to create configuration files.
+
+We have two files:
+  - container configuration YAML file (default filename is docker-compose.yml)
+  - setup configuration YAML file (default filename is config.yml)
+
+The first one provides the configuration for Docker Compose and can be adjusted
+to be used with Docker Swarm or other orchestration systems.
+
+The second one is used to customize the generation process of the first one.
+*/
 package config
 
 import (
@@ -20,7 +32,7 @@ import (
 var defaultDockerComposeYml []byte
 
 //go:embed default-config.yml
-var defaultConfig []byte
+var defaultConfigYml []byte
 
 const (
 	// ConfigHelp contains the short help text for the command.
@@ -89,9 +101,11 @@ func FlagConfig(cmd *cobra.Command) *[]string {
 	return cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file, can be use more then once, ordering is important")
 }
 
-// Config rebuilds the YAML file for using Docker Compose or Docker Swarm.
+// Config rebuilds the container configuration YAML file for using Docker
+// Compose or Docker Swarm.
 //
-// A custom template for the YAML file and YAML configs can be provided.
+// A custom template for the YAML file and one or more setup configuration YAML
+// files can be provided.
 func Config(dir string, tplFile []byte, configFiles [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -104,16 +118,17 @@ func Config(dir string, tplFile []byte, configFiles [][]byte) error {
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	if err := CreateYmlFile(dir, true, tplFile, cfg); err != nil {
+	if err := CreateContainertConfigYmlFile(dir, true, tplFile, cfg); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
 	return nil
 }
 
-// CreateYmlFile builds the YAML file at the given directory. Use a truthy value for force
-// to override an existing file.
-func CreateYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error {
+// CreateContainertConfigYmlFile builds the container configuration YAML file at
+// the given directory. Use a truthy value for force to override an existing
+// file.
+func CreateContainertConfigYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error {
 	if tplFile == nil {
 		tplFile = defaultDockerComposeYml
 	}
@@ -148,8 +163,13 @@ func CreateYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error
 		return fmt.Errorf("parsing template: %w", err)
 	}
 
+	cfgWithVersion := ymlConfigWithVersion{
+		*cfg,
+		shared.OpenSlidesContainerConfigurationFileVersion,
+	}
+
 	var res bytes.Buffer
-	if err := tmpl.Execute(&res, cfg); err != nil {
+	if err := tmpl.Execute(&res, cfgWithVersion); err != nil {
 		return fmt.Errorf("executing template %v: %w", tmpl, err)
 	}
 
@@ -160,8 +180,8 @@ func CreateYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error
 	return nil
 }
 
-// YmlConfig contains the (merged) configuration for the creation of the Docker
-// Compose YAML file.
+// YmlConfig contains the (merged) configuration for the creation of the
+// container configuration YAML file (e. g. Docker Compose YAML file).
 type YmlConfig struct {
 	Filename string `yaml:"filename"`
 
@@ -181,6 +201,11 @@ type YmlConfig struct {
 	DefaultEnvironment map[string]string `yaml:"defaultEnvironment"`
 
 	Services map[string]service `yaml:"services"`
+}
+
+type ymlConfigWithVersion struct {
+	YmlConfig
+	OpenSlidesContainerConfigurationFileVersion string
 }
 
 type service struct {
@@ -206,11 +231,11 @@ func (t *nullTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Va
 	return nil
 }
 
-// NewYmlConfig creates a ymlConfig object from all given files. The files were
-// merged together with the default config.
+// NewYmlConfig creates a ymlConfig object from all given setup configuration
+// YAML files. The files were merged together with the default.
 func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 	allConfigFiles := [][]byte{
-		defaultConfig,
+		defaultConfigYml,
 	}
 	allConfigFiles = append(allConfigFiles, configFiles...)
 
@@ -299,7 +324,7 @@ func configCreateDefault(dir, name string) error {
 	}
 
 	// Create file
-	if err := shared.CreateFile(dir, true, name, defaultConfig); err != nil {
+	if err := shared.CreateFile(dir, true, name, defaultConfigYml); err != nil {
 		return fmt.Errorf("creating config default file at %q: %w", dir, err)
 	}
 	return nil

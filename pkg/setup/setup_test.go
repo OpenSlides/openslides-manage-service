@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
+	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 )
 
 func TestCmd(t *testing.T) {
@@ -464,6 +465,8 @@ func testPasswordFile(t testing.TB, dir, name string) {
 
 func defaultDockerComposeYml() string {
 	return fmt.Sprintf(`---
+# The container configuration YAML file for OpenSlides.
+
 version: "3.4"
 
 x-default-environment: &default-environment
@@ -741,6 +744,7 @@ services:
       - backendManage
     environment:
       << : *default-environment
+      OPENSLIDES_CONTAINER_CONFIGURATION_FILE_VERSION: %s
     networks:
       - frontend
       - data
@@ -779,7 +783,7 @@ secrets:
     file: ./secrets/cert_crt
   cert_key:
     file: ./secrets/cert_key
-`)
+`, shared.OpenSlidesContainerConfigurationFileVersion)
 }
 
 func TestSetupNoDirectory(t *testing.T) {

@@ -1,4 +1,6 @@
 ---
+# The container configuration YAML file for OpenSlides.
+
 version: "3.4"
 
 x-default-environment: &default-environment
@@ -341,6 +343,7 @@ services:
     {{- end }}
     environment:
       << : *default-environment
+      OPENSLIDES_CONTAINER_CONFIGURATION_FILE_VERSION: {{ $.OpenSlidesContainerConfigurationFileVersion }}
       {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
     networks:
       - frontend

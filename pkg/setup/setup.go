@@ -112,7 +112,7 @@ func Setup(dir string, force bool, tplFile []byte, configFiles [][]byte) error {
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	if err := config.CreateYmlFile(dir, force, tplFile, cfg); err != nil {
+	if err := config.CreateContainertConfigYmlFile(dir, force, tplFile, cfg); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 

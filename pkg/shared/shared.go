@@ -14,6 +14,12 @@ import (
 	"strings"
 )
 
+// OpenSlidesContainerConfigurationFileVersion is the hardcoded version of our
+// container configuration YAML file (default is docker-compose.yml). The manage
+// service compares this number with the value of the
+// OPENSLIDES_CONTAINER_CONFIGURATION_FILE_VERSION environment variable.
+const OpenSlidesContainerConfigurationFileVersion = "v001"
+
 // developmentPassword is the password used if environment variable
 // OPENSLIDES_DEVELOPMENT is set to one of the following values: 1, t, T, TRUE,
 // true, True.
@@ -191,4 +197,11 @@ func (l Logger) Infof(format string, v ...interface{}) {
 	}
 }
 
-// TODO: Add methods for warning, error and critical
+// Warningf calls logger.Printf but only in case of log level warning or lower.
+func (l Logger) Warningf(format string, v ...interface{}) {
+	if l.lvl <= lvlWarning {
+		l.logger.Printf("[WARNING] "+format, v...)
+	}
+}
+
+// TODO: Add methods for error and critical
