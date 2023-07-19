@@ -475,34 +475,24 @@ x-default-environment: &default-environment
   AUTOUPDATE_PORT: "9012"
   CACHE_HOST: redis
   CACHE_PORT: "6379"
-  DATASTORE_DATABASE_HOST: postgres
-  DATASTORE_DATABASE_NAME: openslides
-  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  DATASTORE_DATABASE_PORT: "5432"
-  DATASTORE_DATABASE_USER: openslides
+  DATABASE_HOST: postgres
+  DATABASE_NAME: openslides
+  DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  DATABASE_PORT: "5432"
+  DATABASE_USER: openslides
   DATASTORE_READER_HOST: datastoreReader
   DATASTORE_READER_PORT: "9010"
   DATASTORE_WRITER_HOST: datastoreWriter
   DATASTORE_WRITER_PORT: "9011"
   ICC_HOST: icc
   ICC_PORT: "9007"
-  ICC_REDIS_HOST: redis
-  ICC_REDIS_PORT: "6379"
   INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
-  MANAGE_ACTION_HOST: backendManage
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
   MANAGE_HOST: manage
   MANAGE_PORT: "9008"
   MEDIA_BLOCK_SIZE: "4096"
-  MEDIA_DATABASE_HOST: postgres
-  MEDIA_DATABASE_NAME: openslides
-  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  MEDIA_DATABASE_PORT: "5432"
-  MEDIA_DATABASE_USER: openslides
   MEDIA_HOST: media
   MEDIA_PORT: "9006"
-  MEDIA_PRESENTER_HOST: backendPresenter
-  MEDIA_PRESENTER_PORT: "9003"
   MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: "6379"
   OPENSLIDES_DEVELOPMENT: "false"
@@ -510,15 +500,8 @@ x-default-environment: &default-environment
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
   SYSTEM_URL: localhost:8000
-  VOTE_DATABASE_HOST: postgres
-  VOTE_DATABASE_NAME: openslides
-  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  VOTE_DATABASE_PORT: "5432"
-  VOTE_DATABASE_USER: openslides
   VOTE_HOST: vote
   VOTE_PORT: "9013"
-  VOTE_REDIS_HOST: redis
-  VOTE_REDIS_PORT: "6379"
 
 services:
   proxy:
@@ -741,6 +724,7 @@ services:
       - backendManage
     environment:
       << : *default-environment
+      ACTION_HOST: backendManage
     networks:
       - frontend
       - data

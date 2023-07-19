@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/connection"
 	"github.com/OpenSlides/openslides-manage-service/pkg/fehler"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setpassword"
-	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 	"github.com/OpenSlides/openslides-manage-service/proto"
 	"github.com/spf13/cobra"
@@ -103,7 +101,7 @@ type backendAction interface {
 }
 
 // InitialData sets initial data in the datastore.
-func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath string, ba backendAction) (*proto.InitialDataResponse, error) {
+func InitialData(ctx context.Context, in *proto.InitialDataRequest, superadminSecretFile string, ba backendAction) (*proto.InitialDataResponse, error) {
 	initialData := in.Data
 	if initialData == nil {
 		// The backend expects at least an empty object.
@@ -133,8 +131,7 @@ func InitialData(ctx context.Context, in *proto.InitialDataRequest, runPath stri
 		return nil, fmt.Errorf("requesting backend action %q: %w", name, err)
 	}
 
-	p := path.Join(runPath, setup.SecretsDirName, setup.SuperadminFileName)
-	if err := SetSuperadminPassword(ctx, p, ba); err != nil {
+	if err := SetSuperadminPassword(ctx, superadminSecretFile, ba); err != nil {
 		return nil, fmt.Errorf("setting superadmin password: %w", err)
 	}
 
