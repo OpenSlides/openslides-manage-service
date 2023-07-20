@@ -469,27 +469,19 @@ version: "3.4"
 x-default-environment: &default-environment
   ACTION_HOST: backendAction
   ACTION_PORT: "9002"
+  AUTH_COOKIE_KEY_FILE: /run/secrets/auth_cookie_key
   AUTH_HOST: auth
   AUTH_PORT: "9004"
+  AUTH_TOKEN_KEY_FILE: /run/secrets/auth_token_key
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: "9012"
   CACHE_HOST: redis
   CACHE_PORT: "6379"
   DATABASE_HOST: postgres
-  DATABASE_PORT: "5432"
   DATABASE_NAME: openslides
-  DATABASE_USER: openslides
   DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  MEDIA_DATABASE_HOST: postgres
-  MEDIA_DATABASE_PORT: "5432"
-  MEDIA_DATABASE_NAME: openslides
-  MEDIA_DATABASE_USER: openslides
-  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  VOTE_DATABASE_HOST: postgres
-  VOTE_DATABASE_PORT: "5432"
-  VOTE_DATABASE_NAME: openslides
-  VOTE_DATABASE_USER: openslides
-  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  DATABASE_PORT: "5432"
+  DATABASE_USER: openslides
   DATASTORE_READER_HOST: datastoreReader
   DATASTORE_READER_PORT: "9010"
   DATASTORE_WRITER_HOST: datastoreWriter
@@ -500,7 +492,11 @@ x-default-environment: &default-environment
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
   MANAGE_HOST: manage
   MANAGE_PORT: "9008"
-  MEDIA_BLOCK_SIZE: "4096"
+  MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_NAME: openslides
+  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  MEDIA_DATABASE_PORT: "5432"
+  MEDIA_DATABASE_USER: openslides
   MEDIA_HOST: media
   MEDIA_PORT: "9006"
   MESSAGE_BUS_HOST: redis
@@ -509,7 +505,13 @@ x-default-environment: &default-environment
   OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
   SYSTEM_URL: localhost:8000
+  VOTE_DATABASE_HOST: postgres
+  VOTE_DATABASE_NAME: openslides
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  VOTE_DATABASE_PORT: "5432"
+  VOTE_DATABASE_USER: openslides
   VOTE_HOST: vote
   VOTE_PORT: "9013"
 
