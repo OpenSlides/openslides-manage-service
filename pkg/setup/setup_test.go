@@ -480,6 +480,11 @@ x-default-environment: &default-environment
   DATABASE_NAME: openslides
   DATABASE_USER: openslides
   DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  MEDIA_DATABASE_HOST: postgres
+  MEDIA_DATABASE_PORT: "5432"
+  MEDIA_DATABASE_NAME: openslides
+  MEDIA_DATABASE_USER: openslides
+  MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_PORT: "5432"
   VOTE_DATABASE_NAME: openslides
