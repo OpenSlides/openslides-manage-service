@@ -219,7 +219,6 @@ type Config struct {
 	DatastoreReaderHost     string `env:"DATASTORE_READER_HOST,datastore-reader"`
 	DatastoreReaderPort     string `env:"DATASTORE_READER_PORT,9010"`
 
-
 	OpenSlidesDevelopment string `env:"OPENSLIDES_DEVELOPMENT,0"`
 	OpenSlidesLoglevel    string `env:"OPENSLIDES_LOGLEVEL,info"`
 }

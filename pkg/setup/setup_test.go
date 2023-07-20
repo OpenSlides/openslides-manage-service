@@ -476,10 +476,15 @@ x-default-environment: &default-environment
   CACHE_HOST: redis
   CACHE_PORT: "6379"
   DATABASE_HOST: postgres
-  DATABASE_NAME: openslides
-  DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   DATABASE_PORT: "5432"
+  DATABASE_NAME: openslides
   DATABASE_USER: openslides
+  DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  VOTE_DATABASE_HOST: postgres
+  VOTE_DATABASE_PORT: "5432"
+  VOTE_DATABASE_NAME: openslides
+  VOTE_DATABASE_USER: openslides
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   DATASTORE_READER_HOST: datastoreReader
   DATASTORE_READER_PORT: "9010"
   DATASTORE_WRITER_HOST: datastoreWriter
