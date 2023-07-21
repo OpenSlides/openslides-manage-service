@@ -29,11 +29,6 @@ defaultEnvironment:
   DATASTORE_READER_PORT: 9010
   DATASTORE_WRITER_HOST: datastoreWriter
   DATASTORE_WRITER_PORT: 9011
-  DATASTORE_DATABASE_HOST: postgres
-  DATASTORE_DATABASE_PORT: 5432
-  DATASTORE_DATABASE_NAME: openslides
-  DATASTORE_DATABASE_USER: openslides
-  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
 
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: 9012
@@ -43,46 +38,45 @@ defaultEnvironment:
 
   VOTE_HOST: vote
   VOTE_PORT: 9013
-  VOTE_DATABASE_HOST: postgres
-  VOTE_DATABASE_PORT: 5432
-  VOTE_DATABASE_NAME: openslides
-  VOTE_DATABASE_USER: openslides
-  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  VOTE_REDIS_HOST: redis
-  VOTE_REDIS_PORT: 6379
 
   CACHE_HOST: redis
   CACHE_PORT: 6379
-
   MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: 6379
 
   MEDIA_HOST: media
   MEDIA_PORT: 9006
+
+  ICC_HOST: icc
+  ICC_PORT: 9007
+
+  MANAGE_HOST: manage
+  MANAGE_PORT: 9008
+
+  DATABASE_HOST: postgres
+  DATABASE_PORT: 5432
+  DATABASE_NAME: openslides
+  DATABASE_USER: openslides
+  DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   MEDIA_DATABASE_HOST: postgres
   MEDIA_DATABASE_PORT: 5432
   MEDIA_DATABASE_NAME: openslides
   MEDIA_DATABASE_USER: openslides
   MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  MEDIA_BLOCK_SIZE: 4096
-  MEDIA_PRESENTER_HOST: backendPresenter
-  MEDIA_PRESENTER_PORT: 9003
-
-  ICC_HOST: icc
-  ICC_PORT: 9007
-  ICC_REDIS_HOST: redis
-  ICC_REDIS_PORT: 6379
-
-  MANAGE_HOST: manage
-  MANAGE_PORT: 9008
-  MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
-  MANAGE_ACTION_HOST: backendManage
+  VOTE_DATABASE_HOST: postgres
+  VOTE_DATABASE_PORT: 5432
+  VOTE_DATABASE_NAME: openslides
+  VOTE_DATABASE_USER: openslides
+  VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
 
   INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
+  MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
+  AUTH_TOKEN_KEY_FILE: /run/secrets/auth_token_key
+  AUTH_COOKIE_KEY_FILE: /run/secrets/auth_cookie_key
+  SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
 
   OPENSLIDES_LOGLEVEL: info
   OPENSLIDES_DEVELOPMENT: "false"
-
   SYSTEM_URL: localhost:8000
 
 # You can extend or replace parts of the defaultEnvironment.
@@ -97,6 +91,9 @@ services:
   datastoreReader:
     environment:
       NUM_WORKERS: 8
+  manage:
+    environment:
+      ACTION_HOST: backendManage
 
 # All properties from the "defaults" section are available here.
 #
