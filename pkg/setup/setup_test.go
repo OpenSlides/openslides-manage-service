@@ -574,6 +574,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - internal_auth_password
       - postgres_password
 
   backendPresenter:
