@@ -93,6 +93,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - internal_auth_password
       - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
@@ -271,6 +272,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - internal_auth_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
@@ -301,7 +303,7 @@ services:
   {{- with .Services.redis }}
 
   redis:
-    image: redis:latest
+    image: redis:alpine
     command: redis-server --save ""
     environment:
       << : *default-environment

@@ -114,7 +114,8 @@ func TestInitialDataServerAll(t *testing.T) {
 
 	// Run tests
 	t.Run("running the first time", func(t *testing.T) {
-		resp, err := initialdata.InitialData(ctx, in, testDir, ma)
+		p := path.Join(testDir, setup.SecretsDirName, setup.SuperadminFileName)
+		resp, err := initialdata.InitialData(ctx, in, p, ma)
 		if err != nil {
 			t.Fatalf("running InitialData() failed: %v", err)
 		}
