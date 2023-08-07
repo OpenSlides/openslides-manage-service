@@ -50,7 +50,7 @@ defaultEnvironment:
 
   SEARCH_SERVICE_HOST: search
   OPENSLIDES_SEARCH_PORT: 9050
-  OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate/restrict_fqids
+  OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate
 
   VOTE_HOST: vote
   VOTE_PORT: 9013

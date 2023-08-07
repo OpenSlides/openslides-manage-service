@@ -511,7 +511,7 @@ x-default-environment: &default-environment
   OPENSLIDES_DB_USER: openslides
   OPENSLIDES_DEVELOPMENT: "false"
   OPENSLIDES_LOGLEVEL: info
-  OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate/restrict_fqids
+  OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate
   OPENSLIDES_SEARCH_PORT: "9050"
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
