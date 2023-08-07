@@ -501,18 +501,13 @@ x-default-environment: &default-environment
   MEDIA_PORT: "9006"
   MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: "6379"
-  OPENSLIDES_DB: openslides
-  OPENSLIDES_DB_HOST: postgres
-  OPENSLIDES_DB_PASSWORD: secret:postgres_password
-  OPENSLIDES_DB_USER: openslides
   OPENSLIDES_DEVELOPMENT: "false"
   OPENSLIDES_LOGLEVEL: info
-  OPENSLIDES_RESTRICTER: http://autoupdate:9012/internal/autoupdate/restrict_fqids
-  OPENSLIDES_SEARCH_PORT: "9050"
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
-  SEARCH_SERVICE_HOST: search
-  SECRETS_PATH: /run/secrets
+  RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
+  SEARCH_HOST: search
+  SEARCH_PORT: "9050"
   SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
   SYSTEM_URL: localhost:8000
   VOTE_DATABASE_HOST: postgres
