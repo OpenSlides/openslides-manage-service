@@ -1,7 +1,17 @@
-name: GitHub Release
+name: GitHub Release (reusable)
 on:
-  push:
-    branches: [main]
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        default: dev
+      title:
+        type: string
+        default: Development Build
+      prerelease:
+        type: boolean
+        default: true
+
 jobs:
   release:
     name: Create GitHub Release and upload binary
@@ -22,8 +32,8 @@ jobs:
       uses: marvinpinto/action-automatic-releases@latest
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest"
-        prerelease: true
-        title: "Development Build"
+        automatic_release_tag: "${{ inputs.tag }}"
+        prerelease: "${{ inputs.prerelease }}"
+        title: "${{ inputs.title }}"
         files: |
           openslides

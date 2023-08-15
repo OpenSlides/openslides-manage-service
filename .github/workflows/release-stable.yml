@@ -1,0 +1,26 @@
+name: GitHub Release (stable)
+on:
+  registry_package:
+    types: [updated]
+
+#  build-manage:
+#    name: "Build openslides binary (tag: 4.x.x)"
+#    if: startsWith(github.ref_name, 'stable/4')
+#    uses: peb-adr/openslides-manage-service/.github/workflows/release.yml@main
+
+
+jobs:
+  print-stuff:
+    steps:
+      - first:
+        run: |
+          echo "${{ to_json(github.event) }}" | jq .
+  release-stable: 
+    name: Create GitHub Release and upload binary
+    if: github.event.registry_package.package_version.container_metadata.tag.name != ''
+    runs-on: ubuntu-latest
+    uses: ./.github/workflows/release-create.yml
+    with:
+      tag: latest
+      title: Stable Build
+      prerelease: false
