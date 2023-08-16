@@ -505,7 +505,7 @@ x-default-environment: &default-environment
   OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
-  RESTRICTER: http://autoupdate:9012/internal/autoupdate
+  RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
   SEARCH_HOST: search
   SEARCH_PORT: "9050"
   SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
