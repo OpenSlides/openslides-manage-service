@@ -734,6 +734,8 @@ services:
       - frontend
       - data
     secrets:
+      - auth_token_key
+      - auth_cookie_key
       - postgres_password
 
   icc:
