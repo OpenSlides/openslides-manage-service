@@ -1,7 +1,9 @@
 name: GitHub Release (stable)
 on:
   registry_package:
-    types: [updated]
+    types:
+      - updated
+      - published
 
 #  build-manage:
 #    name: "Build openslides binary (tag: 4.x.x)"
