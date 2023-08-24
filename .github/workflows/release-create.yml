@@ -2,6 +2,9 @@ name: GitHub Release (reusable)
 on:
   workflow_call:
     inputs:
+      branch:
+        type: string
+        default: main
       tag:
         type: string
         default: dev
@@ -24,6 +27,8 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
+      with:
+        ref: "${{ inputs.branch }}"
 
     - name: Build binaries
       run: go build ./cmd/openslides
