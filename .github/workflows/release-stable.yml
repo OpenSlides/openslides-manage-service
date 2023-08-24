@@ -1,6 +1,6 @@
 name: GitHub Release (stable)
 on:
-  registry_package:
+  package:
     types:
       - updated
       - published
