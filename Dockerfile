@@ -51,7 +51,7 @@ LABEL org.opencontainers.image.title="OpenSlides Manage Service"
 LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
 provides some management commands to setup and control OpenSlides instances."
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.source="https://github.com/peb-adr/openslides-manage-service"
+LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
 LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
 
 COPY --from=builder /root/healthcheck .
