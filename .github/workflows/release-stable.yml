@@ -1,7 +1,7 @@
 name: GitHub Release (stable)
 on:
   repository_dispatch:
-    types: [new-update]
+    types: [stable-update]
 
 jobs:
   release-stable:
