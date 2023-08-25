@@ -4,13 +4,6 @@ on:
     types: [new-update]
 
 jobs:
-  print-stuff:
-    runs-on: ubuntu-latest
-    steps:
-      - name: first
-        run: |
-          echo "${{ toJSON(github.event) }}"
-
   release-stable:
     name: "Create GitHub Release (4.x.x) and upload binary"
     if: startsWith(github.event.client_payload.branch, 'stable/4')
