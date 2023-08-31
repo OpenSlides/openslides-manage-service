@@ -1,0 +1,24 @@
+name: GitHub Release (stable)
+on:
+  repository_dispatch:
+    types: [stable-update]
+
+jobs:
+  release-stable:
+    name: "Create GitHub Release (4.x.x) and upload binary"
+    if: startsWith(github.event.client_payload.branch, 'stable/4')
+    uses: ./.github/workflows/release-create.yml
+    with:
+      branch: "${{ github.event.client_payload.branch }}"
+      tag: "${{ github.event.client_payload.version }}"
+      title: Stable Build
+      prerelease: false
+  release-stable-latest:
+    name: "Create GitHub Release (latest) and upload binary"
+    if: startsWith(github.event.client_payload.branch, 'stable/4')
+    uses: ./.github/workflows/release-create.yml
+    with:
+      branch: "${{ github.event.client_payload.branch }}"
+      tag: latest
+      title: Stable Build
+      prerelease: false
