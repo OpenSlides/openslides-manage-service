@@ -505,6 +505,9 @@ x-default-environment: &default-environment
   OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
+  SEARCH_HOST: search
+  SEARCH_PORT: "9050"
   SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
   SYSTEM_URL: localhost:8000
   VOTE_DATABASE_HOST: postgres
@@ -523,6 +526,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -547,6 +551,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -653,6 +658,22 @@ services:
     depends_on:
       - datastoreReader
       - redis
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
+  search:
+    image: ghcr.io/openslides/openslides/openslides-search:latest
+    depends_on:
+      - datastoreReader
+      - postgres
+      - autoupdate
     environment:
       << : *default-environment
     networks:
