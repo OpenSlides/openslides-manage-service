@@ -469,31 +469,29 @@ version: "3.4"
 x-default-environment: &default-environment
   ACTION_HOST: backendAction
   ACTION_PORT: "9002"
+  AUTH_COOKIE_KEY_FILE: /run/secrets/auth_cookie_key
   AUTH_HOST: auth
   AUTH_PORT: "9004"
+  AUTH_TOKEN_KEY_FILE: /run/secrets/auth_token_key
   AUTOUPDATE_HOST: autoupdate
   AUTOUPDATE_PORT: "9012"
   CACHE_HOST: redis
   CACHE_PORT: "6379"
-  DATASTORE_DATABASE_HOST: postgres
-  DATASTORE_DATABASE_NAME: openslides
-  DATASTORE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
-  DATASTORE_DATABASE_PORT: "5432"
-  DATASTORE_DATABASE_USER: openslides
+  DATABASE_HOST: postgres
+  DATABASE_NAME: openslides
+  DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+  DATABASE_PORT: "5432"
+  DATABASE_USER: openslides
   DATASTORE_READER_HOST: datastoreReader
   DATASTORE_READER_PORT: "9010"
   DATASTORE_WRITER_HOST: datastoreWriter
   DATASTORE_WRITER_PORT: "9011"
   ICC_HOST: icc
   ICC_PORT: "9007"
-  ICC_REDIS_HOST: redis
-  ICC_REDIS_PORT: "6379"
   INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
-  MANAGE_ACTION_HOST: backendManage
   MANAGE_AUTH_PASSWORD_FILE: /run/secrets/manage_auth_password
   MANAGE_HOST: manage
   MANAGE_PORT: "9008"
-  MEDIA_BLOCK_SIZE: "4096"
   MEDIA_DATABASE_HOST: postgres
   MEDIA_DATABASE_NAME: openslides
   MEDIA_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
@@ -501,14 +499,16 @@ x-default-environment: &default-environment
   MEDIA_DATABASE_USER: openslides
   MEDIA_HOST: media
   MEDIA_PORT: "9006"
-  MEDIA_PRESENTER_HOST: backendPresenter
-  MEDIA_PRESENTER_PORT: "9003"
   MESSAGE_BUS_HOST: redis
   MESSAGE_BUS_PORT: "6379"
   OPENSLIDES_DEVELOPMENT: "false"
   OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
+  SEARCH_HOST: search
+  SEARCH_PORT: "9050"
+  SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
   SYSTEM_URL: localhost:8000
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_NAME: openslides
@@ -517,8 +517,6 @@ x-default-environment: &default-environment
   VOTE_DATABASE_USER: openslides
   VOTE_HOST: vote
   VOTE_PORT: "9013"
-  VOTE_REDIS_HOST: redis
-  VOTE_REDIS_PORT: "6379"
 
 services:
   proxy:
@@ -528,6 +526,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -552,6 +551,7 @@ services:
       - backendAction
       - backendPresenter
       - autoupdate
+      - search
       - auth
       - media
       - icc
@@ -579,6 +579,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - internal_auth_password
       - postgres_password
 
   backendPresenter:
@@ -667,6 +668,22 @@ services:
       - auth_cookie_key
       - postgres_password
 
+  search:
+    image: ghcr.io/openslides/openslides/openslides-search:latest
+    depends_on:
+      - datastoreReader
+      - postgres
+      - autoupdate
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
   auth:
     image: ghcr.io/openslides/openslides/openslides-auth:latest
     depends_on:
@@ -680,6 +697,7 @@ services:
     secrets:
       - auth_token_key
       - auth_cookie_key
+      - internal_auth_password
 
   vote:
     image: ghcr.io/openslides/openslides/openslides-vote:latest
@@ -716,6 +734,8 @@ services:
       - frontend
       - data
     secrets:
+      - auth_token_key
+      - auth_cookie_key
       - postgres_password
 
   icc:
@@ -741,6 +761,7 @@ services:
       - backendManage
     environment:
       << : *default-environment
+      ACTION_HOST: backendManage
     networks:
       - frontend
       - data

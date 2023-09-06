@@ -29,8 +29,6 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const runDir = "/run"
-
 // Run starts the manage server.
 func Run(cfg *Config) error {
 	logger, err := shared.NewLogger(cfg.OpenSlidesLoglevel)
@@ -105,7 +103,7 @@ func (s *srv) InitialData(ctx context.Context, in *proto.InitialDataRequest) (*p
 		return nil, fmt.Errorf("getting internal auth password from file: %w", err)
 	}
 	a := backendaction.New(s.config.manageBackendActionURL(), pw, backendaction.ActionRoute)
-	return initialdata.InitialData(ctx, in, runDir, a)
+	return initialdata.InitialData(ctx, in, s.config.SuperadminPasswordFile, a)
 
 }
 
@@ -208,22 +206,18 @@ type Config struct {
 	// variables. The first value is the name of the environment variable. After
 	// a comma the default value can be given. If no default value is given, then
 	// an empty string is used. The type of a env field has to be string.
-	Port                   string `env:"MANAGE_PORT,9008"`
-	ManageAuthPasswordFile string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
+	Port                     string `env:"MANAGE_PORT,9008"`
+	ManageAuthPasswordFile   string `env:"MANAGE_AUTH_PASSWORD_FILE,/run/secrets/manage_auth_password"`
+	InternalAuthPasswordFile string `env:"INTERNAL_AUTH_PASSWORD_FILE,/run/secrets/internal_auth_password"`
+	SuperadminPasswordFile   string `env:"SUPERADMIN_PASSWORD_FILE,/run/secrets/superadmin"`
 
-	// Hint: The env var for the host is MANAGE_ACTION_HOST but the env vars for
-	// protocol and port don't have the MANAGE_ prefix because the backend
-	// itself does not distiguish between an common backend container and a
-	// manage backend container. So protocol and port are the same for all backend containers.
 	ManageActionProtocol string `env:"ACTION_PROTOCOL,http"`
-	ManageActionHost     string `env:"MANAGE_ACTION_HOST,backendManage"`
+	ManageActionHost     string `env:"ACTION_HOST,backendManage"`
 	ManageActionPort     string `env:"ACTION_PORT,9002"`
 
 	DatastoreReaderProtocol string `env:"DATASTORE_READER_PROTOCOL,http"`
 	DatastoreReaderHost     string `env:"DATASTORE_READER_HOST,datastore-reader"`
 	DatastoreReaderPort     string `env:"DATASTORE_READER_PORT,9010"`
-
-	InternalAuthPasswordFile string `env:"INTERNAL_AUTH_PASSWORD_FILE,/run/secrets/internal_auth_password"`
 
 	OpenSlidesDevelopment string `env:"OPENSLIDES_DEVELOPMENT,0"`
 	OpenSlidesLoglevel    string `env:"OPENSLIDES_LOGLEVEL,info"`

@@ -239,6 +239,7 @@ func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 		"autoupdate",
 		"auth",
 		"vote",
+		"search",
 		"redis",
 		"media",
 		"icc",

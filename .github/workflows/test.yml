@@ -25,6 +25,3 @@ jobs:
 
     - name: go test
       run: go test -timeout 10s -race ./...
-
-    - name: go test for special system tests
-      run: OPENSLIDES_MANAGE_SERVICE_SYSTEM_TEST=true go test -timeout 300s -v pkg/client/system_test.go

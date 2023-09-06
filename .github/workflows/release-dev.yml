@@ -1,0 +1,9 @@
+name: GitHub Release (dev)
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release-dev:
+    name: "Create dev Release"
+    uses: ./.github/workflows/release-create.yml
