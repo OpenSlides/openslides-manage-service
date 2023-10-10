@@ -2,10 +2,13 @@ package config
 
 import (
 	"bytes"
-	_ "embed" // Blank import required to use go directive.
+	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
+	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"text/template"
@@ -16,8 +19,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//go:embed default-docker-compose.yml
-var defaultDockerComposeYml []byte
+//go:embed templates
+var defaultTemplates embed.FS
 
 //go:embed default-config.yml
 var defaultConfig []byte
@@ -45,33 +48,24 @@ func Cmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 	}
 
-	tplFileName := FlagTpl(cmd)
+	tplDirName := FlagTpl(cmd)
 	configFileNames := FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
+		var err error
 
-		var tplFile []byte
-		if *tplFileName != "" {
-			fc, err := os.ReadFile(*tplFileName)
-			if err != nil {
-				return fmt.Errorf("reading file %q: %w", *tplFileName, err)
-			}
-			tplFile = fc
+		var tplDirFs fs.FS
+		if tplDirFs, err = ValidateTpl(tplDirName); err != nil {
+			return fmt.Errorf("validating configFileNames: %w", err)
 		}
 
 		var configFiles [][]byte
-		if len(*configFileNames) > 0 {
-			for _, configFileName := range *configFileNames {
-				fc, err := os.ReadFile(configFileName)
-				if err != nil {
-					return fmt.Errorf("reading file %q: %w", configFileName, err)
-				}
-				configFiles = append(configFiles, fc)
-			}
+		if configFiles, err = ValidateConfig(configFileNames); err != nil {
+			return fmt.Errorf("validating configFileNames: %w", err)
 		}
 
-		if err := Config(dir, tplFile, configFiles); err != nil {
+		if err := Config(dir, tplDirFs, configFiles); err != nil {
 			return fmt.Errorf("running Config(): %w", err)
 		}
 		return nil
@@ -81,43 +75,101 @@ func Cmd() *cobra.Command {
 
 // FlagTpl setups the template flag to the given cobra command.
 func FlagTpl(cmd *cobra.Command) *string {
-	return cmd.Flags().StringP("template", "t", "", "custom YAML template file")
+	return cmd.Flags().StringP("template", "t", "docker-compose", "Deployment files template directory (TODO: list presets)")
+}
+
+// ValidateTpl validates the provided option. I.e. it reads and returns the appropriate FS.
+func ValidateTpl(tplDirName *string) (fs.FS, error) {
+	var tplDirFs fs.FS = nil
+	// If template dir is given and exists, read it
+	if _, statErr := os.Stat(*tplDirName); statErr == nil {
+		tplDirFs = os.DirFS(*tplDirName)
+	} else {
+		var err error
+		var embeddedPath = filepath.Join("templates", *tplDirName)
+
+		_, err = fs.ReadDir(defaultTemplates, embeddedPath)
+		if err != nil {
+			return nil, fmt.Errorf("checking for embedded template dir %q: %w", *tplDirName, err)
+		}
+		tplDirFs, err = fs.Sub(defaultTemplates, embeddedPath)
+		if err != nil {
+			return nil, fmt.Errorf("reading embedded template files %q: %w", *tplDirName, err)
+		}
+	}
+	return tplDirFs, nil
 }
 
 // FlagConfig setups the config flag to the given cobra command.
 func FlagConfig(cmd *cobra.Command) *[]string {
-	return cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file, can be use more then once, ordering is important")
+	return cmd.Flags().StringArrayP("config", "c", nil, "custom YAML config file, can be used more then once, ordering is important")
+}
+
+// ValidateConfig validates the provided option. I.e. it reads and returns the appropriate FS.
+func ValidateConfig(configFileNames *[]string) ([][]byte, error) {
+	var configFiles [][]byte
+	if len(*configFileNames) > 0 {
+		for _, configFileName := range *configFileNames {
+			fc, err := os.ReadFile(configFileName)
+			if err != nil {
+				return nil, fmt.Errorf("reading file %q: %w", configFileName, err)
+			}
+			configFiles = append(configFiles, fc)
+		}
+	}
+	return configFiles, nil
 }
 
 // Config rebuilds the YAML file for using Docker Compose or Docker Swarm.
 //
 // A custom template for the YAML file and YAML configs can be provided.
-func Config(dir string, tplFile []byte, configFiles [][]byte) error {
+func Config(dir string, tplFileFs fs.FS, configFiles [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
-	// Create YAML file
+	// Create YAML config file
 	cfg, err := NewYmlConfig(configFiles)
 	if err != nil {
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	if err := CreateYmlFile(dir, true, tplFile, cfg); err != nil {
-		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
+	// Create YAML stack file(s) from template dir
+	if err := CreateDeploymentFilesFromTree(dir, true, tplFileFs, cfg); err != nil {
+		return fmt.Errorf("creating deployment files at %q: %w", dir, err)
 	}
 
 	return nil
 }
 
-// CreateYmlFile builds the YAML file at the given directory. Use a truthy value for force
-// to override an existing file.
-func CreateYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error {
-	if tplFile == nil {
-		tplFile = defaultDockerComposeYml
-	}
+func CreateDeploymentFilesFromTree(outdir string, force bool, tplFileFs fs.FS, cfg *YmlConfig) error {
+	fs.WalkDir(tplFileFs, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			log.Fatal(err)
+		}
+		if d.IsDir() {
+			if err := os.MkdirAll(path, os.ModePerm); err != nil {
+				return fmt.Errorf("creating directory at %q: %w", path, err)
+			}
+		} else {
+			fc, err := fs.ReadFile(tplFileFs, path)
+			if err != nil {
+				return fmt.Errorf("reading file %q: %w", path, err)
+			}
+			outfile := filepath.Join(outdir, path)
+			fmt.Println(outfile)
+			CreateDeploymentFile(outfile, force, fc, cfg)
+		}
+		return nil
+	})
 
+	return nil
+}
+
+// CreateDeploymentFile builds a single deployment file at the given directory. Use a truthy value for force
+// to override an existing file.
+func CreateDeploymentFile(outfile string, force bool, tplFile []byte, cfg *YmlConfig) error {
 	marshalContentFunc := func(ws int, v interface{}) (string, error) {
 		y, err := yaml.Marshal(v)
 		if err != nil {
@@ -153,8 +205,8 @@ func CreateYmlFile(dir string, force bool, tplFile []byte, cfg *YmlConfig) error
 		return fmt.Errorf("executing template %v: %w", tmpl, err)
 	}
 
-	if err := shared.CreateFile(dir, force, cfg.Filename, res.Bytes()); err != nil {
-		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
+	if err := shared.CreateFile(filepath.Dir(outfile), force, filepath.Base(outfile), res.Bytes()); err != nil {
+		return fmt.Errorf("creating YAML file at %q: %w", outfile, err)
 	}
 
 	return nil

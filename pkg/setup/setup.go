@@ -61,33 +61,24 @@ func Cmd() *cobra.Command {
 	}
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
-	tplFileName := config.FlagTpl(cmd)
+	tplDirName := config.FlagTpl(cmd)
 	configFileNames := config.FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
+		var err error
 
-		var tplFile []byte
-		if *tplFileName != "" {
-			fc, err := os.ReadFile(*tplFileName)
-			if err != nil {
-				return fmt.Errorf("reading file %q: %w", *tplFileName, err)
-			}
-			tplFile = fc
+		var tplDirFs fs.FS
+		if tplDirFs, err = config.ValidateTpl(tplDirName); err != nil {
+			return fmt.Errorf("validating configFileNames: %w", err)
 		}
 
 		var configFiles [][]byte
-		if len(*configFileNames) > 0 {
-			for _, configFileName := range *configFileNames {
-				fc, err := os.ReadFile(configFileName)
-				if err != nil {
-					return fmt.Errorf("reading file %q: %w", configFileName, err)
-				}
-				configFiles = append(configFiles, fc)
-			}
+		if configFiles, err = config.ValidateConfig(configFileNames); err != nil {
+			return fmt.Errorf("validating configFileNames: %w", err)
 		}
 
-		if err := Setup(dir, *force, tplFile, configFiles); err != nil {
+		if err := Setup(dir, *force, tplDirFs, configFiles); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -100,7 +91,7 @@ func Cmd() *cobra.Command {
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
 // and YAML configs can be provided.
-func Setup(dir string, force bool, tplFile []byte, configFiles [][]byte) error {
+func Setup(dir string, force bool, tplFileFs fs.FS, configFiles [][]byte) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
@@ -112,7 +103,7 @@ func Setup(dir string, force bool, tplFile []byte, configFiles [][]byte) error {
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	if err := config.CreateYmlFile(dir, force, tplFile, cfg); err != nil {
+	if err := config.CreateDeploymentFilesFromTree(dir, force, tplFileFs, cfg); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
