@@ -66,19 +66,16 @@ func Cmd() *cobra.Command {
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		var err error
 
-		var tplDirFs fs.FS
-		if tplDirFs, err = config.ValidateTpl(tplDirName); err != nil {
+		if err := config.ValidateTpl(tplDirName); err != nil {
 			return fmt.Errorf("validating configFileNames: %w", err)
 		}
 
-		var configFiles [][]byte
-		if configFiles, err = config.ValidateConfig(configFileNames); err != nil {
+		if err := config.ValidateConfig(configFileNames); err != nil {
 			return fmt.Errorf("validating configFileNames: %w", err)
 		}
 
-		if err := Setup(dir, *force, tplDirFs, configFiles); err != nil {
+		if err := Setup(dir, *force, tplDirName, configFileNames); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -86,24 +83,25 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-// Setup creates YAML file for Docker Compose or Docker Swarm with secrets directory and
-// directories for database and SSL certs volumes.
+// Setup creates one or more (depending on template) files containing the deployment definitions
+// with secrets directory and directories for database and SSL certs volumes.
 //
 // Existing files are skipped unless force is true. A custom template for the YAML file
 // and YAML configs can be provided.
-func Setup(dir string, force bool, tplFileFs fs.FS, configFiles [][]byte) error {
+func Setup(dir string, force bool, tplDirName *string, configFileNames *[]string) error {
 	// Create directory
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating directory at %q: %w", dir, err)
 	}
 
 	// Create YAML file
-	cfg, err := config.NewYmlConfig(configFiles)
+	cfg, err := config.NewYmlConfig(configFileNames)
 	if err != nil {
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	if err := config.CreateDeploymentFilesFromTree(dir, force, tplFileFs, cfg); err != nil {
+	// Create deployment file(s)
+	if err := config.CreateDeploymentFilesFromTree(dir, force, tplDirName, cfg); err != nil {
 		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
