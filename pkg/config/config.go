@@ -284,7 +284,9 @@ func CreateDeploymentFile(outfile string, force bool, tplFile []byte, cfg *YmlCo
 
 // YmlConfig contains the (merged) configuration for the creation of the deployment files.
 type YmlConfig struct {
-	Filename string `yaml:"filename"`
+	Filename  string `yaml:"filename"`
+	Url       string `yaml:"url"`
+	StackName string `yaml:"stackName"`
 
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
