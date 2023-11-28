@@ -509,7 +509,6 @@ x-default-environment: &default-environment
   SEARCH_HOST: search
   SEARCH_PORT: "9050"
   SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
-  SYSTEM_URL: localhost:8000
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_NAME: openslides
   VOTE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
