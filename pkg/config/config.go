@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -40,6 +41,54 @@ const (
 	// ConfigCreateDefaultHelpExtra contains the long help text for the command without the headline.
 	ConfigCreateDefaultHelpExtra = `This command (re)creates the default setup configuration YAML file in the given directory.`
 )
+
+// Static FuncMap available to the templates
+var marshalContentFunc = func(ws int, v interface{}) (string, error) {
+	y, err := yaml.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	result := "\n"
+	for _, line := range strings.Split(string(y), "\n") {
+		if len(line) != 0 {
+			result += fmt.Sprintf("%s%s\n", strings.Repeat(" ", ws), line)
+		}
+	}
+	result = strings.TrimRight(result, "\n")
+	return result, nil
+}
+var checkFlagFunc = func(v interface{}) (bool, error) {
+	f, ok := v.(*bool)
+	if !ok {
+		return false, fmt.Errorf("using wrong type as argument in checkFlag function, only *bool is allowed")
+	}
+	return *f, nil
+}
+var base64EncodeFunc = func(s string) string {
+	return base64.StdEncoding.EncodeToString([]byte(s))
+}
+var base64DecodeFunc = func(s string) (string, error) {
+	decoded, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return "", fmt.Errorf("base64 decoding string (%s): %w", s, err)
+	}
+	return string(decoded), nil
+}
+var readFileFunc = func(s string) (string, error) {
+	b, err := os.ReadFile(s)
+	if err != nil {
+		return "", fmt.Errorf("reading file %s: %w", s, err)
+	}
+	return string(b), nil
+}
+
+var funcMap = template.FuncMap{
+	"marshalContent": marshalContentFunc,
+	"checkFlag":      checkFlagFunc,
+	"base64Encode":   base64EncodeFunc,
+	"base64Decode":   base64DecodeFunc,
+	"readFile":       readFileFunc,
+}
 
 // Cmd returns the subcommand.
 func Cmd() *cobra.Command {
@@ -175,7 +224,7 @@ func Config(dir string, tplDirName *string, configFileNames *[]string) error {
 	}
 
 	// Create YAML config file
-	cfg, err := NewYmlConfig(configFileNames)
+	cfg, err := NewYmlConfig(configFileNames, dir)
 	if err != nil {
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
@@ -240,31 +289,6 @@ func CreateDeploymentFilesFromTree(outdir string, force bool, tplDirName *string
 // CreateDeploymentFile builds a single deployment file to the given path. Use a truthy value for force
 // to override an existing file.
 func CreateDeploymentFile(outfile string, force bool, tplFile []byte, cfg *YmlConfig) error {
-	marshalContentFunc := func(ws int, v interface{}) (string, error) {
-		y, err := yaml.Marshal(v)
-		if err != nil {
-			return "", err
-		}
-		result := "\n"
-		for _, line := range strings.Split(string(y), "\n") {
-			if len(line) != 0 {
-				result += fmt.Sprintf("%s%s\n", strings.Repeat(" ", ws), line)
-			}
-		}
-		result = strings.TrimRight(result, "\n")
-		return result, nil
-	}
-	checkFlagFunc := func(v interface{}) (bool, error) {
-		f, ok := v.(*bool)
-		if !ok {
-			return false, fmt.Errorf("using wrong type as argument in checkFlag function, only *bool is allowed")
-		}
-		return *f, nil
-	}
-	funcMap := template.FuncMap{}
-	funcMap["marshalContent"] = marshalContentFunc
-	funcMap["checkFlag"] = checkFlagFunc
-
 	tmpl, err := template.New("Deployment File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplFile))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
@@ -284,6 +308,8 @@ func CreateDeploymentFile(outfile string, force bool, tplFile []byte, cfg *YmlCo
 
 // YmlConfig contains the (merged) configuration for the creation of the deployment files.
 type YmlConfig struct {
+	WorkingDirectory string
+
 	Filename  string `yaml:"filename"`
 	Url       string `yaml:"url"`
 	StackName string `yaml:"stackName"`
@@ -331,7 +357,7 @@ func (t *nullTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Va
 
 // NewYmlConfig creates a ymlConfig object from all given files. The files were
 // merged together with the default config.
-func NewYmlConfig(configFileNames *[]string) (*YmlConfig, error) {
+func NewYmlConfig(configFileNames *[]string, dir string) (*YmlConfig, error) {
 	var err error
 	var configFiles [][]byte
 	if configFiles, err = ReadConfigFiles(configFileNames); err != nil {
@@ -394,6 +420,9 @@ func NewYmlConfig(configFileNames *[]string) (*YmlConfig, error) {
 
 		config.Services[name] = s
 	}
+
+	// Set the WorkingDirectory
+	config.WorkingDirectory = dir
 
 	return config, nil
 }

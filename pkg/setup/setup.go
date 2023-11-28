@@ -95,7 +95,7 @@ func Setup(dir string, force bool, tplDirName *string, configFileNames *[]string
 	}
 
 	// Create YAML file
-	cfg, err := config.NewYmlConfig(configFileNames)
+	cfg, err := config.NewYmlConfig(configFileNames, dir)
 	if err != nil {
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
