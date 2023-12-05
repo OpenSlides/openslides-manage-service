@@ -337,6 +337,7 @@ type service struct {
 	Tag               string            `yaml:"tag"`
 	Environment       map[string]string `yaml:"environment"`
 	AdditionalContent json.RawMessage   `yaml:"additionalContent"`
+	CustomKeys        map[string]string `yaml:"customKeys"`
 }
 
 // nullTransformer is used to fix a problem with mergo
