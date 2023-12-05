@@ -276,7 +276,9 @@ func CreateDeploymentFilesFromTree(outdir string, force bool, tplDirName *string
 			if err != nil {
 				return fmt.Errorf("reading file %q: %w", path, err)
 			}
-			CreateDeploymentFile(createFile, force, fc, cfg)
+			if err := CreateDeploymentFile(createFile, force, fc, cfg); err != nil {
+				return fmt.Errorf("creating deployment file %s: %w", createFile, err)
+			}
 		}
 		return nil
 	}); err != nil {
