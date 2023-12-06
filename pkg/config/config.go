@@ -291,7 +291,7 @@ func CreateDeploymentFilesFromTree(outdir string, force bool, tplDirName *string
 // CreateDeploymentFile builds a single deployment file to the given path. Use a truthy value for force
 // to override an existing file.
 func CreateDeploymentFile(outfile string, force bool, tplFile []byte, cfg *YmlConfig) error {
-	tmpl, err := template.New("Deployment File").Option("missingkey=error").Funcs(funcMap).Parse(string(tplFile))
+	tmpl, err := template.New("Deployment File").Funcs(funcMap).Parse(string(tplFile))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
