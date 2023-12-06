@@ -100,11 +100,6 @@ func Setup(dir string, force bool, tplDirName *string, configFileNames *[]string
 		return fmt.Errorf("creating new YML config object: %w", err)
 	}
 
-	// Create deployment file(s)
-	if err := config.CreateDeploymentFilesFromTree(dir, force, tplDirName, cfg); err != nil {
-		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
-	}
-
 	// Create secrets directory
 	secrDir := path.Join(dir, SecretsDirName)
 	if err := os.MkdirAll(secrDir, subDirPerms); err != nil {
@@ -126,6 +121,11 @@ func Setup(dir string, force bool, tplDirName *string, configFileNames *[]string
 	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", dir, err)
+	}
+
+	// Create deployment file(s)
+	if err := config.CreateDeploymentFilesFromTree(dir, force, tplDirName, cfg); err != nil {
+		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
 	}
 
 	return nil
