@@ -89,7 +89,7 @@ disablePostgres: true
 		if err := config.Config(testDir, nil, c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
-		testFileNotContains(t, testDir, "docker-compose.yml", "image: postgres:11")
+		testFileNotContains(t, testDir, "docker-compose.yml", "image: postgres:15")
 	})
 
 	t.Run("running config.Config() using a custom config twice 3", func(t *testing.T) {
@@ -105,7 +105,7 @@ disablePostgres: false
 		if err := config.Config(testDir, nil, c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
-		testFileContains(t, testDir, "docker-compose.yml", "image: postgres:11")
+		testFileContains(t, testDir, "docker-compose.yml", "image: postgres:15")
 	})
 }
 
