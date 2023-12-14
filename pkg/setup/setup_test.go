@@ -311,7 +311,7 @@ services:
 		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-proxy:2.0.0")
 		testFileContains(t, testDir, myFileName, "image: example.com/test_Waetai0ohf/openslides-client:latest")
 		testFileContains(t, testDir, myFileName, "ports:\n      - 127.0.0.1:8001:8000")
-		testFileContains(t, testDir, myFileName, "image: postgres:11")
+		testFileContains(t, testDir, myFileName, "image: postgres:15")
 		testFileNotContains(t, testDir, myFileName, "cert_crt")
 		testKeyFile(t, secDir, "auth_token_key")
 		testKeyFile(t, secDir, "auth_cookie_key")
@@ -331,7 +331,7 @@ disablePostgres: true
 		if err := setup.Setup(testDir, false, nil, c); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
-		testFileNotContains(t, testDir, myFileName, "image: postgres:11")
+		testFileNotContains(t, testDir, myFileName, "image: postgres:15")
 	})
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory using yet another custom config", func(t *testing.T) {
@@ -639,7 +639,7 @@ services:
       - postgres_password
 
   postgres:
-    image: postgres:11
+    image: postgres:15
     environment:
       << : *default-environment
       POSTGRES_DB: openslides
