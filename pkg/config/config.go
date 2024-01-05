@@ -57,6 +57,16 @@ var marshalContentFunc = func(ws int, v interface{}) (string, error) {
 	result = strings.TrimRight(result, "\n")
 	return result, nil
 }
+var envMapToK8SFunc = func(v map[string]string) interface{} {
+	var listOfMaps []map[string]string
+	for key, value := range v {
+		m := make(map[string]string)
+		m["name"] = key
+		m["value"] = value
+		listOfMaps = append(listOfMaps, m)
+	}
+	return listOfMaps
+}
 var checkFlagFunc = func(v interface{}) (bool, error) {
 	f, ok := v.(*bool)
 	if !ok {
@@ -84,6 +94,7 @@ var readFileFunc = func(s string) (string, error) {
 
 var funcMap = template.FuncMap{
 	"marshalContent": marshalContentFunc,
+	"envMapToK8S":    envMapToK8SFunc,
 	"checkFlag":      checkFlagFunc,
 	"base64Encode":   base64EncodeFunc,
 	"base64Decode":   base64DecodeFunc,
