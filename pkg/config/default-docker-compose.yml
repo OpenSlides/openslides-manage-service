@@ -144,6 +144,7 @@ services:
       - auth_cookie_key
       - internal_auth_password
       - postgres_password
+      - superadmin
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
