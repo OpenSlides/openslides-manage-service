@@ -604,6 +604,7 @@ services:
       - postgres
     environment:
       << : *default-environment
+      OPENSLIDES_BACKEND_CREATE_INITIAL_DATA: "1"
       OPENSLIDES_BACKEND_COMPONENT: action
     networks:
       - data
@@ -613,6 +614,7 @@ services:
       - auth_cookie_key
       - internal_auth_password
       - postgres_password
+      - superadmin
 
   datastoreReader:
     image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
