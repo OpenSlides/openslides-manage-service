@@ -94,6 +94,9 @@ services:
   datastoreReader:
     environment:
       NUM_WORKERS: 8
+  backendManage:
+    environment:
+      OPENSLIDES_BACKEND_CREATE_INITIAL_DATA: 1
   manage:
     environment:
       ACTION_HOST: backendManage
