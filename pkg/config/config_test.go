@@ -56,6 +56,11 @@ func TestConfigWithCustomConfig(t *testing.T) {
 		t.Fatalf("generating temporary directory failed: %v", err)
 	}
 	defer os.RemoveAll(testDir)
+	testLibDir, err := os.MkdirTemp("", "openslides-manage-service-lib-")
+	if err != nil {
+		t.Fatalf("generating temporary directory failed: %v", err)
+	}
+	defer os.RemoveAll(testLibDir)
 
 	t.Run("running config.Config() using a custom config twice 1", func(t *testing.T) {
 		customConfig1 := `---
@@ -66,11 +71,20 @@ defaults:
 defaults:
   containerRegistry: example.com/test_Aeghies3me
 `
+		c := make([]string, 2)
+		cfgPath1 := path.Join(testLibDir, "ext-conf1")
+		if err := os.WriteFile(cfgPath1, []byte(customConfig1), os.ModePerm); err != nil {
+			t.Fatalf("writing custom config failed: %v", err)
+		}
+		c[0] = cfgPath1
+		cfgPath2 := path.Join(testLibDir, "ext-conf2")
+		if err := os.WriteFile(cfgPath2, []byte(customConfig2), os.ModePerm); err != nil {
+			t.Fatalf("writing custom config failed: %v", err)
+		}
+		c[1] = cfgPath2
+		var s = "docker-compose"
 
-		c := make([][]byte, 2)
-		c[0] = []byte(customConfig1)
-		c[1] = []byte(customConfig2)
-		if err := config.Config(testDir, nil, c); err != nil {
+		if err := config.Config(testDir, &s, &c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Aeghies3me/openslides-proxy:latest")
@@ -83,10 +97,20 @@ disablePostgres: false
 		customConfig2 := `---
 disablePostgres: true
 `
-		c := make([][]byte, 2)
-		c[0] = []byte(customConfig1)
-		c[1] = []byte(customConfig2)
-		if err := config.Config(testDir, nil, c); err != nil {
+		c := make([]string, 2)
+		cfgPath1 := path.Join(testLibDir, "ext-conf1")
+		if err := os.WriteFile(cfgPath1, []byte(customConfig1), os.ModePerm); err != nil {
+			t.Fatalf("writing custom config failed: %v", err)
+		}
+		c[0] = cfgPath1
+		cfgPath2 := path.Join(testLibDir, "ext-conf2")
+		if err := os.WriteFile(cfgPath2, []byte(customConfig2), os.ModePerm); err != nil {
+			t.Fatalf("writing custom config failed: %v", err)
+		}
+		c[1] = cfgPath2
+
+		var s = "docker-compose"
+		if err := config.Config(testDir, &s, &c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, "docker-compose.yml", "image: postgres:15")
@@ -99,10 +123,20 @@ disablePostgres: true
 		customConfig2 := `---
 disablePostgres: false
 `
-		c := make([][]byte, 2)
-		c[0] = []byte(customConfig1)
-		c[1] = []byte(customConfig2)
-		if err := config.Config(testDir, nil, c); err != nil {
+		c := make([]string, 2)
+		cfgPath1 := path.Join(testLibDir, "ext-conf1")
+		if err := os.WriteFile(cfgPath1, []byte(customConfig1), os.ModePerm); err != nil {
+			t.Fatalf("writing custom config failed: %v", err)
+		}
+		c[0] = cfgPath1
+		cfgPath2 := path.Join(testLibDir, "ext-conf2")
+		if err := os.WriteFile(cfgPath2, []byte(customConfig2), os.ModePerm); err != nil {
+			t.Fatalf("writing custom config failed: %v", err)
+		}
+		c[1] = cfgPath2
+
+		var s = "docker-compose"
+		if err := config.Config(testDir, &s, &c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, "docker-compose.yml", "image: postgres:15")
