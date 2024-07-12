@@ -1,6 +1,9 @@
 ---
-# Name of the generated YAML file.
+# Name of the generated deployment file for Docker Compose.
 filename: docker-compose.yml
+
+# Name of the directory that contains the deployment files e. g. for Kubernetes.
+deploymentDirectoryName: deployment
 
 # The OpenSlides proxy service listens on this address.
 host: 127.0.0.1

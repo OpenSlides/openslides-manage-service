@@ -82,9 +82,9 @@ defaults:
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		c[1] = cfgPath2
-		var s = "docker-compose"
+		tech := "docker-compose"
 
-		if err := config.Config(testDir, &s, &c); err != nil {
+		if err := config.Config(testDir, tech, "", c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Aeghies3me/openslides-proxy:latest")
@@ -108,9 +108,9 @@ disablePostgres: true
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		c[1] = cfgPath2
+		tech := "docker-compose"
 
-		var s = "docker-compose"
-		if err := config.Config(testDir, &s, &c); err != nil {
+		if err := config.Config(testDir, tech, "", c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, "docker-compose.yml", "image: postgres:15")
@@ -134,9 +134,9 @@ disablePostgres: false
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		c[1] = cfgPath2
+		tech := "docker-compose"
 
-		var s = "docker-compose"
-		if err := config.Config(testDir, &s, &c); err != nil {
+		if err := config.Config(testDir, tech, "", c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, "docker-compose.yml", "image: postgres:15")

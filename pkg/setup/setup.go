@@ -61,21 +61,13 @@ func Cmd() *cobra.Command {
 	}
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
-	tplDirName := config.FlagTpl(cmd)
+	tech := config.FlagTech(cmd)
+	tplFileOrDirName := config.FlagTpl(cmd)
 	configFileNames := config.FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-
-		if err := config.ValidateTpl(tplDirName); err != nil {
-			return fmt.Errorf("validating configFileNames: %w", err)
-		}
-
-		if err := config.ValidateConfig(configFileNames); err != nil {
-			return fmt.Errorf("validating configFileNames: %w", err)
-		}
-
-		if err := Setup(dir, *force, tplDirName, configFileNames); err != nil {
+		if err := Setup(dir, *force, *tech, *tplFileOrDirName, *configFileNames); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -83,27 +75,25 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-// Setup creates one or more (depending on template) files containing the deployment definitions
-// with secrets directory and directories for database and SSL certs volumes.
-//
-// Existing files are skipped unless force is true. A custom template for the YAML file
-// and YAML configs can be provided.
-func Setup(dir string, force bool, tplDirName *string, configFileNames *[]string) error {
-	// Create directory
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return fmt.Errorf("creating directory at %q: %w", dir, err)
+// Setup creates one or more (depending on template) files containing the
+// deployment definitions and the secrets directory including SSL certs. The
+// parameters are just the command flags.
+func Setup(baseDir string, force bool, tech string, tplFileOrDirName string, configFileNames []string) error {
+	// Create YAML config object
+	cfg, err := config.NewYmlConfig(configFileNames)
+	if err != nil {
+		return fmt.Errorf("parsing configuration: %w", err)
 	}
 
-	// Create YAML file
-	cfg, err := config.NewYmlConfig(configFileNames, dir)
-	if err != nil {
-		return fmt.Errorf("creating new YML config object: %w", err)
+	// Create the base directory and the the deployment files using the code from the config command.
+	if err := config.CreateDirAndFiles(baseDir, force, tech, tplFileOrDirName, cfg); err != nil {
+		return fmt.Errorf("(re-)creating deployment files: %w", err)
 	}
 
 	// Create secrets directory
-	secrDir := path.Join(dir, SecretsDirName)
+	secrDir := path.Join(baseDir, SecretsDirName)
 	if err := os.MkdirAll(secrDir, subDirPerms); err != nil {
-		return fmt.Errorf("creating secrets directory at %q: %w", dir, err)
+		return fmt.Errorf("creating secrets directory at %q: %w", baseDir, err)
 	}
 
 	// Create random secrets
@@ -120,12 +110,7 @@ func Setup(dir string, force bool, tplDirName *string, configFileNames *[]string
 
 	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
-		return fmt.Errorf("creating admin file at %q: %w", dir, err)
-	}
-
-	// Create deployment file(s)
-	if err := config.CreateDeploymentFilesFromTree(dir, force, tplDirName, cfg); err != nil {
-		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
+		return fmt.Errorf("creating admin file at %q: %w", baseDir, err)
 	}
 
 	return nil
