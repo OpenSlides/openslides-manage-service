@@ -6,42 +6,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set up Go
-      uses: actions/setup-go@v2.1.3
-      with:
-        go-version: 1.19
+      - name: Set up Go
+        uses: actions/setup-go@v2.1.3
+        with:
+          go-version: 1.23
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
 
-    - name: Create manage auth password
-      run: echo "password" > manage_auth_password
+      - name: Create manage auth password
+        run: echo "password" > manage_auth_password
 
-    - name: Build and start server with golang
-      run: |
-        go build ./cmd/server
-        MANAGE_AUTH_PASSWORD_FILE=manage_auth_password timeout --preserve-status --signal SIGINT 5s ./server
+      - name: Build and start server with golang
+        run: |
+          go build ./cmd/server
+          MANAGE_AUTH_PASSWORD_FILE=manage_auth_password timeout --preserve-status --signal SIGINT 5s ./server
 
-    - name: Build and start manage with golang
-      run: |
-        go build ./cmd/openslides
-        ./openslides
+      - name: Build and start manage with golang
+        run: |
+          go build ./cmd/openslides
+          ./openslides
 
-    - name: Build and start server with Docker
-      run: |
-        docker build . --tag openslides-manage
-        timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage
-      env:
-        DOCKER_BUILDKIT: 1
+      - name: Build and start server with Docker
+        run: |
+          docker build . --tag openslides-manage
+          timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage
+        env:
+          DOCKER_BUILDKIT: 1
 
-    - name: Start development version of server with Makefile
-      run: |
-        make build-dev
-        timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage-dev
-      env:
-        DOCKER_BUILDKIT: 1
+      - name: Start development version of server with Makefile
+        run: |
+          make build-dev
+          timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage-dev
+        env:
+          DOCKER_BUILDKIT: 1
 
-    - name: Run tests with Makefile
-      run: make run-tests
-      env:
-        DOCKER_BUILDKIT: 1
+      - name: Run tests with Makefile
+        run: make run-tests
+        env:
+          DOCKER_BUILDKIT: 1
