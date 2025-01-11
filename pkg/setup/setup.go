@@ -61,13 +61,16 @@ func Cmd() *cobra.Command {
 	}
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
-	tech := config.FlagTech(cmd)
+	builtinTemplate := config.FlagBuiltinTemplate(cmd)
 	tplFileOrDirName := config.FlagTpl(cmd)
 	configFileNames := config.FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if *tplFileOrDirName != "" && *builtinTemplate != config.BuiltinTemplateDefault {
+			return fmt.Errorf("flag --builtin-template must not be used together with flag --template")
+		}
 		dir := args[0]
-		if err := Setup(dir, *force, *tech, *tplFileOrDirName, *configFileNames); err != nil {
+		if err := Setup(dir, *force, *builtinTemplate, *tplFileOrDirName, *configFileNames); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil

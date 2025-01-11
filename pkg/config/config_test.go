@@ -11,7 +11,7 @@ import (
 )
 
 func TestCmd(t *testing.T) {
-	t.Run("executing setup.Cmd() with existing directory", func(t *testing.T) {
+	t.Run("executing config.Cmd() with existing directory", func(t *testing.T) {
 		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
 		if err != nil {
 			t.Fatalf("generating temporary directory failed: %v", err)
@@ -30,7 +30,31 @@ func TestCmd(t *testing.T) {
 		}
 	})
 
-	t.Run("executing setup.CmdCreateDefault() with existing directory", func(t *testing.T) {
+	t.Run("executing config.Cmd() with existing directory with builtin-template flag and template flag", func(t *testing.T) {
+		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
+		if err != nil {
+			t.Fatalf("generating temporary directory failed: %v", err)
+		}
+		defer os.RemoveAll(testDir)
+
+		templateFilePath := path.Join(testDir, "some-template.yml")
+		if err := os.WriteFile(templateFilePath, []byte(""), os.ModePerm); err != nil {
+			t.Fatalf("writing custom template failed: %v", err)
+		}
+		cmd := config.Cmd()
+		cmd.SetArgs([]string{testDir, "--builtin-template", "kubernetes", "--template", templateFilePath})
+
+		err = cmd.Execute()
+		if err == nil {
+			t.Fatalf("executing config subcommand: expected error but err is nil")
+		}
+		errMsg := "flag --builtin-template must not be used together with flag --template"
+		if err.Error() != errMsg {
+			t.Fatalf("wrong error message, expected %q, got %q", errMsg, err.Error())
+		}
+	})
+
+	t.Run("executing config.CmdCreateDefault() with existing directory", func(t *testing.T) {
 		testDir, err := os.MkdirTemp("", "openslides-manage-service-")
 		if err != nil {
 			t.Fatalf("generating temporary directory failed: %v", err)

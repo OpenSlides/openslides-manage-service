@@ -50,13 +50,16 @@ func Cmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 	}
 
-	tech := FlagTech(cmd)
+	builtinTemplate := FlagBuiltinTemplate(cmd)
 	tplFileOrDirName := FlagTpl(cmd)
 	configFileNames := FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if *tplFileOrDirName != "" && *builtinTemplate != BuiltinTemplateDefault {
+			return fmt.Errorf("flag --builtin-template must not be used together with flag --template")
+		}
 		dir := args[0]
-		if err := Config(dir, *tech, *tplFileOrDirName, *configFileNames); err != nil {
+		if err := Config(dir, *builtinTemplate, *tplFileOrDirName, *configFileNames); err != nil {
 			return fmt.Errorf("running Config(): %w", err)
 		}
 		return nil
@@ -64,11 +67,21 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-const techMsg = " must bei either \"docker-compose\" or \"kubernetes\""
+// BuiltinTemplateDefault is the default builtin template which is used if the
+// user does neigther provide a custom template nor give a builtin template.
+const BuiltinTemplateDefault = "docker-compose"
 
-// FlagTech setups the technology flag to the given cobra command.
-func FlagTech(cmd *cobra.Command) *string {
-	return cmd.Flags().String("technology", "docker-compose", "create files for this deployment technology,"+techMsg)
+func getBuiltinTemplateMsg() string {
+	var allNames []string
+	for _, obj := range allBuiltinTemplates {
+		allNames = append(allNames, obj.name)
+	}
+	return fmt.Sprintf(" must be one of the following: %s", strings.Join(allNames, ", "))
+}
+
+// FlagBuiltinTemplate setups the builtin-template flag to the given cobra command.
+func FlagBuiltinTemplate(cmd *cobra.Command) *string {
+	return cmd.Flags().String("builtin-template", BuiltinTemplateDefault, "create files for this builtin deployment variant,"+getBuiltinTemplateMsg())
 }
 
 // FlagTpl setups the template flag to the given cobra command.
@@ -98,79 +111,129 @@ func Config(baseDir string, tech string, tplFileOrDirName string, configFileName
 	return nil
 }
 
-// CreateDirAndFiles creates the base directory and (re-)creates the deployment files
-// according to the given technology and the given template. If tplFileOrDirName
-// is empty, the default deployment file or directory is used. Use a truthy
-// value for force to override existing files.
-func CreateDirAndFiles(baseDir string, force bool, tech string, tplFileOrDirName string, cfg *YmlConfig) error {
-	switch tech {
-	case "docker-compose":
-		// Get template file from command line option or default
-		var tplFile []byte
-		var err error
-		if tplFileOrDirName == "" {
-			tplFile, err = deploymentTemplates.ReadFile(path.Join("templates", "docker-compose", "docker-compose.yml"))
-			if err != nil {
-				return fmt.Errorf("reading template file: %w", err)
-			}
-		} else {
-			tplFile, err = os.ReadFile(tplFileOrDirName)
-			if err != nil {
-				return fmt.Errorf("reading file %q: %w", tplFileOrDirName, err)
-			}
+type builtinTemplateFunc struct {
+	name string
+	fn   func(baseDir string, force bool, cfg *YmlConfig) error
+}
+
+var allBuiltinTemplates = []builtinTemplateFunc{
+	{name: "docker-compose", fn: builtinTemplateDockerCompose},
+	{name: "kubernetes", fn: builtinTemplateKubernetes},
+}
+
+func builtinTemplateByName(name string) (builtinTemplateFunc, bool) {
+	for _, obj := range allBuiltinTemplates {
+		if obj.name == name {
+			return obj, true
 		}
-
-		// Create directory
-		if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
-			return fmt.Errorf("creating directory at %q: %w", baseDir, err)
-		}
-
-		// Create deployment file for Docker Compose
-		filename := filepath.Join(baseDir, cfg.Filename)
-		if err := CreateDeploymentFile(filename, force, tplFile, cfg); err != nil {
-			return fmt.Errorf("creating deployment file %q: %w", filename, err)
-		}
-
-		return nil
-
-	case "kubernetes":
-		// Get template directory from command line option or default
-		var tplDir fs.FS
-		var err error
-		if tplFileOrDirName == "" {
-			tplDir, err = fs.Sub(deploymentTemplates, path.Join("templates", "kubernetes"))
-			if err != nil {
-				return fmt.Errorf("retrieving subtree: %w", err)
-			}
-		} else {
-			fileInfo, err := os.Stat(tplFileOrDirName)
-			if err != nil {
-				if errors.Is(err, os.ErrNotExist) {
-					return fmt.Errorf("template file or directory %q does not exist", tplFileOrDirName)
-				}
-				return fmt.Errorf("checking file info of %q: %w", tplFileOrDirName, err)
-			}
-			if !fileInfo.IsDir() {
-				return fmt.Errorf("%q is not a directory", tplFileOrDirName)
-			}
-			tplDir = os.DirFS(tplFileOrDirName)
-		}
-
-		// Create directory
-		if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
-			return fmt.Errorf("creating directory at %q: %w", baseDir, err)
-		}
-
-		// Create the deployment directory for Kubernetes
-		if err := CreateDeploymentFilesFromTree(baseDir, force, tplDir, cfg); err != nil {
-			return fmt.Errorf("creating deployment files at %q: %w", baseDir, err)
-		}
-
-		return nil
-
-	default:
-		return fmt.Errorf("unknown technology %q,"+techMsg, tech)
 	}
+	return builtinTemplateFunc{}, false
+}
+
+// CreateDirAndFiles creates the base directory and (re-)creates the deployment
+// files according to the given template. If tplFileOrDirName is empty, the
+// given builtin template file or directory is used. Use a truthy value for
+// force to override existing files.
+func CreateDirAndFiles(baseDir string, force bool, builtinTemplate string, tplFileOrDirName string, cfg *YmlConfig) error {
+	if tplFileOrDirName == "" {
+		obj, found := builtinTemplateByName(builtinTemplate)
+		if !found {
+			return fmt.Errorf("unknown builtin template %q,"+getBuiltinTemplateMsg(), builtinTemplate)
+		}
+		return obj.fn(baseDir, force, cfg)
+	}
+
+	fileInfo, err := os.Stat(tplFileOrDirName)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("template file or directory %q does not exist", tplFileOrDirName)
+		}
+		return fmt.Errorf("checking file info of %q: %w", tplFileOrDirName, err)
+	}
+
+	if !fileInfo.IsDir() {
+		return customTemplateSingleFile(baseDir, force, tplFileOrDirName, cfg)
+	}
+
+	return customTemplateDirectory(baseDir, force, tplFileOrDirName, cfg)
+}
+
+func builtinTemplateDockerCompose(baseDir string, force bool, cfg *YmlConfig) error {
+	// Get default template file
+	tplFile, err := deploymentTemplates.ReadFile(path.Join("templates", "docker-compose.yml"))
+	if err != nil {
+		return fmt.Errorf("reading template file: %w", err)
+	}
+
+	// Create directory
+	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+		return fmt.Errorf("creating directory at %q: %w", baseDir, err)
+	}
+
+	// Create deployment file for Docker Compose
+	filename := filepath.Join(baseDir, cfg.Filename)
+	if err := CreateDeploymentFile(filename, force, tplFile, cfg); err != nil {
+		return fmt.Errorf("creating deployment file %q: %w", filename, err)
+	}
+
+	return nil
+}
+
+func builtinTemplateKubernetes(baseDir string, force bool, cfg *YmlConfig) error {
+	// Get default template directory
+	tplDir, err := fs.Sub(deploymentTemplates, path.Join("templates", "kubernetes"))
+	if err != nil {
+		return fmt.Errorf("retrieving subtree: %w", err)
+	}
+
+	// Create directory
+	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+		return fmt.Errorf("creating directory at %q: %w", baseDir, err)
+	}
+
+	// Create the deployment directory for Kubernetes
+	if err := CreateDeploymentFilesFromTree(baseDir, force, tplDir, cfg); err != nil {
+		return fmt.Errorf("creating deployment files at %q: %w", baseDir, err)
+	}
+
+	return nil
+}
+
+func customTemplateSingleFile(baseDir string, force bool, tplFilename string, cfg *YmlConfig) error {
+	// Get file content
+	tplFile, err := os.ReadFile(tplFilename)
+	if err != nil {
+		return fmt.Errorf("reading file %q: %w", tplFilename, err)
+	}
+
+	// Create directory
+	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+		return fmt.Errorf("creating directory at %q: %w", baseDir, err)
+	}
+
+	// Create deployment file
+	filename := filepath.Join(baseDir, cfg.Filename)
+	if err := CreateDeploymentFile(filename, force, tplFile, cfg); err != nil {
+		return fmt.Errorf("creating deployment file %q: %w", filename, err)
+	}
+
+	return nil
+}
+
+func customTemplateDirectory(baseDir string, force bool, tplDirname string, cfg *YmlConfig) error {
+	tplDir := os.DirFS(tplDirname)
+
+	// Create directory
+	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+		return fmt.Errorf("creating directory at %q: %w", baseDir, err)
+	}
+
+	// Create the deployment directory for Kubernetes
+	if err := CreateDeploymentFilesFromTree(baseDir, force, tplDir, cfg); err != nil {
+		return fmt.Errorf("creating deployment files at %q: %w", baseDir, err)
+	}
+
+	return nil
 }
 
 // CreateDeploymentFilesFromTree walks through the FS containing templates and
@@ -208,8 +271,8 @@ func CreateDeploymentFilesFromTree(baseDir string, force bool, tplDir fs.FS, cfg
 	return nil
 }
 
-// CreateDeploymentFile builds a single deployment file to the given path. Use a truthy value for force
-// to override an existing file.
+// CreateDeploymentFile builds a single deployment file to the given path. Use a
+// truthy value for force to override an existing file.
 func CreateDeploymentFile(filename string, force bool, tplFile []byte, cfg *YmlConfig) error {
 	tmpl, err := template.New("Deployment File").Funcs(funcMap).Parse(string(tplFile))
 	if err != nil {
