@@ -81,7 +81,7 @@ func Cmd() *cobra.Command {
 // Setup creates one or more (depending on template) files containing the
 // deployment definitions and the secrets directory including SSL certs. The
 // parameters are just the command flags.
-func Setup(baseDir string, force bool, tech string, tplFileOrDirName string, configFileNames []string) error {
+func Setup(baseDir string, force bool, builtinTpl string, tplFileOrDirName string, configFileNames []string) error {
 	// Create YAML config object
 	cfg, err := config.NewYmlConfig(configFileNames)
 	if err != nil {
@@ -89,7 +89,7 @@ func Setup(baseDir string, force bool, tech string, tplFileOrDirName string, con
 	}
 
 	// Create the base directory and the the deployment files using the code from the config command.
-	if err := config.CreateDirAndFiles(baseDir, force, tech, tplFileOrDirName, cfg); err != nil {
+	if err := config.CreateDirAndFiles(baseDir, force, builtinTpl, tplFileOrDirName, cfg); err != nil {
 		return fmt.Errorf("(re-)creating deployment files: %w", err)
 	}
 

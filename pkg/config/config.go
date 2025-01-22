@@ -86,7 +86,7 @@ func FlagBuiltinTemplate(cmd *cobra.Command) *string {
 
 // FlagTpl setups the template flag to the given cobra command.
 func FlagTpl(cmd *cobra.Command) *string {
-	return cmd.Flags().StringP("template", "t", "", "file or directory for the deployment template files (according to the technology flag)")
+	return cmd.Flags().StringP("template", "t", "", "file or directory for deployment template files, use this to provide a custom template")
 }
 
 // FlagConfig setups the config flag to the given cobra command.
@@ -96,7 +96,7 @@ func FlagConfig(cmd *cobra.Command) *[]string {
 
 // Config rebuilds one or more (depending on template) files containing the
 // deployment definitions. The parameters are just the command flags.
-func Config(baseDir string, tech string, tplFileOrDirName string, configFileNames []string) error {
+func Config(baseDir string, builtinTpl string, tplFileOrDirName string, configFileNames []string) error {
 	// Create YAML config object
 	cfg, err := NewYmlConfig(configFileNames)
 	if err != nil {
@@ -104,7 +104,7 @@ func Config(baseDir string, tech string, tplFileOrDirName string, configFileName
 	}
 
 	// Create the base directory and the deployment files.
-	if err := CreateDirAndFiles(baseDir, true, tech, tplFileOrDirName, cfg); err != nil {
+	if err := CreateDirAndFiles(baseDir, true, builtinTpl, tplFileOrDirName, cfg); err != nil {
 		return fmt.Errorf("(re-)creating deployment files: %w", err)
 	}
 

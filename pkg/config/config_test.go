@@ -106,9 +106,9 @@ defaults:
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		c[1] = cfgPath2
-		tech := "docker-compose"
+		builtinTpl := "docker-compose"
 
-		if err := config.Config(testDir, tech, "", c); err != nil {
+		if err := config.Config(testDir, builtinTpl, "", c); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Aeghies3me/openslides-proxy:latest")
