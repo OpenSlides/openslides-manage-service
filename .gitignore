@@ -6,8 +6,10 @@
 /server
 
 # Generated files
-docker-compose.yml
 config.yml
+docker-compose.yml
+!pkg/config/templates/docker-compose.yml
+deployment/
 secrets/
 /inst
 

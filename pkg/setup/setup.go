@@ -61,33 +61,16 @@ func Cmd() *cobra.Command {
 	}
 
 	force := cmd.Flags().BoolP("force", "f", false, "do not skip existing files but overwrite them")
-	tplFileName := config.FlagTpl(cmd)
+	builtinTemplate := config.FlagBuiltinTemplate(cmd)
+	tplFileOrDirName := config.FlagTpl(cmd)
 	configFileNames := config.FlagConfig(cmd)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if *tplFileOrDirName != "" && *builtinTemplate != config.BuiltinTemplateDefault {
+			return fmt.Errorf("flag --builtin-template must not be used together with flag --template")
+		}
 		dir := args[0]
-
-		var tplFile []byte
-		if *tplFileName != "" {
-			fc, err := os.ReadFile(*tplFileName)
-			if err != nil {
-				return fmt.Errorf("reading file %q: %w", *tplFileName, err)
-			}
-			tplFile = fc
-		}
-
-		var configFiles [][]byte
-		if len(*configFileNames) > 0 {
-			for _, configFileName := range *configFileNames {
-				fc, err := os.ReadFile(configFileName)
-				if err != nil {
-					return fmt.Errorf("reading file %q: %w", configFileName, err)
-				}
-				configFiles = append(configFiles, fc)
-			}
-		}
-
-		if err := Setup(dir, *force, tplFile, configFiles); err != nil {
+		if err := Setup(dir, *force, *builtinTemplate, *tplFileOrDirName, *configFileNames); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -95,31 +78,25 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-// Setup creates YAML file for Docker Compose or Docker Swarm with secrets directory and
-// directories for database and SSL certs volumes.
-//
-// Existing files are skipped unless force is true. A custom template for the YAML file
-// and YAML configs can be provided.
-func Setup(dir string, force bool, tplFile []byte, configFiles [][]byte) error {
-	// Create directory
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return fmt.Errorf("creating directory at %q: %w", dir, err)
-	}
-
-	// Create YAML file
-	cfg, err := config.NewYmlConfig(configFiles)
+// Setup creates one or more (depending on template) files containing the
+// deployment definitions and the secrets directory including SSL certs. The
+// parameters are just the command flags.
+func Setup(baseDir string, force bool, builtinTpl string, tplFileOrDirName string, configFileNames []string) error {
+	// Create YAML config object
+	cfg, err := config.NewYmlConfig(configFileNames)
 	if err != nil {
-		return fmt.Errorf("creating new YML config object: %w", err)
+		return fmt.Errorf("parsing configuration: %w", err)
 	}
 
-	if err := config.CreateYmlFile(dir, force, tplFile, cfg); err != nil {
-		return fmt.Errorf("creating YAML file at %q: %w", dir, err)
+	// Create the base directory and the the deployment files using the code from the config command.
+	if err := config.CreateDirAndFiles(baseDir, force, builtinTpl, tplFileOrDirName, cfg); err != nil {
+		return fmt.Errorf("(re-)creating deployment files: %w", err)
 	}
 
 	// Create secrets directory
-	secrDir := path.Join(dir, SecretsDirName)
+	secrDir := path.Join(baseDir, SecretsDirName)
 	if err := os.MkdirAll(secrDir, subDirPerms); err != nil {
-		return fmt.Errorf("creating secrets directory at %q: %w", dir, err)
+		return fmt.Errorf("creating secrets directory at %q: %w", baseDir, err)
 	}
 
 	// Create random secrets
@@ -136,7 +113,7 @@ func Setup(dir string, force bool, tplFile []byte, configFiles [][]byte) error {
 
 	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
-		return fmt.Errorf("creating admin file at %q: %w", dir, err)
+		return fmt.Errorf("creating admin file at %q: %w", baseDir, err)
 	}
 
 	return nil
