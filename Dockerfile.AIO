@@ -1,6 +1,6 @@
 # Question: Wofür wird das Client Target verwendet?
 
-ARG CONTEXT=dev
+ARG CONTEXT=prod
 ARG GO_IMAGE_VERSION=1.19
 
 FROM golang:${GO_IMAGE_VERSION}-alpine as base
