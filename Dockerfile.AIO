@@ -29,6 +29,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
 LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"    
 
+HEALTHCHECK CMD ["/healthcheck"]
 
 
 # Development Image
@@ -39,8 +40,6 @@ RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
 EXPOSE 9008
 
 CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
-
-HEALTHCHECK CMD ["/healthcheck"]
 
 
 
@@ -83,5 +82,3 @@ COPY --from=builder /root/server .
 EXPOSE 9008
 
 ENTRYPOINT ["/server"]
-
-HEALTHCHECK CMD ["/healthcheck"]
