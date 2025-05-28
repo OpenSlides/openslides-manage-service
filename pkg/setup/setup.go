@@ -88,11 +88,6 @@ func Setup(baseDir string, force bool, builtinTpl string, tplFileOrDirName strin
 		return fmt.Errorf("parsing configuration: %w", err)
 	}
 
-	// Create the base directory and the the deployment files using the code from the config command.
-	if err := config.CreateDirAndFiles(baseDir, force, builtinTpl, tplFileOrDirName, cfg); err != nil {
-		return fmt.Errorf("(re-)creating deployment files: %w", err)
-	}
-
 	// Create secrets directory
 	secrDir := path.Join(baseDir, SecretsDirName)
 	if err := os.MkdirAll(secrDir, subDirPerms); err != nil {
@@ -114,6 +109,11 @@ func Setup(baseDir string, force bool, builtinTpl string, tplFileOrDirName strin
 	// Create superadmin file
 	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
 		return fmt.Errorf("creating admin file at %q: %w", baseDir, err)
+	}
+
+	// Create the base directory and the the deployment files using the code from the config command.
+	if err := config.CreateDirAndFiles(baseDir, force, builtinTpl, tplFileOrDirName, cfg); err != nil {
+		return fmt.Errorf("(re-)creating deployment files: %w", err)
 	}
 
 	return nil

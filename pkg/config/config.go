@@ -172,7 +172,7 @@ func builtinTemplateDockerCompose(baseDir string, force bool, cfg *YmlConfig) er
 
 	// Create deployment file for Docker Compose
 	filename := filepath.Join(baseDir, cfg.Filename)
-	if err := CreateDeploymentFile(filename, force, tplFile, cfg); err != nil {
+	if err := CreateDeploymentFile(filename, force, tplFile, cfg, baseDir); err != nil {
 		return fmt.Errorf("creating deployment file %q: %w", filename, err)
 	}
 
@@ -213,7 +213,7 @@ func customTemplateSingleFile(baseDir string, force bool, tplFilename string, cf
 
 	// Create deployment file
 	filename := filepath.Join(baseDir, cfg.Filename)
-	if err := CreateDeploymentFile(filename, force, tplFile, cfg); err != nil {
+	if err := CreateDeploymentFile(filename, force, tplFile, cfg, baseDir); err != nil {
 		return fmt.Errorf("creating deployment file %q: %w", filename, err)
 	}
 
@@ -245,7 +245,7 @@ func CreateDeploymentFilesFromTree(baseDir string, force bool, tplDir fs.FS, cfg
 			return fmt.Errorf("walking templates directory at %q: %w", path, err)
 		}
 
-		filename := filepath.Join(baseDir, cfg.DeploymentDirectoryName, path)
+		filename := filepath.Join(baseDir, path)
 
 		if d.IsDir() {
 			if err := os.MkdirAll(filename, os.ModePerm); err != nil {
@@ -259,7 +259,7 @@ func CreateDeploymentFilesFromTree(baseDir string, force bool, tplDir fs.FS, cfg
 			return fmt.Errorf("reading file %q: %w", path, err)
 		}
 
-		if err := CreateDeploymentFile(filename, force, fc, cfg); err != nil {
+		if err := CreateDeploymentFile(filename, force, fc, cfg, baseDir); err != nil {
 			return fmt.Errorf("creating deployment file %q: %w", filename, err)
 		}
 
@@ -273,8 +273,8 @@ func CreateDeploymentFilesFromTree(baseDir string, force bool, tplDir fs.FS, cfg
 
 // CreateDeploymentFile builds a single deployment file to the given path. Use a
 // truthy value for force to override an existing file.
-func CreateDeploymentFile(filename string, force bool, tplFile []byte, cfg *YmlConfig) error {
-	tmpl, err := template.New("Deployment File").Funcs(funcMap).Parse(string(tplFile))
+func CreateDeploymentFile(filename string, force bool, tplFile []byte, cfg *YmlConfig, baseDir string) error {
+	tmpl, err := template.New("Deployment File").Funcs(getFuncMap(baseDir)).Parse(string(tplFile))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
@@ -293,8 +293,7 @@ func CreateDeploymentFile(filename string, force bool, tplFile []byte, cfg *YmlC
 
 // YmlConfig contains the (merged) configuration for the creation of the deployment files.
 type YmlConfig struct {
-	Filename                string `yaml:"filename"`
-	DeploymentDirectoryName string `yaml:"deploymentDirectoryName"`
+	Filename string `yaml:"filename"`
 
 	URL       string `yaml:"url"`
 	StackName string `yaml:"stackName"`
@@ -467,13 +466,25 @@ var readFileFunc = func(s string) (string, error) {
 	return string(b), nil
 }
 
-var funcMap = template.FuncMap{
-	"marshalContent": marshalContentFunc,
-	"envMapToK8S":    envMapToK8SFunc,
-	"checkFlag":      checkFlagFunc,
-	"base64Encode":   base64EncodeFunc,
-	"base64Decode":   base64DecodeFunc,
-	"readFile":       readFileFunc,
+func getFuncMap(baseDir string) template.FuncMap {
+	readSecretFunc := func(name string) (string, error) {
+		secretPath := filepath.Join(baseDir, "secrets", name)
+		data, err := os.ReadFile(secretPath)
+		if err != nil {
+			return "", fmt.Errorf("reading secret %q: %w", name, err)
+		}
+		return base64.StdEncoding.EncodeToString(data), nil
+	}
+
+	return template.FuncMap{
+		"marshalContent": marshalContentFunc,
+		"envMapToK8S":    envMapToK8SFunc,
+		"checkFlag":      checkFlagFunc,
+		"base64Encode":   base64EncodeFunc,
+		"base64Decode":   base64DecodeFunc,
+		"readFile":       readFileFunc,
+		"readSecret":     readSecretFunc,
+	}
 }
 
 // CmdCreateDefault returns the config-create-default subcommand.
