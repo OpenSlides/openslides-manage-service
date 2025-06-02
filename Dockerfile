@@ -1,7 +1,14 @@
-FROM golang:1.19-alpine as base
+ARG CONTEXT=prod
+ARG GO_IMAGE_VERSION=1.19
+
+FROM golang:${GO_IMAGE_VERSION}-alpine as base
+
+ARG CONTEXT
+ARG GO_IMAGE_VERSION
 
 WORKDIR /root
 
+## Installs
 RUN apk add git
 
 COPY go.mod go.sum ./
@@ -13,7 +20,39 @@ COPY proto proto
 COPY Makefile Makefile
 
 
-# Build service in seperate stage.
+LABEL org.opencontainers.image.title="OpenSlides Manage Service"
+LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
+    provides some management commands to setup and control OpenSlides instances."
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
+LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"    
+
+EXPOSE 9008
+HEALTHCHECK CMD ["/healthcheck"]
+
+
+# Development Image
+
+FROM base as dev
+
+RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
+
+CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
+
+
+
+# Testing Image
+
+FROM base as tests
+
+RUN apk add build-base
+
+CMD make test
+
+
+
+# Production Image
+
 FROM base as builder
 
 RUN CGO_ENABLED=0 go build ./cmd/openslides
@@ -21,38 +60,21 @@ RUN CGO_ENABLED=0 go build ./cmd/server
 RUN CGO_ENABLED=0 go build ./cmd/healthcheck
 
 
-# Test build.
-FROM base as testing
-
-RUN apk add build-base
-
-CMD make test
-
-
-# Development build.
-FROM base as development
-
-RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
-EXPOSE 9008
-
-CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
-
-
-# Productive build (client) tool.
 FROM scratch as client
+
 COPY --from=builder /root/openslides .
+
 ENTRYPOINT ["/openslides"]
 
 
-# Productive build server.
-FROM scratch
+FROM scratch as prod
 
 LABEL org.opencontainers.image.title="OpenSlides Manage Service"
 LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
-provides some management commands to setup and control OpenSlides instances."
+    provides some management commands to setup and control OpenSlides instances."
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
-LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
+LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"    
 
 COPY --from=builder /root/healthcheck .
 COPY --from=builder /root/server .
@@ -60,5 +82,3 @@ COPY --from=builder /root/server .
 EXPOSE 9008
 
 ENTRYPOINT ["/server"]
-
-HEALTHCHECK CMD ["/healthcheck"]
