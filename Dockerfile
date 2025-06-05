@@ -1,11 +1,9 @@
 ARG CONTEXT=prod
-ARG GO_IMAGE_VERSION=1.19
 
-FROM golang:${GO_IMAGE_VERSION}-alpine as base
+FROM golang:1.19-alpine as base
 
 ## Setup
 ARG CONTEXT
-ARG GO_IMAGE_VERSION
 WORKDIR /root
 ENV ${CONTEXT}=1
 
