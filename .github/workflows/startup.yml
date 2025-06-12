@@ -27,19 +27,35 @@ jobs:
         go build ./cmd/openslides
         ./openslides
 
+    - name: Build Prod
+      uses: Janmtbehrens/OpenSlides/dev/actions/build-service@all-in-one
+      with:
+        service: manage
+        context: prod
+
     - name: Build and start server with Docker
       run: |
-        docker build . --tag openslides-manage
         timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage
       env:
         DOCKER_BUILDKIT: 1
 
+    - name: Build Dev
+      uses: Janmtbehrens/OpenSlides/dev/actions/build-service@all-in-one
+      with:
+        service: manage
+        context: dev
+
     - name: Start development version of server with Makefile
       run: |
-        make build-dev
         timeout --preserve-status --signal SIGINT 5s docker run --env MANAGE_AUTH_PASSWORD_FILE=/manage_auth_password --volume $PWD/manage_auth_password:/manage_auth_password openslides-manage-dev
       env:
         DOCKER_BUILDKIT: 1
+
+    - name: Build Tests
+      uses: Janmtbehrens/OpenSlides/dev/actions/build-service@all-in-one
+      with:
+        service: manage
+        context: tests
 
     - name: Run tests with Makefile
       run: make run-tests
