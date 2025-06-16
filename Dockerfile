@@ -40,7 +40,7 @@ FROM base as dev
 RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
 
 ## Command
-CMD ["CompileDaemon","-log-prefix=false","-build='go build ./cmd/server'","-command='./server'"]
+CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
 
 
 # Testing Image
