@@ -29,10 +29,7 @@ LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/open
 
 EXPOSE 9008
 
-## Command
-COPY ./dev/command.sh ./
-RUN chmod +x command.sh
-CMD ["./command.sh"]
+## Healthcheck
 HEALTHCHECK CMD ["/healthcheck"]
 
 
@@ -42,6 +39,8 @@ FROM base as dev
 
 RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
 
+## Command
+CMD ["CompileDaemon","-log-prefix=false","-build='go build ./cmd/server'","-command='./server'"]
 
 
 # Testing Image
@@ -50,6 +49,8 @@ FROM base as tests
 
 RUN apk add build-base --no-cache
 
+## Command
+CMD ["make", "test"]
 
 
 # Production Image
