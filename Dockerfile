@@ -88,3 +88,5 @@ COPY --from=builder /root/server .
 EXPOSE 9008
 
 ENTRYPOINT ["/server"]
+
+HEALTHCHECK CMD ["/healthcheck"]
