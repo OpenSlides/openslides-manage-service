@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -362,12 +363,12 @@ func NewYmlConfig(configFileNames []string) (*YmlConfig, error) {
 
 	// Unmarshal and merge them all
 	config := new(YmlConfig)
-	for _, configFile := range allConfigFiles {
+	for _, configFile := range slices.Backward(allConfigFiles) {
 		c := new(YmlConfig)
 		if err := yaml.Unmarshal(configFile, c); err != nil {
 			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 		}
-		if err := mergo.Merge(config, c, mergo.WithOverride, mergo.WithTransformers(&nullTransformer{})); err != nil {
+		if err := mergo.Merge(config, c, mergo.WithAppendSlice, mergo.WithTransformers(&nullTransformer{})); err != nil {
 			return nil, fmt.Errorf("merging config files: %w", err)
 		}
 	}
