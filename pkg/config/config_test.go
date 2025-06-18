@@ -116,10 +116,10 @@ defaults:
 
 	t.Run("running config.Config() using a custom config twice 2", func(t *testing.T) {
 		customConfig1 := `---
-disablePostgres: false
+disablePostgres: true
 `
 		customConfig2 := `---
-disablePostgres: true
+disablePostgres: false
 `
 		c := make([]string, 2)
 		cfgPath1 := path.Join(testLibDir, "ext-conf1")
