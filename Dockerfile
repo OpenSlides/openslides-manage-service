@@ -4,7 +4,7 @@ FROM golang:1.19-alpine as base
 
 ## Setup
 ARG CONTEXT
-WORKDIR /root
+WORKDIR /app
 ENV ${CONTEXT}=1
 
 ## Installs
@@ -66,7 +66,7 @@ FROM scratch as client
 
 WORKDIR /
 
-COPY --from=builder /root/openslides .
+COPY --from=builder /app/openslides .
 
 ENTRYPOINT ["/openslides"]
 
@@ -82,8 +82,8 @@ LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
 LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"    
 
-COPY --from=builder /root/healthcheck .
-COPY --from=builder /root/server .
+COPY --from=builder /app/healthcheck .
+COPY --from=builder /app/server .
 
 EXPOSE 9008
 

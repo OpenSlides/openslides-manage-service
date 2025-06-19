@@ -38,8 +38,8 @@ openslides:
 		if [ $(shell whoami) != root ]; then \
 			addgroup -g $(shell id -g) build ; \
 			adduser -u $(shell id -u) -G build -D build ; \
-			chown build: /root/openslides ; \
+			chown build: /app/openslides ; \
 		fi; \
-		cp -p /root/openslides /build/"
+		cp -p /app/openslides /build/"
 
 .PHONY: openslides
