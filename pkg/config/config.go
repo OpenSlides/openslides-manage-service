@@ -332,7 +332,8 @@ type nullTransformer struct{}
 func (t *nullTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
 	if typ.Kind() == reflect.Ptr {
 		return func(dst, src reflect.Value) error {
-			if dst.CanSet() && !src.IsNil() {
+			// Only copy if destination is nil and source is not nil
+			if dst.CanSet() && dst.IsNil() && !src.IsNil() {
 				dst.Set(src)
 			}
 			return nil
@@ -368,7 +369,7 @@ func NewYmlConfig(configFileNames []string) (*YmlConfig, error) {
 		if err := yaml.Unmarshal(configFile, c); err != nil {
 			return nil, fmt.Errorf("unmarshaling YAML: %w", err)
 		}
-		if err := mergo.Merge(config, c, mergo.WithAppendSlice, mergo.WithTransformers(&nullTransformer{})); err != nil {
+		if err := mergo.Merge(config, c, mergo.WithTransformers(&nullTransformer{})); err != nil {
 			return nil, fmt.Errorf("merging config files: %w", err)
 		}
 	}
