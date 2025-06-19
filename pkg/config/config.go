@@ -302,6 +302,8 @@ type YmlConfig struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
 
+	CustomKeys map[string]string `yaml:"customKeys"`
+
 	DisablePostgres  *bool `yaml:"disablePostgres"`
 	DisableDependsOn *bool `yaml:"disableDependsOn"`
 	EnableLocalHTTPS *bool `yaml:"enableLocalHTTPS"`
