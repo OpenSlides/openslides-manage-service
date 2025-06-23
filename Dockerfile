@@ -30,7 +30,7 @@ LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/open
 EXPOSE 9008
 
 ## Healthcheck
-HEALTHCHECK CMD ["/healthcheck"]
+HEALTHCHECK CMD ["/app/healthcheck"]
 
 
 # Development Image
