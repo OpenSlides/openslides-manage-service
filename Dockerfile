@@ -5,8 +5,6 @@ FROM golang:1.19-alpine as base
 ## Setup
 ARG CONTEXT
 WORKDIR /app
-# Used for easy target differentiation
-ARG ${CONTEXT}=1 
 ENV APP_CONTEXT=${CONTEXT}
 
 ## Installs
@@ -20,20 +18,18 @@ COPY pkg pkg
 COPY proto proto
 COPY Makefile Makefile
 
-
 ## External Information
 LABEL org.opencontainers.image.title="OpenSlides Manage Service"
 LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
     provides some management commands to setup and control OpenSlides instances."
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
-LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"    
+LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
 
 EXPOSE 9008
 
 ## Healthcheck
 HEALTHCHECK CMD ["/app/healthcheck"]
-
 
 # Development Image
 
@@ -44,7 +40,6 @@ RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
 ## Command
 CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
 
-
 # Testing Image
 
 FROM base as tests
@@ -54,7 +49,6 @@ RUN apk add build-base --no-cache
 ## Command
 CMD ["make", "test"]
 
-
 # Production Image
 
 FROM base as builder
@@ -62,7 +56,6 @@ FROM base as builder
 RUN CGO_ENABLED=0 go build ./cmd/openslides && \
     CGO_ENABLED=0 go build ./cmd/server && \ 
     CGO_ENABLED=0 go build ./cmd/healthcheck
-
 
 FROM scratch as client
 
@@ -73,7 +66,6 @@ COPY --from=builder /app/openslides .
 
 ENTRYPOINT ["/openslides"]
 
-
 FROM scratch as prod
 
 WORKDIR /
@@ -83,7 +75,7 @@ LABEL org.opencontainers.image.description="Manage service and tool for OpenSlid
     provides some management commands to setup and control OpenSlides instances."
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
-LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"    
+LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
 
 COPY --from=builder /app/healthcheck .
 COPY --from=builder /app/server .
