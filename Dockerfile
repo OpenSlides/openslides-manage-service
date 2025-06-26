@@ -5,7 +5,9 @@ FROM golang:1.19-alpine as base
 ## Setup
 ARG CONTEXT
 WORKDIR /app
-ENV ${CONTEXT}=1
+# Used for easy target differentiation
+ARG ${CONTEXT}=1 
+ENV APP_CONTEXT=${CONTEXT}
 
 ## Installs
 RUN apk add git --no-cache
@@ -65,6 +67,7 @@ RUN CGO_ENABLED=0 go build ./cmd/openslides && \
 FROM scratch as client
 
 WORKDIR /
+ENV APP_CONTEXT=prod
 
 COPY --from=builder /app/openslides .
 
