@@ -46,6 +46,8 @@ FROM base as tests
 
 RUN apk add build-base --no-cache
 
+CMD ["sleep", "infinity"]
+
 ## Command
 CMD ["make", "test"]
 
@@ -54,7 +56,7 @@ CMD ["make", "test"]
 FROM base as builder
 
 RUN CGO_ENABLED=0 go build ./cmd/openslides && \
-    CGO_ENABLED=0 go build ./cmd/server && \ 
+    CGO_ENABLED=0 go build ./cmd/server && \
     CGO_ENABLED=0 go build ./cmd/healthcheck
 
 FROM scratch as client

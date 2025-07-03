@@ -19,6 +19,9 @@ run-dev%:
 run-tests:
 	bash dev/run-tests.sh
 
+run-lint:
+	bash dev/run-lint.sh -l
+
 ########################## Deprecation List ##########################
 
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -54,4 +57,4 @@ openslides: | deprecation-warning
 		fi; \
 		cp -p /app/openslides /build/"
 
-.PHONY: | deprecation-warning openslides
+.PHONY: openslides
