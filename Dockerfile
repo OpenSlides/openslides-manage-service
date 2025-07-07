@@ -19,13 +19,6 @@ COPY proto proto
 COPY Makefile Makefile
 
 ## External Information
-LABEL org.opencontainers.image.title="OpenSlides Manage Service"
-LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
-    provides some management commands to setup and control OpenSlides instances."
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
-LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
-
 EXPOSE 9008
 
 ## Healthcheck
@@ -54,7 +47,7 @@ CMD ["make", "test"]
 FROM base as builder
 
 RUN CGO_ENABLED=0 go build ./cmd/openslides && \
-    CGO_ENABLED=0 go build ./cmd/server && \ 
+    CGO_ENABLED=0 go build ./cmd/server && \
     CGO_ENABLED=0 go build ./cmd/healthcheck
 
 FROM scratch as client
@@ -68,7 +61,9 @@ ENTRYPOINT ["/openslides"]
 
 FROM scratch as prod
 
-WORKDIR /
+## Setup
+ARG CONTEXT
+ENV APP_CONTEXT=prod
 
 LABEL org.opencontainers.image.title="OpenSlides Manage Service"
 LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
@@ -77,8 +72,8 @@ LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
 LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
 
-COPY --from=builder /app/healthcheck .
-COPY --from=builder /app/server .
+COPY --from=builder /app/healthcheck /
+COPY --from=builder /app/server /
 
 EXPOSE 9008
 
