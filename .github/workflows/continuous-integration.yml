@@ -66,10 +66,7 @@ jobs:
         ./openslides
 
     - name: Build Prod
-      uses: OpenSlides/OpenSlides/dev/actions/build-service@main
-      with:
-        service: manage
-        context: prod
+      run: make build-prod
 
     - name: Build and start server with Docker
       run: |
@@ -78,10 +75,7 @@ jobs:
         DOCKER_BUILDKIT: 1
 
     - name: Build Dev
-      uses: OpenSlides/OpenSlides/dev/actions/build-service@main
-      with:
-        service: manage
-        context: dev
+      run: make build-dev
 
     - name: Start development version of server with Makefile
       run: |
@@ -90,10 +84,7 @@ jobs:
         DOCKER_BUILDKIT: 1
 
     - name: Build Tests
-      uses: OpenSlides/OpenSlides/dev/actions/build-service@main
-      with:
-        service: manage
-        context: tests
+      run: make build-test
 
     - name: Run tests with Makefile
       run: make run-tests
