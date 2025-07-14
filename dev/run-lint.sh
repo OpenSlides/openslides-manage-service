@@ -19,27 +19,25 @@ done
 
 # Setup
 IMAGE_TAG=openslides-manage-tests
-CATCH=0
 DOCKER_EXEC="docker exec manage-test"
 
+# Safe Exit
+trap 'if [ -z "$PERSIST_CONTAINERS" ] && [ -z "$SKIP_CONTAINER_UP" ]; then docker stop manage-test && docker rm manage-test; fi' EXIT
+
 # Optionally build image
-if [ -z "$SKIP_BUILD" ]; then make build-tests || CATCH=1; fi
+if [ -z "$SKIP_BUILD" ]; then make build-tests; fi
 
 # Execution
 if [ -z "$LOCAL" ]
 then
     # Container Mode
-    if [ -z "$SKIP_CONTAINER_UP" ]; then docker run -d -t --name manage-test ${IMAGE_TAG} || CATCH=1; fi
-    eval "$DOCKER_EXEC go vet ./..." || CATCH=1
-    eval "$DOCKER_EXEC golint -set_exit_status ./..." || CATCH=1
-    eval "$DOCKER_EXEC gofmt -l ." || CATCH=1
+    if [ -z "$SKIP_CONTAINER_UP" ]; then docker run -d -t --name manage-test ${IMAGE_TAG}; fi
+    eval "$DOCKER_EXEC go vet ./..."
+    eval "$DOCKER_EXEC golint -set_exit_status ./..."
+    eval "$DOCKER_EXEC gofmt -l ."
 else
     # Local Mode
-    go vet ./... || CATCH=1
-    golint -set_exit_status ./... || CATCH=1
-    gofmt -l -s -w . || CATCH=1
+    go vet ./...
+    golint -set_exit_status ./...
+    gofmt -l -s -w .
 fi
-
-if [ -z "$PERSIST_CONTAINERS" ] && [ -z "$SKIP_CONTAINER_UP" ]; then docker stop manage-test && docker rm manage-test || CATCH=1; fi
-
-exit $CATCH

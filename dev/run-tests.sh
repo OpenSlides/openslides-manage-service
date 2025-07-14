@@ -7,9 +7,8 @@ echo "###################### Run Tests and Linters ###########################"
 echo "########################################################################"
 
 # Parameters
-while getopts "p" FLAG; do
+while getopts "s" FLAG; do
     case "${FLAG}" in
-    p) PERSIST_CONTAINERS=true ;;
     s) SKIP_BUILD=true ;;
     *) echo "Can't parse flag ${FLAG}" && break ;;
     esac
@@ -18,16 +17,13 @@ done
 # Setup
 IMAGE_TAG=openslides-manage-tests
 LOCAL_PWD=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-CATCH=0
+
+# Safe Exit
+trap 'docker stop manage-test && docker rm manage-test' EXIT
 
 # Execution
-if [ -z "$SKIP_BUILD" ]; then make build-tests || CATCH=1; fi
-docker run ${IMAGE_TAG} || CATCH=1
+if [ -z "$SKIP_BUILD" ]; then make build-tests; fi
+docker run --privileged -t ${IMAGE_TAG} --name manage-test ./dev/container-tests.sh
 
 # Linters
-bash "$LOCAL_PWD"/run-lint.sh -s -c || CATCH=1
-
-if [ -z "$PERSIST_CONTAINERS" ]; then docker stop $(docker ps -a -q --filter ancestor=${IMAGE_TAG} --format="{{.ID}}") && \
-                                      docker rm $(docker ps -a -q --filter ancestor=${IMAGE_TAG} --format="{{.ID}}") || CATCH=1; fi
-
-exit $CATCH
+bash "$LOCAL_PWD"/run-lint.sh -s -c

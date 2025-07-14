@@ -1,6 +1,6 @@
 ARG CONTEXT=prod
 
-FROM golang:1.19-alpine as base
+FROM golang:1.24.4-alpine as base
 
 ## Setup
 ARG CONTEXT
@@ -19,13 +19,6 @@ COPY proto proto
 COPY Makefile Makefile
 
 ## External Information
-LABEL org.opencontainers.image.title="OpenSlides Manage Service"
-LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
-    provides some management commands to setup and control OpenSlides instances."
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
-LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
-
 EXPOSE 9008
 
 ## Healthcheck
@@ -44,12 +37,20 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 
 FROM base as tests
 
-RUN apk add build-base --no-cache
+COPY dev/container-tests.sh ./dev/container-tests.sh
+
+RUN apk add --no-cache \
+    build-base \
+    docker && \
+    go get -u github.com/ory/dockertest/v3 && \
+    go install golang.org/x/lint/golint@latest && \
+    chmod +x dev/container-tests.sh
 
 CMD ["sleep", "infinity"]
 
 ## Command
-CMD ["make", "test"]
+STOPSIGNAL SIGKILL
+CMD ["sleep", "inf"]
 
 # Production Image
 
@@ -70,7 +71,9 @@ ENTRYPOINT ["/openslides"]
 
 FROM scratch as prod
 
-WORKDIR /
+## Setup
+ARG CONTEXT
+ENV APP_CONTEXT=prod
 
 LABEL org.opencontainers.image.title="OpenSlides Manage Service"
 LABEL org.opencontainers.image.description="Manage service and tool for OpenSlides which \
@@ -79,8 +82,8 @@ LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/OpenSlides/openslides-manage-service"
 LABEL org.opencontainers.image.documentation="https://github.com/OpenSlides/openslides-manage-service/blob/main/README.md"
 
-COPY --from=builder /app/healthcheck .
-COPY --from=builder /app/server .
+COPY --from=builder /app/healthcheck /
+COPY --from=builder /app/server /
 
 EXPOSE 9008
 
