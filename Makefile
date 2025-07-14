@@ -10,7 +10,7 @@ build-prod:
 build-dev:
 	docker build ./ --tag "openslides-$(SERVICE)-dev" --build-arg CONTEXT="dev" --target "dev"
 
-build-test:
+build-tests:
 	docker build ./ --tag "openslides-$(SERVICE)-tests" --build-arg CONTEXT="tests" --target "tests"
 
 # Development
@@ -27,6 +27,9 @@ run-tests:
 
 run-lint:
 	bash dev/run-lint.sh -l
+
+gofmt:
+	gofmt -l -s -w .
 
 ########################## Deprecation List ##########################
 
