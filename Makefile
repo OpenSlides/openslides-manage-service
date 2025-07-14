@@ -15,17 +15,17 @@ build-tests:
 
 # Development
 
-.PHONY: run-dev%
+.PHONY: dev%
 
-run-dev%:
-	bash $(MAKEFILE_PATH)/make-run-dev.sh "$@" "$(SERVICE)" "$(DOCKER_COMPOSE_FILE)" "$(ARGS)" "$(USED_SHELL)"
+dev%:
+	bash $(MAKEFILE_PATH)/make-dev.sh "$@" "$(SERVICE)" "$(DOCKER_COMPOSE_FILE)" "$(ARGS)" "$(USED_SHELL)"
 
 # Tests
 
 run-tests:
 	bash dev/run-tests.sh
 
-run-lint:
+lint:
 	bash dev/run-lint.sh -l
 
 gofmt:
