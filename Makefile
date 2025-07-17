@@ -36,7 +36,10 @@ gofmt:
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 
 deprecation-warning:
-	bash $(MAKEFILE_PATH)/make-deprecation-warning.sh
+	@echo "\033[1;33m DEPRECATION WARNING: This make command is deprecated and will be removed soon! \033[0m"
+
+deprecation-warning-alternative: | deprecation-warning
+	@echo "\033[1;33m Please use the following command instead: $(ALTERNATIVE) \033[0m"
 
 all: | deprecation-warning openslides
 
