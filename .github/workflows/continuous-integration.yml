@@ -3,7 +3,7 @@ name: CI - Build and Test Service
 on: [pull_request]
 jobs:
   continuous-tests:
-    name: Test
+    name: Run tests
     runs-on: ubuntu-latest
 
     steps:

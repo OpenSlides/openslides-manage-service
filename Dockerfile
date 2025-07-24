@@ -46,8 +46,6 @@ RUN apk add --no-cache \
     go install golang.org/x/lint/golint@latest && \
     chmod +x dev/container-tests.sh
 
-CMD ["sleep", "infinity"]
-
 ## Command
 STOPSIGNAL SIGKILL
 CMD ["sleep", "inf"]
