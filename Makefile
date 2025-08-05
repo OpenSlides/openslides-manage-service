@@ -1,11 +1,18 @@
-all: openslides
+SERVICE=manage
+
+build-prod:
+	docker build ./ --tag "openslides-$(SERVICE)" --build-arg CONTEXT="prod" --target "prod"
 
 build-dev:
-	docker build . --target development --tag openslides-manage-dev
+	docker build ./ --tag "openslides-$(SERVICE)-dev" --build-arg CONTEXT="dev" --target "dev"
+
+build-test:
+	docker build ./ --tag "openslides-$(SERVICE)-tests" --build-arg CONTEXT="tests" --target "tests"
+
+all: openslides
 
 run-tests:
-	docker build . --target testing --tag openslides-manage-test
-	docker run openslides-manage-test
+	bash dev/run-tests.sh
 
 test:
 	# Attention: This steps should be the same as in .github/workflows/test.yml.
@@ -31,8 +38,8 @@ openslides:
 		if [ $(shell whoami) != root ]; then \
 			addgroup -g $(shell id -g) build ; \
 			adduser -u $(shell id -u) -G build -D build ; \
-			chown build: /root/openslides ; \
+			chown build: /app/openslides ; \
 		fi; \
-		cp -p /root/openslides /build/"
+		cp -p /app/openslides /build/"
 
 .PHONY: openslides
