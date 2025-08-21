@@ -1,6 +1,6 @@
 ARG CONTEXT=prod
 
-FROM golang:1.24.4-alpine as base
+FROM golang:1.24.4-alpine AS base
 
 ## Setup
 ARG CONTEXT
@@ -26,7 +26,7 @@ HEALTHCHECK CMD ["/app/healthcheck"]
 
 # Development Image
 
-FROM base as dev
+FROM base AS dev
 
 RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
 
@@ -35,7 +35,7 @@ CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./s
 
 # Testing Image
 
-FROM base as tests
+FROM base AS tests
 
 COPY dev/container-tests.sh ./dev/container-tests.sh
 
@@ -52,13 +52,13 @@ CMD ["sleep", "inf"]
 
 # Production Image
 
-FROM base as builder
+FROM base AS builder
 
 RUN CGO_ENABLED=0 go build ./cmd/openslides && \
     CGO_ENABLED=0 go build ./cmd/server && \
     CGO_ENABLED=0 go build ./cmd/healthcheck
 
-FROM scratch as client
+FROM scratch AS client
 
 WORKDIR /
 ENV APP_CONTEXT=prod
@@ -67,7 +67,7 @@ COPY --from=builder /app/openslides .
 
 ENTRYPOINT ["/openslides"]
 
-FROM scratch as prod
+FROM scratch AS prod
 
 ## Setup
 ARG CONTEXT
