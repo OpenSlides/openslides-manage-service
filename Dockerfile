@@ -24,16 +24,14 @@ EXPOSE 9008
 ## Healthcheck
 HEALTHCHECK CMD ["/app/healthcheck"]
 
-## Command
-COPY ./dev/command.sh ./
-RUN chmod +x command.sh
-CMD ["./command.sh"]
-
 # Development Image
 
 FROM base AS dev
 
 RUN ["go", "install", "github.com/githubnemo/CompileDaemon@latest"]
+
+## Command
+CMD CompileDaemon -log-prefix=false -build="go build ./cmd/server" -command="./server"
 
 # Testing Image
 
@@ -48,7 +46,9 @@ RUN apk add --no-cache \
     go install golang.org/x/lint/golint@latest && \
     chmod +x dev/container-tests.sh
 
+## Command
 STOPSIGNAL SIGKILL
+CMD ["sleep", "inf"]
 
 # Production Image
 
