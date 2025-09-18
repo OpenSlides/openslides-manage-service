@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 )
@@ -124,38 +127,97 @@ func (c *Conn) Health(ctx context.Context) (json.RawMessage, error) {
 }
 
 func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
-	req, err := http.NewRequestWithContext(ctx, method, addr, body)
-	if err != nil {
-		return nil, fmt.Errorf("creating request to backend action service: %w", err)
-	}
-	creds := shared.BasicAuth{
-		Password: pw,
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(shared.AuthHeader, creds.EncPassword())
+	const maxRetries = 5
+	const backoffDelay = 5 * time.Second
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("sending request to backend action service at %q: %w", addr, err)
-	}
-	defer resp.Body.Close()
+	var lastErr error
+	var originalBody []byte
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, err := io.ReadAll(resp.Body)
+	// Copy body for reuse across retries
+	if body != nil {
+		var err error
+		originalBody, err = io.ReadAll(body)
 		if err != nil {
-			body = []byte("[can not read body]")
+			return nil, fmt.Errorf("reading request body: %w", err)
 		}
-		return nil, fmt.Errorf("got response %q: %q", resp.Status, body)
 	}
 
-	encodedResp, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("reading response body: %w", err)
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		var bodyReader io.Reader
+		if originalBody != nil {
+			bodyReader = bytes.NewReader(originalBody)
+		}
+
+		req, err := http.NewRequestWithContext(ctx, method, addr, bodyReader)
+		if err != nil {
+			return nil, fmt.Errorf("creating request: %w", err)
+		}
+
+		creds := shared.BasicAuth{Password: pw}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set(shared.AuthHeader, creds.EncPassword())
+
+		resp, err := http.DefaultClient.Do(req)
+
+		// Network error? Retry
+		if err != nil {
+			if isNetworkError(err) {
+				lastErr = fmt.Errorf("network error on attempt %d: %w", attempt+1, err)
+
+				// Sleep before next retry
+				if attempt < maxRetries-1 {
+					select {
+					case <-time.After(backoffDelay):
+						continue
+					case <-ctx.Done():
+						return nil, ctx.Err()
+					}
+				}
+				break // retries exhausted
+			}
+
+			// Non-network error: return immediately
+			return nil, fmt.Errorf("non-network error: %w", err)
+		}
+
+		defer resp.Body.Close()
+
+		// Got a server response: do not retry
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			respBody, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("server error response %d: %s", resp.StatusCode, string(respBody))
+		}
+
+		// Success
+		encodedResp, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("reading response body: %w", err)
+		}
+
+		if !json.Valid(encodedResp) {
+			return nil, fmt.Errorf("invalid JSON response: %q", string(encodedResp))
+		}
+
+		return json.RawMessage(encodedResp), nil
 	}
 
-	if !json.Valid(encodedResp) {
-		return nil, fmt.Errorf("response body does not contain valid JSON, got %q", string(encodedResp))
+	return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, lastErr)
+}
+
+func isNetworkError(err error) bool {
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return true
 	}
 
-	return json.RawMessage(encodedResp), nil
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		return true
+	}
+
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+
+	return false
 }
