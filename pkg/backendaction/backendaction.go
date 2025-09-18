@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
+	"github.com/rs/zerolog/log"
 )
 
 // Conn holds a connection to the backend action service.
@@ -130,10 +131,7 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 	const maxRetries = 5
 	const backoffDelay = 5 * time.Second
 
-	var lastErr error
 	var originalBody []byte
-
-	// Copy body for reuse across retries
 	if body != nil {
 		var err error
 		originalBody, err = io.ReadAll(body)
@@ -159,12 +157,10 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 
 		resp, err := http.DefaultClient.Do(req)
 
-		// Network error? Retry
 		if err != nil {
 			if isNetworkError(err) {
-				lastErr = fmt.Errorf("network error on attempt %d: %w", attempt+1, err)
+				log.Warn().Err(err).Msgf("network error on attempt %d/%d; retrying...", attempt+1, maxRetries)
 
-				// Sleep before next retry
 				if attempt < maxRetries-1 {
 					select {
 					case <-time.After(backoffDelay):
@@ -173,22 +169,20 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 						return nil, ctx.Err()
 					}
 				}
-				break // retries exhausted
+
+				return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, err)
 			}
 
-			// Non-network error: return immediately
 			return nil, fmt.Errorf("non-network error: %w", err)
 		}
 
 		defer resp.Body.Close()
 
-		// Got a server response: do not retry
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			respBody, _ := io.ReadAll(resp.Body)
 			return nil, fmt.Errorf("server error response %d: %s", resp.StatusCode, string(respBody))
 		}
 
-		// Success
 		encodedResp, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("reading response body: %w", err)
@@ -201,23 +195,34 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 		return json.RawMessage(encodedResp), nil
 	}
 
-	return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, lastErr)
+	// j.i.c.
+	return nil, errors.New("unexpected error: requestWithPassword exited retry loop without returning")
 }
 
 func isNetworkError(err error) bool {
+	// Unwrap *url.Error first
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		err = urlErr.Err
+	}
+
+	// Timeout or temporary network error
 	var netErr net.Error
 	if errors.As(err, &netErr) {
 		return true
 	}
 
+	// Lower-level operation error (e.g., connection refused)
 	var opErr *net.OpError
 	if errors.As(err, &opErr) {
 		return true
 	}
 
+	// Unexpected connection closures
 	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 		return true
 	}
 
+	// Fallback — could log here if needed
 	return false
 }
