@@ -130,8 +130,8 @@ func (c *Conn) Health(ctx context.Context) (json.RawMessage, error) {
 
 func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
 	const maxRetries = 5
-	const backoffDelay = 5 * time.Second
-	const requestTimeout = 15 * time.Second // Individual request timeout
+	const backoffDelay = 4 * time.Second
+	const requestTimeout = 5 * time.Second // Individual request timeout
 
 	var originalBody []byte
 	if body != nil {
