@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
@@ -130,6 +131,7 @@ func (c *Conn) Health(ctx context.Context) (json.RawMessage, error) {
 func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
 	const maxRetries = 5
 	const backoffDelay = 5 * time.Second
+	const requestTimeout = 15 * time.Second // Individual request timeout
 
 	var originalBody []byte
 	if body != nil {
@@ -140,14 +142,39 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 		}
 	}
 
+	// Create a custom HTTP client that doesn't have its own timeout
+	httpClient := &http.Client{
+		Timeout: 0, // No client-level timeout, let request context handle it
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second, // This is the dial timeout
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			ResponseHeaderTimeout: 0, // Let request context handle it
+			IdleConnTimeout:       90 * time.Second,
+		},
+	}
+
+	var lastErr error
 	for attempt := 0; attempt < maxRetries; attempt++ {
+		// Check if parent context is already done before starting attempt
+		if ctx.Err() != nil {
+			log.Warn().Msg("parent context done before retry attempt")
+			return nil, ctx.Err()
+		}
+
 		var bodyReader io.Reader
 		if originalBody != nil {
 			bodyReader = bytes.NewReader(originalBody)
 		}
 
-		req, err := http.NewRequestWithContext(ctx, method, addr, bodyReader)
+		// Create a fresh context for this individual request
+		// This gives each request its own timeout window
+		reqCtx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+
+		req, err := http.NewRequestWithContext(reqCtx, method, addr, bodyReader)
 		if err != nil {
+			cancel()
 			return nil, fmt.Errorf("creating request: %w", err)
 		}
 
@@ -155,27 +182,39 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set(shared.AuthHeader, creds.EncPassword())
 
-		resp, err := http.DefaultClient.Do(req)
+		log.Warn().Int("attempt", attempt+1).Int("max_retries", maxRetries).Msg("attempting request")
+
+		resp, err := httpClient.Do(req)
+		cancel() // Always clean up the request context
 
 		if err != nil {
 			if isNetworkError(err) {
+				lastErr = err
 				log.Warn().Err(err).Msgf("network error on attempt %d/%d; retrying...", attempt+1, maxRetries)
 
+				// Only retry if we haven't exhausted all attempts
 				if attempt < maxRetries-1 {
+					log.Warn().Dur("backoff_delay", backoffDelay).Msg("waiting before retry")
+
+					// Wait for backoff delay or until parent context is done
 					select {
 					case <-time.After(backoffDelay):
+						log.Warn().Msg("backoff complete, retrying")
 						continue
 					case <-ctx.Done():
+						log.Warn().Msg("parent context done during backoff")
 						return nil, ctx.Err()
 					}
 				}
-
-				return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, err)
+				// If we're here, we've exhausted all retries
+				log.Warn().Err(lastErr).Msgf("request failed after %d attempts", maxRetries)
+				return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, lastErr)
 			}
-
+			// Non-network error - don't retry
 			return nil, fmt.Errorf("non-network error: %w", err)
 		}
 
+		// Success - process the response
 		defer resp.Body.Close()
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -192,11 +231,12 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 			return nil, fmt.Errorf("invalid JSON response: %q", string(encodedResp))
 		}
 
+		log.Warn().Msg("request succeeded")
 		return json.RawMessage(encodedResp), nil
 	}
 
-	// j.i.c.
-	return nil, errors.New("unexpected error: requestWithPassword exited retry loop without returning")
+	// This should never be reached due to the logic above, but keeping it for safety
+	return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, lastErr)
 }
 
 func isNetworkError(err error) bool {
@@ -204,6 +244,16 @@ func isNetworkError(err error) bool {
 	var urlErr *url.Error
 	if errors.As(err, &urlErr) {
 		err = urlErr.Err
+	}
+
+	// Check for context deadline exceeded (should be treated as network error for retry)
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+
+	// Check for context canceled (should NOT be retried)
+	if errors.Is(err, context.Canceled) {
+		return false
 	}
 
 	// Timeout or temporary network error
@@ -223,6 +273,22 @@ func isNetworkError(err error) bool {
 		return true
 	}
 
-	// Fallback — could log here if needed
+	// Check for specific network-related error strings
+	errStr := err.Error()
+	networkErrors := []string{
+		"connection refused",
+		"connection reset by peer",
+		"i/o timeout",
+		"no such host",
+		"network is unreachable",
+		"connection timed out",
+	}
+
+	for _, netErrStr := range networkErrors {
+		if strings.Contains(strings.ToLower(errStr), netErrStr) {
+			return true
+		}
+	}
+
 	return false
 }
