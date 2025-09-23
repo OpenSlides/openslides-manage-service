@@ -142,19 +142,6 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 		}
 	}
 
-	// Create a custom HTTP client that doesn't have its own timeout
-	httpClient := &http.Client{
-		Timeout: 0, // No client-level timeout, let request context handle it
-		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second, // This is the dial timeout
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			ResponseHeaderTimeout: 0, // Let request context handle it
-			IdleConnTimeout:       90 * time.Second,
-		},
-	}
-
 	var lastErr error
 	for attempt := 0; attempt < maxRetries; attempt++ {
 		// Check if parent context is already done before starting attempt
@@ -171,10 +158,10 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 		// Create a fresh context for this individual request
 		// This gives each request its own timeout window
 		reqCtx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+		defer cancel() // Always clean up the request context
 
 		req, err := http.NewRequestWithContext(reqCtx, method, addr, bodyReader)
 		if err != nil {
-			cancel()
 			return nil, fmt.Errorf("creating request: %w", err)
 		}
 
@@ -184,9 +171,7 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 
 		log.Warn().Int("attempt", attempt+1).Int("max_retries", maxRetries).Msg("attempting request")
 
-		resp, err := httpClient.Do(req)
-		cancel() // Always clean up the request context
-
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			if isNetworkError(err) {
 				lastErr = err
