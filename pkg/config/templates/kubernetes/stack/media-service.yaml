@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    osinstance/service: media
+    osinstance/name: {{ .URL }}
+  name: media
+  namespace: {{ .StackName }}
+spec:
+  ports:
+    - name: "9006"
+      port: 9006
+      targetPort: 9006
+  selector:
+    osinstance/service: media
+status:
+  loadBalancer: {}

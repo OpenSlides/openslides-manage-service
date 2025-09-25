@@ -51,6 +51,22 @@ SSL certs. Everything is created in the given directory.`
 	ManageAuthPasswordFileName = "manage_auth_password"
 )
 
+// SecretSpec defines how to generate a specific secret
+type SecretSpec struct {
+	Name      string
+	Generator func() ([]byte, error)
+}
+
+// defaultSecrets defines all the secrets that should be created by default
+var defaultSecrets = []SecretSpec{
+	{"auth_token_key", randomSecret},
+	{"auth_cookie_key", randomSecret},
+	{ManageAuthPasswordFileName, randomSecret},
+	{"internal_auth_password", randomSecret},
+	{"postgres_password", randomSecret},
+	{SuperadminFileName, func() ([]byte, error) { return []byte(DefaultSuperadminPassword), nil }},
+}
+
 // Cmd returns the subcommand.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -69,8 +85,16 @@ func Cmd() *cobra.Command {
 		if *tplFileOrDirName != "" && *builtinTemplate != config.BuiltinTemplateDefault {
 			return fmt.Errorf("flag --builtin-template must not be used together with flag --template")
 		}
-		dir := args[0]
-		if err := Setup(dir, *force, *builtinTemplate, *tplFileOrDirName, *configFileNames); err != nil {
+
+		cfg := config.SetupConfig{
+			BaseDir:         args[0],
+			Force:           *force,
+			BuiltinTemplate: *builtinTemplate,
+			CustomTemplate:  *tplFileOrDirName,
+			ConfigFiles:     *configFileNames,
+		}
+
+		if err := Setup(cfg); err != nil {
 			return fmt.Errorf("running Setup(): %w", err)
 		}
 		return nil
@@ -79,68 +103,55 @@ func Cmd() *cobra.Command {
 }
 
 // Setup creates one or more (depending on template) files containing the
-// deployment definitions and the secrets directory including SSL certs. The
-// parameters are just the command flags.
-func Setup(baseDir string, force bool, builtinTpl string, tplFileOrDirName string, configFileNames []string) error {
+// deployment definitions and the secrets directory including SSL certs.
+func Setup(cfg config.SetupConfig) error {
 	// Create YAML config object
-	cfg, err := config.NewYmlConfig(configFileNames)
+	ymlCfg, err := config.NewYmlConfig(cfg.ConfigFiles)
 	if err != nil {
 		return fmt.Errorf("parsing configuration: %w", err)
 	}
 
-	// Create secrets directory
-	secrDir := path.Join(baseDir, SecretsDirName)
+	// Create secrets directory first (needed before deployment file generation)
+	secrDir := path.Join(cfg.BaseDir, SecretsDirName)
 	if err := os.MkdirAll(secrDir, subDirPerms); err != nil {
-		return fmt.Errorf("creating secrets directory at %q: %w", baseDir, err)
+		return fmt.Errorf("creating secrets directory at %q: %w", cfg.BaseDir, err)
 	}
 
-	// Create random secrets
-	if err := createRandomSecrets(secrDir, force); err != nil {
-		return fmt.Errorf("creating random secrets: %w", err)
+	// Create all secrets (must be done before deployment files since templates may reference them)
+	if err := createSecrets(secrDir, cfg.Force, defaultSecrets); err != nil {
+		return fmt.Errorf("creating secrets: %w", err)
 	}
 
-	// Create certificates
-	if *cfg.EnableLocalHTTPS {
-		if err := createCerts(secrDir, force); err != nil {
+	// Create certificates if HTTPS is enabled
+	if *ymlCfg.EnableLocalHTTPS {
+		if err := createCerts(secrDir, cfg.Force); err != nil {
 			return fmt.Errorf("creating certificates: %w", err)
 		}
 	}
 
-	// Create superadmin file
-	if err := shared.CreateFile(secrDir, force, SuperadminFileName, []byte(DefaultSuperadminPassword)); err != nil {
-		return fmt.Errorf("creating admin file at %q: %w", baseDir, err)
-	}
-
-	// Create the base directory and the the deployment files using the code from the config command.
-	if err := config.CreateDirAndFiles(baseDir, force, builtinTpl, tplFileOrDirName, cfg); err != nil {
+	// Create the base directory and the deployment files (after secrets are created)
+	if err := config.CreateDirAndFiles(cfg.BaseDir, cfg.Force, cfg.BuiltinTemplate, cfg.CustomTemplate, ymlCfg); err != nil {
 		return fmt.Errorf("(re-)creating deployment files: %w", err)
 	}
 
 	return nil
 }
 
-func createRandomSecrets(dir string, force bool) error {
-	secs := []struct {
-		filename string
-	}{
-		{"auth_token_key"},
-		{"auth_cookie_key"},
-		{ManageAuthPasswordFileName},
-		{"internal_auth_password"},
-		{"postgres_password"},
-	}
-	for _, s := range secs {
-		secrToken, err := randomSecret()
+// createSecrets creates all specified secrets in the given directory
+func createSecrets(dir string, force bool, secrets []SecretSpec) error {
+	for _, spec := range secrets {
+		data, err := spec.Generator()
 		if err != nil {
-			return fmt.Errorf("creating random secret %q: %w", s.filename, err)
+			return fmt.Errorf("generating secret %q: %w", spec.Name, err)
 		}
-		if err := shared.CreateFile(dir, force, s.filename, secrToken); err != nil {
-			return fmt.Errorf("creating secret file %q at %q: %w", dir, s.filename, err)
+		if err := shared.CreateFile(dir, force, spec.Name, data); err != nil {
+			return fmt.Errorf("creating secret file %q: %w", spec.Name, err)
 		}
 	}
 	return nil
 }
 
+// randomSecret generates a cryptographically secure random base64-encoded secret
 func randomSecret() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	b64e := base64.NewEncoder(base64.StdEncoding, buf)
@@ -153,6 +164,7 @@ func randomSecret() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// createCerts generates self-signed certificates for local HTTPS
 func createCerts(dir string, force bool) error {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -164,6 +176,7 @@ func createCerts(dir string, force bool) error {
 	if err != nil {
 		return fmt.Errorf("generating serial number: %w", err)
 	}
+
 	templ := x509.Certificate{
 		SerialNumber:          serialNumber,
 		Subject:               pkix.Name{Organization: []string{"OpenSlides"}},
@@ -175,10 +188,13 @@ func createCerts(dir string, force bool) error {
 		BasicConstraintsValid: true,
 	}
 
+	// Create certificate
 	certData, err := x509.CreateCertificate(rand.Reader, &templ, &templ, &key.PublicKey, key)
 	if err != nil {
 		return fmt.Errorf("creating certificate data: %w", err)
 	}
+
+	// Encode and save certificate
 	buf1 := new(bytes.Buffer)
 	if err := pem.Encode(buf1, &pem.Block{Type: "CERTIFICATE", Bytes: certData}); err != nil {
 		return fmt.Errorf("encoding certificate data: %w", err)
@@ -187,6 +203,7 @@ func createCerts(dir string, force bool) error {
 		return fmt.Errorf("creating certificate file %q at %q: %w", certCertName, dir, err)
 	}
 
+	// Encode and save private key
 	keyData, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {
 		return fmt.Errorf("marshalling key: %w", err)

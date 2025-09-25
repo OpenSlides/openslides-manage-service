@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    osinstance/service: datastorereader
+    osinstance/name: {{ .URL }}
+  name: datastorereader
+  namespace: {{ .StackName }}
+{{- with .Services.datastoreReader }}
+spec:
+  replicas: {{ or .CustomKeys.replicas 1 }}
+  selector:
+    matchLabels:
+      osinstance/service: datastorereader
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        osinstance/name: {{ $.URL }}
+        osinstance/service: datastorereader
+    spec:
+      containers:
+        - name: datastorereader
+          image: {{ .ContainerRegistry }}/openslides-datastore-reader:{{ .Tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9010
+          startupProbe:
+            httpGet:
+              path: /internal/datastore/reader/health
+              port: 9010
+            periodSeconds: 1
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /internal/datastore/reader/health
+              port: 9010
+            periodSeconds: 30
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /internal/datastore/reader/health
+              port: 9010
+            periodSeconds: 30
+            failureThreshold: 3
+          env:
+            {{- with .Environment }}{{ envMapToK8S . | marshalContent 12 }}{{- end }}
+          envFrom:
+            - configMapRef:
+                name: default-environment
+          resources: {}
+          volumeMounts:
+            - mountPath: /run/secrets/postgres-password
+              name: postgres-password
+      restartPolicy: Always
+      volumes:
+        - name: postgres-password
+          secret:
+            items:
+              - key: postgres-password
+                path: postgres-password
+            secretName: postgres-password
+status: {}
+{{- end }}

@@ -2,12 +2,12 @@ package setup_test
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path"
 	"strings"
 	"testing"
 
+	"github.com/OpenSlides/openslides-manage-service/pkg/config"
 	"github.com/OpenSlides/openslides-manage-service/pkg/setup"
 )
 
@@ -189,8 +189,18 @@ func TestSetupCommon(t *testing.T) {
 	}
 	defer os.RemoveAll(testDir)
 
+	builtinTemplate := "docker-compose"
+
+	cfg := config.SetupConfig{
+		BaseDir:         testDir,
+		Force:           false,
+		BuiltinTemplate: builtinTemplate,
+		CustomTemplate:  "",
+		ConfigFiles:     nil,
+	}
+
 	t.Run("running setup.Setup() and create all stuff in tmp directory", func(t *testing.T) {
-		if err := setup.Setup(testDir, false, "docker-compose", "", nil); err != nil {
+		if err := setup.Setup(cfg); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -213,7 +223,7 @@ func TestSetupCommon(t *testing.T) {
 			t.Fatalf("writing to file %q: %v", p, err)
 		}
 
-		if err := setup.Setup(testDir, false, "docker-compose", "", nil); err != nil {
+		if err := setup.Setup(cfg); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -226,7 +236,9 @@ func TestSetupCommon(t *testing.T) {
 	})
 
 	t.Run("running setup.Setup() with force flag with changing existant files", func(t *testing.T) {
-		if err := setup.Setup(testDir, true, "docker-compose", "", nil); err != nil {
+		cfgLocal := cfg
+		cfgLocal.Force = true
+		if err := setup.Setup(cfgLocal); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -248,7 +260,15 @@ func TestSetupNonExistingSubdirectory(t *testing.T) {
 
 	t.Run("running setup.Setup() and give a previously not existing subdirectory", func(t *testing.T) {
 		dir := path.Join(testDir, "new_directory")
-		if err := setup.Setup(dir, false, "docker-compose", "", nil); err != nil {
+		builtinTemplate := "docker-compose"
+		cfg := config.SetupConfig{
+			BaseDir:         dir,
+			Force:           false,
+			BuiltinTemplate: builtinTemplate,
+			CustomTemplate:  "",
+			ConfigFiles:     nil,
+		}
+		if err := setup.Setup(cfg); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(dir, setup.SecretsDirName)
@@ -279,7 +299,15 @@ func TestSetupExternalTemplate(t *testing.T) {
 		if err := os.WriteFile(tplPath, []byte(tplText), os.ModePerm); err != nil {
 			t.Fatalf("writing custom template failed: %v", err)
 		}
-		if err := setup.Setup(testDir, false, "docker-compose", tplPath, nil); err != nil {
+		builtinTemplate := "docker-compose"
+		cfg := config.SetupConfig{
+			BaseDir:         testDir,
+			Force:           false,
+			BuiltinTemplate: builtinTemplate,
+			CustomTemplate:  tplPath,
+			ConfigFiles:     nil,
+		}
+		if err := setup.Setup(cfg); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -304,6 +332,16 @@ func TestSetupCommonWithConfig(t *testing.T) {
 	}
 	defer os.RemoveAll(testLibDir)
 
+	builtinTemplate := "docker-compose"
+
+	cfg := config.SetupConfig{
+		BaseDir:         testDir,
+		Force:           false,
+		BuiltinTemplate: builtinTemplate,
+		CustomTemplate:  "",
+		ConfigFiles:     nil,
+	}
+
 	t.Run("running setup.Setup() and create all stuff in tmp directory using a custom config", func(t *testing.T) {
 		customConfig := `---
 filename: my-filename-ooph1OhShi.yml
@@ -320,9 +358,9 @@ services:
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		myFileName := "my-filename-ooph1OhShi.yml"
-		c := make([]string, 1)
-		c[0] = cfgPath
-		if err := setup.Setup(testDir, false, "docker-compose", "", c); err != nil {
+		cfgLocal := cfg
+		cfgLocal.ConfigFiles = []string{cfgPath}
+		if err := setup.Setup(cfgLocal); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		secDir := path.Join(testDir, setup.SecretsDirName)
@@ -348,9 +386,9 @@ disablePostgres: true
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		myFileName := "my-filename-eab7iv8Oom.yml"
-		c := make([]string, 1)
-		c[0] = cfgPath
-		if err := setup.Setup(testDir, false, "docker-compose", "", c); err != nil {
+		cfgLocal := cfg
+		cfgLocal.ConfigFiles = []string{cfgPath}
+		if err := setup.Setup(cfgLocal); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, myFileName, "image: postgres:15")
@@ -366,9 +404,9 @@ disableDependsOn: true
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		myFileName := "my-filename-Koo0eidifg.yml"
-		c := make([]string, 1)
-		c[0] = cfgPath
-		if err := setup.Setup(testDir, false, "docker-compose", "", c); err != nil {
+		cfgLocal := cfg
+		cfgLocal.ConfigFiles = []string{cfgPath}
+		if err := setup.Setup(cfgLocal); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, myFileName, "depends_on")
@@ -387,9 +425,9 @@ defaultEnvironment:
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		myFileName := "my-filename-ieGh8ox0do.yml"
-		c := make([]string, 1)
-		c[0] = cfgPath
-		if err := setup.Setup(testDir, false, "docker-compose", "", c); err != nil {
+		cfgLocal := cfg
+		cfgLocal.ConfigFiles = []string{cfgPath}
+		if err := setup.Setup(cfgLocal); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, myFileName, `FOOOO: "1234567890"`)
@@ -408,9 +446,9 @@ services:
 			t.Fatalf("writing custom config failed: %v", err)
 		}
 		myFileName := "my-filename-shoPhie9Ax.yml"
-		c := make([]string, 1)
-		c[0] = cfgPath
-		if err := setup.Setup(testDir, false, "docker-compose", "", c); err != nil {
+		cfgLocal := cfg
+		cfgLocal.ConfigFiles = []string{cfgPath}
+		if err := setup.Setup(cfgLocal); err != nil {
 			t.Fatalf("running Setup() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, myFileName, `KEY_SKRIVESLDIERUFJ: test_iyoe8bahGh`)
@@ -497,7 +535,7 @@ func testPasswordFile(t testing.TB, dir, name string) {
 }
 
 func defaultDockerComposeYml() string {
-	return fmt.Sprintf(`---
+	return `---
 version: "3.4"
 
 x-default-environment: &default-environment
@@ -835,12 +873,21 @@ secrets:
     file: ./secrets/cert_crt
   cert_key:
     file: ./secrets/cert_key
-`)
+`
 }
 
 func TestSetupNoDirectory(t *testing.T) {
 	hasErrMsg := "not a directory"
-	err := setup.Setup("setup_test.go", false, "docker-compose", "", nil)
+	notADir := "setup_test.go"
+	builtinTemplate := "docker-compose"
+	cfg := config.SetupConfig{
+		BaseDir:         notADir,
+		Force:           false,
+		BuiltinTemplate: builtinTemplate,
+		CustomTemplate:  "",
+		ConfigFiles:     nil,
+	}
+	err := setup.Setup(cfg)
 	if !strings.Contains(err.Error(), hasErrMsg) {
 		t.Fatalf("running Setup() with invalid directory, got error message %q, expected %q", err.Error(), hasErrMsg)
 	}

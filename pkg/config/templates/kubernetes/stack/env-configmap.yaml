@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: default-environment
+    namespace: {{ .StackName }}
+data:
+  {{- with .DefaultEnvironment }}{{ marshalContent 2 . }}{{- end }}

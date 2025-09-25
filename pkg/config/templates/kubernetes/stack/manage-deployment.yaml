@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    osinstance/service: manage
+    osinstance/name: {{ .URL }}
+  name: manage
+  namespace: {{ .StackName }}
+{{- with .Services.manage }}
+spec:
+  replicas: {{ or .CustomKeys.replicas 1 }}
+  selector:
+    matchLabels:
+      osinstance/service: manage
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        osinstance/name: {{ $.URL }}
+        osinstance/service: manage
+    spec:
+      containers:
+        - name: manage
+          image: {{ .ContainerRegistry }}/openslides-manage:{{ .Tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9008
+          startupProbe:
+            exec:
+              command:
+                - /healthcheck
+            periodSeconds: 1
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                - /healthcheck
+            periodSeconds: 30
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - /healthcheck
+            periodSeconds: 30
+            failureThreshold: 3
+          env:
+            {{- with .Environment }}{{ envMapToK8S . | marshalContent 12 }}{{- end }}
+          envFrom:
+            - configMapRef:
+                name: default-environment
+          resources: {}
+          volumeMounts:
+            - mountPath: /run/secrets/superadmin
+              name: superadmin
+            - mountPath: /run/secrets/manage-auth-password
+              name: manage-auth-password
+            - mountPath: /run/secrets/internal-auth-password
+              name: internal-auth-password
+      restartPolicy: Always
+      volumes:
+        - name: superadmin
+          secret:
+            items:
+              - key: superadmin
+                path: superadmin
+            secretName: superadmin
+        - name: manage-auth-password
+          secret:
+            items:
+              - key: manage-auth-password
+                path: manage-auth-password
+            secretName: manage-auth-password
+        - name: internal-auth-password
+          secret:
+            items:
+              - key: internal-auth-password
+                path: internal-auth-password
+            secretName: internal-auth-password
+status: {}
+{{- end }}

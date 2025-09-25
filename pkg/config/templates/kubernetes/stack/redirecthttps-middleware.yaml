@@ -1,0 +1,11 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect
+  namespace: {{ .StackName }}
+  labels:
+    osinstance/name: {{ .URL }}
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

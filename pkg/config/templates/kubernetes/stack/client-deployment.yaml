@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    osinstance/service: client
+    osinstance/name: {{ .URL }}
+  name: client
+  namespace: {{ .StackName }}
+{{- with .Services.client }}
+spec:
+  replicas: {{ or .CustomKeys.replicas 1 }}
+  selector:
+    matchLabels:
+      osinstance/service: client
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        osinstance/name: {{ $.URL }}
+        osinstance/service: client
+    spec:
+      containers:
+        - name: client
+          image: {{ .ContainerRegistry }}/openslides-client:{{ .Tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9001
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 9001
+            periodSeconds: 1
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9001
+            periodSeconds: 30
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9001
+            periodSeconds: 30
+            failureThreshold: 3
+          env:
+            {{- with .Environment }}{{ envMapToK8S . | marshalContent 12 }}{{- end }}
+          envFrom:
+            - configMapRef:
+                name: default-environment
+          resources: {}
+      restartPolicy: Always
+status: {}
+{{- end }}

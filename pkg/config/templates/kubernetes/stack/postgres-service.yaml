@@ -1,0 +1,20 @@
+{{- if checkFlag .DisablePostgres }}{{ else }}
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    osinstance/service: postgres
+    osinstance/name: {{ .URL }}
+  name: postgres
+  namespace: {{ .StackName }}
+spec:
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
+  selector:
+    osinstance/service: postgres
+status:
+  loadBalancer: {}
+{{- end }}

@@ -108,7 +108,15 @@ defaults:
 		c[1] = cfgPath2
 		builtinTpl := "docker-compose"
 
-		if err := config.Config(testDir, builtinTpl, "", c); err != nil {
+		cfg := config.SetupConfig{
+			BaseDir:         testDir,
+			Force:           true,
+			BuiltinTemplate: builtinTpl,
+			CustomTemplate:  "",
+			ConfigFiles:     c,
+		}
+
+		if err := config.Config(cfg); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, "docker-compose.yml", "image: example.com/test_Aeghies3me/openslides-proxy:latest")
@@ -134,7 +142,15 @@ disablePostgres: true
 		c[1] = cfgPath2
 		tech := "docker-compose"
 
-		if err := config.Config(testDir, tech, "", c); err != nil {
+		cfg := config.SetupConfig{
+			BaseDir:         testDir,
+			Force:           true,
+			BuiltinTemplate: tech,
+			CustomTemplate:  "",
+			ConfigFiles:     c,
+		}
+
+		if err := config.Config(cfg); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileNotContains(t, testDir, "docker-compose.yml", "image: postgres:15")
@@ -160,7 +176,15 @@ disablePostgres: false
 		c[1] = cfgPath2
 		tech := "docker-compose"
 
-		if err := config.Config(testDir, tech, "", c); err != nil {
+		cfg := config.SetupConfig{
+			BaseDir:         testDir,
+			Force:           true,
+			BuiltinTemplate: tech,
+			CustomTemplate:  "",
+			ConfigFiles:     c,
+		}
+
+		if err := config.Config(cfg); err != nil {
 			t.Fatalf("running config.Config() failed with error: %v", err)
 		}
 		testFileContains(t, testDir, "docker-compose.yml", "image: postgres:15")

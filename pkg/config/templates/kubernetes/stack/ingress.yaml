@@ -1,0 +1,95 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress
+  namespace: {{ .StackName }}
+  annotations:
+    {{- if checkFlag .EnableLocalHTTPS }}
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    {{- end }}
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .StackName }}-redirect@kubernetescrd
+  labels:
+    osinstance/name: {{ .URL }}
+spec:
+  ingressClassName: "traefik"
+  tls:
+    - hosts:
+      - {{ .URL }}
+      {{- if checkFlag .EnableLocalHTTPS }}
+      secretName: tls-letsencrypt
+      {{- end }}
+  rules:
+    - host: {{ .URL }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 9001
+          - path: /system/action
+            pathType: Prefix
+            backend:
+              service:
+                name: backendaction
+                port:
+                  number: 9002
+          - path: /system/presenter
+            pathType: Prefix
+            backend:
+              service:
+                name: backendpresenter
+                port:
+                  number: 9003
+          - path: /system/search
+            pathType: Prefix
+            backend:
+              service:
+                name: search
+                port:
+                  number: 9050
+          - path: /system/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth
+                port:
+                  number: 9004
+          - path: /system/saml
+            pathType: Prefix
+            backend:
+              service:
+                name: auth
+                port:
+                  number: 9004
+          - path: /system/media
+            pathType: Prefix
+            backend:
+              service:
+                name: media
+                port:
+                  number: 9006
+          - path: /system/icc
+            pathType: Prefix
+            backend:
+              service:
+                name: icc
+                port:
+                  number: 9007
+          - path: /system/autoupdate
+            pathType: Prefix
+            backend:
+              service:
+                name: autoupdate
+                port:
+                  number: 9012
+          - path: /system/vote
+            pathType: Prefix
+            backend:
+              service:
+                name: vote
+                port:
+                  number: 9013

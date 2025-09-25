@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    osinstance/service: redis
+    osinstance/name: {{ .URL }}
+  name: redis
+  namespace: {{ .StackName }}
+{{- with .Services.redis }}
+spec:
+  replicas: {{ or .CustomKeys.replicas 1 }}
+  selector:
+    matchLabels:
+      osinstance/service: redis
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        osinstance/name: {{ $.URL }}
+        osinstance/service: redis
+    spec:
+      containers:
+        - name: redis
+          args:
+            - redis-server
+            - --save
+            - ""
+          image: redis:alpine
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6379
+          startupProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            periodSeconds: 1
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            periodSeconds: 30
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            periodSeconds: 30
+            failureThreshold: 3
+          env:
+            {{- with .Environment }}{{ envMapToK8S . | marshalContent 12 }}{{- end }}
+          envFrom:
+            - configMapRef:
+                name: default-environment
+          resources: {}
+      restartPolicy: Always
+status: {}
+{{- end }}

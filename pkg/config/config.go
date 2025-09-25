@@ -42,6 +42,19 @@ const (
 	ConfigCreateDefaultHelpExtra = `This command (re)creates the default setup configuration YAML file in the given directory.`
 )
 
+// BuiltinTemplateDefault is the default builtin template which is used if the
+// user does neigther provide a custom template nor give a builtin template.
+const BuiltinTemplateDefault = "docker-compose"
+
+// SetupConfig holds all configuration for the setup process
+type SetupConfig struct {
+	BaseDir         string
+	Force           bool
+	BuiltinTemplate string
+	CustomTemplate  string
+	ConfigFiles     []string
+}
+
 // Cmd returns the subcommand.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -59,18 +72,22 @@ func Cmd() *cobra.Command {
 		if *tplFileOrDirName != "" && *builtinTemplate != BuiltinTemplateDefault {
 			return fmt.Errorf("flag --builtin-template must not be used together with flag --template")
 		}
-		dir := args[0]
-		if err := Config(dir, *builtinTemplate, *tplFileOrDirName, *configFileNames); err != nil {
+
+		cfg := SetupConfig{
+			BaseDir:         args[0],
+			Force:           true,
+			BuiltinTemplate: *builtinTemplate,
+			CustomTemplate:  *tplFileOrDirName,
+			ConfigFiles:     *configFileNames,
+		}
+
+		if err := Config(cfg); err != nil {
 			return fmt.Errorf("running Config(): %w", err)
 		}
 		return nil
 	}
 	return cmd
 }
-
-// BuiltinTemplateDefault is the default builtin template which is used if the
-// user does neigther provide a custom template nor give a builtin template.
-const BuiltinTemplateDefault = "docker-compose"
 
 func getBuiltinTemplateMsg() string {
 	var allNames []string
@@ -96,16 +113,16 @@ func FlagConfig(cmd *cobra.Command) *[]string {
 }
 
 // Config rebuilds one or more (depending on template) files containing the
-// deployment definitions. The parameters are just the command flags.
-func Config(baseDir string, builtinTpl string, tplFileOrDirName string, configFileNames []string) error {
+// deployment definitions using the provided configuration.
+func Config(cfg SetupConfig) error {
 	// Create YAML config object
-	cfg, err := NewYmlConfig(configFileNames)
+	ymlCfg, err := NewYmlConfig(cfg.ConfigFiles)
 	if err != nil {
 		return fmt.Errorf("parsing configuration: %w", err)
 	}
 
 	// Create the base directory and the deployment files.
-	if err := CreateDirAndFiles(baseDir, true, builtinTpl, tplFileOrDirName, cfg); err != nil {
+	if err := CreateDirAndFiles(cfg.BaseDir, cfg.Force, cfg.BuiltinTemplate, cfg.CustomTemplate, ymlCfg); err != nil {
 		return fmt.Errorf("(re-)creating deployment files: %w", err)
 	}
 
@@ -275,7 +292,8 @@ func CreateDeploymentFilesFromTree(baseDir string, force bool, tplDir fs.FS, cfg
 // CreateDeploymentFile builds a single deployment file to the given path. Use a
 // truthy value for force to override an existing file.
 func CreateDeploymentFile(filename string, force bool, tplFile []byte, cfg *YmlConfig, baseDir string) error {
-	tmpl, err := template.New("Deployment File").Funcs(getFuncMap(baseDir)).Parse(string(tplFile))
+	tf := &TemplateFunctions{baseDir: baseDir}
+	tmpl, err := template.New("Deployment File").Funcs(tf.GetFuncMap()).Parse(string(tplFile))
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
@@ -419,9 +437,40 @@ func NewYmlConfig(configFileNames []string) (*YmlConfig, error) {
 	return config, nil
 }
 
+// TemplateFunctions provides template functions with context
+type TemplateFunctions struct {
+	baseDir string
+}
+
+// ReadSecret reads a secret file and returns it base64 encoded
+func (tf *TemplateFunctions) ReadSecret(name string) (string, error) {
+	secretPath := filepath.Join(tf.baseDir, "secrets", name)
+	data, err := os.ReadFile(secretPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("secret %q does not exist - ensure secrets are created before deployment files", name)
+		}
+		return "", fmt.Errorf("reading secret %q: %w", name, err)
+	}
+	return base64.StdEncoding.EncodeToString(data), nil
+}
+
+// GetFuncMap returns the template function map with context
+func (tf *TemplateFunctions) GetFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"marshalContent": marshalContentFunc,
+		"envMapToK8S":    envMapToK8SFunc,
+		"checkFlag":      checkFlagFunc,
+		"base64Encode":   base64EncodeFunc,
+		"base64Decode":   base64DecodeFunc,
+		"readFile":       readFileFunc,
+		"readSecret":     tf.ReadSecret,
+	}
+}
+
 // Static funcMap provides functions to be available to the templates.
 
-var marshalContentFunc = func(ws int, v interface{}) (string, error) {
+var marshalContentFunc = func(ws int, v any) (string, error) {
 	y, err := yaml.Marshal(v)
 	if err != nil {
 		return "", fmt.Errorf("marshalling content: %w", err)
@@ -435,7 +484,7 @@ var marshalContentFunc = func(ws int, v interface{}) (string, error) {
 	result = strings.TrimRight(result, "\n")
 	return result, nil
 }
-var envMapToK8SFunc = func(v map[string]string) interface{} {
+var envMapToK8SFunc = func(v map[string]string) any {
 	var listOfMaps []map[string]string
 	for key, value := range v {
 		m := make(map[string]string)
@@ -445,7 +494,7 @@ var envMapToK8SFunc = func(v map[string]string) interface{} {
 	}
 	return listOfMaps
 }
-var checkFlagFunc = func(v interface{}) (bool, error) {
+var checkFlagFunc = func(v any) (bool, error) {
 	f, ok := v.(*bool)
 	if !ok {
 		return false, fmt.Errorf("using wrong type as argument in checkFlag function, only *bool is allowed")
@@ -468,27 +517,6 @@ var readFileFunc = func(s string) (string, error) {
 		return "", fmt.Errorf("reading file %q: %w", s, err)
 	}
 	return string(b), nil
-}
-
-func getFuncMap(baseDir string) template.FuncMap {
-	readSecretFunc := func(name string) (string, error) {
-		secretPath := filepath.Join(baseDir, "secrets", name)
-		data, err := os.ReadFile(secretPath)
-		if err != nil {
-			return "", fmt.Errorf("reading secret %q: %w", name, err)
-		}
-		return base64.StdEncoding.EncodeToString(data), nil
-	}
-
-	return template.FuncMap{
-		"marshalContent": marshalContentFunc,
-		"envMapToK8S":    envMapToK8SFunc,
-		"checkFlag":      checkFlagFunc,
-		"base64Encode":   base64EncodeFunc,
-		"base64Decode":   base64DecodeFunc,
-		"readFile":       readFileFunc,
-		"readSecret":     readSecretFunc,
-	}
 }
 
 // CmdCreateDefault returns the config-create-default subcommand.

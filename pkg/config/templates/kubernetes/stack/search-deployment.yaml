@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    osinstance/service: search
+    osinstance/name: {{ .URL }}
+  name: search
+  namespace: {{ .StackName }}
+{{- with .Services.search }}
+spec:
+  replicas: {{ or .CustomKeys.replicas 1 }}
+  selector:
+    matchLabels:
+      osinstance/service: search
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        osinstance/name: {{ $.URL }}
+        osinstance/service: search
+    spec:
+      containers:
+        - name: search
+          image: {{ .ContainerRegistry }}/openslides-search:{{ .Tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9050
+          startupProbe:
+            tcpSocket:
+              port: 9050
+            periodSeconds: 1
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: 9050
+            periodSeconds: 30
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 9050
+            periodSeconds: 30
+            failureThreshold: 3
+          env:
+            {{- with .Environment }}{{ envMapToK8S . | marshalContent 12 }}{{- end }}
+          envFrom:
+            - configMapRef:
+                name: default-environment
+          resources: {}
+          volumeMounts:
+            - mountPath: /run/secrets/auth-token-key
+              name: auth-token-key
+            - mountPath: /run/secrets/auth-cookie-key
+              name: auth-cookie-key
+            - mountPath: /run/secrets/postgres-password
+              name: postgres-password
+      restartPolicy: Always
+      volumes:
+        - name: auth-token-key
+          secret:
+            items:
+              - key: auth-token-key
+                path: auth-token-key
+            secretName: auth-token-key
+        - name: auth-cookie-key
+          secret:
+            items:
+              - key: auth-cookie-key
+                path: auth-cookie-key
+            secretName: auth-cookie-key
+        - name: postgres-password
+          secret:
+            items:
+              - key: postgres-password
+                path: postgres-password
+            secretName: postgres-password
+status: {}
+{{- end }}
