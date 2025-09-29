@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
-	"github.com/rs/zerolog/log"
 )
 
 // Conn holds a connection to the backend action service.
@@ -128,10 +127,50 @@ func (c *Conn) Health(ctx context.Context) (json.RawMessage, error) {
 	return res, nil
 }
 
+func executeRequest(ctx context.Context, method string, addr string, pw []byte, bodyReader io.Reader, requestTimeout time.Duration) (json.RawMessage, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, method, addr, bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	creds := shared.BasicAuth{Password: pw}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(shared.AuthHeader, creds.EncPassword())
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server error response %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	encodedResp, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	if !json.Valid(encodedResp) {
+		return nil, fmt.Errorf("invalid JSON response: %q", string(encodedResp))
+	}
+
+	return json.RawMessage(encodedResp), nil
+}
+
 func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
 	const maxRetries = 5
 	const backoffDelay = 4 * time.Second
-	const requestTimeout = 5 * time.Second // Individual request timeout
+	const requestTimeout = 5 * time.Second
 
 	var originalBody []byte
 	if body != nil {
@@ -144,121 +183,53 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 
 	var lastErr error
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		// Check if parent context is already done before starting attempt
-		if ctx.Err() != nil {
-			log.Warn().Msg("parent context done before retry attempt")
-			return nil, ctx.Err()
-		}
-
 		var bodyReader io.Reader
 		if originalBody != nil {
 			bodyReader = bytes.NewReader(originalBody)
 		}
 
-		// Create a fresh context for this individual request
-		// This gives each request its own timeout window
-		reqCtx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-		defer cancel() // Always clean up the request context
-
-		req, err := http.NewRequestWithContext(reqCtx, method, addr, bodyReader)
-		if err != nil {
-			return nil, fmt.Errorf("creating request: %w", err)
+		result, err := executeRequest(ctx, method, addr, pw, bodyReader, requestTimeout)
+		if err == nil {
+			return result, nil
 		}
 
-		creds := shared.BasicAuth{Password: pw}
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set(shared.AuthHeader, creds.EncPassword())
-
-		log.Warn().Int("attempt", attempt+1).Int("max_retries", maxRetries).Msg("attempting request")
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			if isNetworkError(err) {
-				lastErr = err
-				log.Warn().Err(err).Msgf("network error on attempt %d/%d; retrying...", attempt+1, maxRetries)
-
-				// Only retry if we haven't exhausted all attempts
-				if attempt < maxRetries-1 {
-					log.Warn().Dur("backoff_delay", backoffDelay).Msg("waiting before retry")
-
-					// Wait for backoff delay or until parent context is done
-					select {
-					case <-time.After(backoffDelay):
-						log.Warn().Msg("backoff complete, retrying")
-						continue
-					case <-ctx.Done():
-						log.Warn().Msg("parent context done during backoff")
-						return nil, ctx.Err()
-					}
-				}
-				// If we're here, we've exhausted all retries
-				log.Warn().Err(lastErr).Msgf("request failed after %d attempts", maxRetries)
-				return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, lastErr)
+		lastErr = err
+		if isNetworkError(err) && attempt < maxRetries-1 {
+			select {
+			case <-time.After(backoffDelay):
+				continue
+			case <-ctx.Done():
+				return nil, ctx.Err()
 			}
-			// Non-network error - don't retry
-			return nil, fmt.Errorf("non-network error: %w", err)
 		}
-
-		// Success - process the response
-		defer resp.Body.Close()
-
-		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			respBody, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("server error response %d: %s", resp.StatusCode, string(respBody))
-		}
-
-		encodedResp, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("reading response body: %w", err)
-		}
-
-		if !json.Valid(encodedResp) {
-			return nil, fmt.Errorf("invalid JSON response: %q", string(encodedResp))
-		}
-
-		log.Warn().Msg("request succeeded")
-		return json.RawMessage(encodedResp), nil
+		break
 	}
 
-	// This should never be reached due to the logic above, but keeping it for safety
 	return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, lastErr)
 }
 
 func isNetworkError(err error) bool {
-	// Unwrap *url.Error first
 	var urlErr *url.Error
 	if errors.As(err, &urlErr) {
 		err = urlErr.Err
 	}
-
-	// Check for context deadline exceeded (should be treated as network error for retry)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return true
 	}
-
-	// Check for context canceled (should NOT be retried)
 	if errors.Is(err, context.Canceled) {
 		return false
 	}
-
-	// Timeout or temporary network error
 	var netErr net.Error
 	if errors.As(err, &netErr) {
 		return true
 	}
-
-	// Lower-level operation error (e.g., connection refused)
 	var opErr *net.OpError
 	if errors.As(err, &opErr) {
 		return true
 	}
-
-	// Unexpected connection closures
 	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 		return true
 	}
-
-	// Check for specific network-related error strings
 	errStr := err.Error()
 	networkErrors := []string{
 		"connection refused",
@@ -268,12 +239,10 @@ func isNetworkError(err error) bool {
 		"network is unreachable",
 		"connection timed out",
 	}
-
 	for _, netErrStr := range networkErrors {
 		if strings.Contains(strings.ToLower(errStr), netErrStr) {
 			return true
 		}
 	}
-
 	return false
 }
