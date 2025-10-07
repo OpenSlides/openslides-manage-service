@@ -16,6 +16,18 @@ import (
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
 )
 
+const (
+	// maxRetries defines how many times the request will be retried
+	// if a transient network error occurs.
+	maxRetries = 5
+
+	// backoffDelay is the wait time between retry attempts.
+	backoffDelay = 4 * time.Second
+
+	// requestTimeout sets a timeout duration for each individual request attempt.
+	requestTimeout = 5 * time.Second
+)
+
 // Conn holds a connection to the backend action service.
 type Conn struct {
 	URL                  *url.URL
@@ -167,11 +179,13 @@ func executeRequest(ctx context.Context, method string, addr string, pw []byte, 
 	return json.RawMessage(encodedResp), nil
 }
 
+// requestWithPassword sends an HTTP request with optional body and password-based auth.
+// It retries the request up to maxRetries times in case of network-related errors,
+// applying a fixed delay (backoffDelay) between attempts.
+//
+// If the context is canceled, the function aborts early and returns ctx.Err().
+// Returns the JSON response body if successful.
 func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
-	const maxRetries = 5
-	const backoffDelay = 4 * time.Second
-	const requestTimeout = 5 * time.Second
-
 	var originalBody []byte
 	if body != nil {
 		var err error
