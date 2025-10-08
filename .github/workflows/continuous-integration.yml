@@ -72,7 +72,7 @@ jobs:
         DOCKER_BUILDKIT: 1
 
     - name: Build Tests
-      run: make build-test
+      run: make build-tests
 
     - name: Run tests with Makefile
       run: make run-tests
