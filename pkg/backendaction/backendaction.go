@@ -4,12 +4,28 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/OpenSlides/openslides-manage-service/pkg/shared"
+)
+
+const (
+	// maxRetries defines how many times the request will be retried
+	// if a transient network error occurs.
+	maxRetries = 5
+
+	// backoffDelay is the wait time between retry attempts.
+	backoffDelay = 4 * time.Second
+
+	// requestTimeout sets a timeout duration for each individual request attempt.
+	requestTimeout = 5 * time.Second
 )
 
 // Conn holds a connection to the backend action service.
@@ -123,29 +139,32 @@ func (c *Conn) Health(ctx context.Context) (json.RawMessage, error) {
 	return res, nil
 }
 
-func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
-	req, err := http.NewRequestWithContext(ctx, method, addr, body)
+func executeRequest(ctx context.Context, method string, addr string, pw []byte, bodyReader io.Reader, requestTimeout time.Duration) (json.RawMessage, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, method, addr, bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("creating request to backend action service: %w", err)
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	creds := shared.BasicAuth{
-		Password: pw,
-	}
+
+	creds := shared.BasicAuth{Password: pw}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(shared.AuthHeader, creds.EncPassword())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("sending request to backend action service at %q: %w", addr, err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			body = []byte("[can not read body]")
-		}
-		return nil, fmt.Errorf("got response %q: %q", resp.Status, body)
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server error response %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	encodedResp, err := io.ReadAll(resp.Body)
@@ -154,8 +173,90 @@ func requestWithPassword(ctx context.Context, method string, addr string, pw []b
 	}
 
 	if !json.Valid(encodedResp) {
-		return nil, fmt.Errorf("response body does not contain valid JSON, got %q", string(encodedResp))
+		return nil, fmt.Errorf("invalid JSON response: %q", string(encodedResp))
 	}
 
 	return json.RawMessage(encodedResp), nil
+}
+
+// requestWithPassword sends an HTTP request with optional body and password-based auth.
+// It retries the request up to maxRetries times in case of network-related errors,
+// applying a fixed delay (backoffDelay) between attempts.
+//
+// If the context is canceled, the function aborts early and returns ctx.Err().
+// Returns the JSON response body if successful.
+func requestWithPassword(ctx context.Context, method string, addr string, pw []byte, body io.Reader) (json.RawMessage, error) {
+	var originalBody []byte
+	if body != nil {
+		var err error
+		originalBody, err = io.ReadAll(body)
+		if err != nil {
+			return nil, fmt.Errorf("reading request body: %w", err)
+		}
+	}
+
+	var lastErr error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		var bodyReader io.Reader
+		if originalBody != nil {
+			bodyReader = bytes.NewReader(originalBody)
+		}
+
+		result, err := executeRequest(ctx, method, addr, pw, bodyReader, requestTimeout)
+		if err == nil {
+			return result, nil
+		}
+
+		lastErr = err
+		if isNetworkError(err) && attempt < maxRetries-1 {
+			select {
+			case <-time.After(backoffDelay):
+				continue
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, lastErr)
+}
+
+func isNetworkError(err error) bool {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		err = urlErr.Err
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	if errors.Is(err, context.Canceled) {
+		return false
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return true
+	}
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		return true
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+	errStr := err.Error()
+	networkErrors := []string{
+		"connection refused",
+		"connection reset by peer",
+		"i/o timeout",
+		"no such host",
+		"network is unreachable",
+		"connection timed out",
+	}
+	for _, netErrStr := range networkErrors {
+		if strings.Contains(strings.ToLower(errStr), netErrStr) {
+			return true
+		}
+	}
+	return false
 }
