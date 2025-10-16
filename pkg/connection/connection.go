@@ -21,7 +21,7 @@ const (
 	defaultAddr = "localhost:8000"
 
 	// defaultTimeout holds the default timeout for the gRPC connection that is established by some commands.
-	defaultTimeout = 5 * time.Second
+	defaultTimeout = 30 * time.Second
 )
 
 // Params provides the parameters for the connection to the manage server.
