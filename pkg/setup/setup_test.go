@@ -508,6 +508,8 @@ x-default-environment: &default-environment
   RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
   SEARCH_HOST: search
   SEARCH_PORT: "9050"
+  PROJECTOR_HOST: projector
+  PROJECTOR_PORT: "9051"
   SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_NAME: openslides
@@ -526,6 +528,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+	  - projector
       - auth
       - media
       - icc
@@ -551,6 +554,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -675,6 +679,22 @@ services:
       - datastoreReader
       - postgres
       - autoupdate
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
+  projector:
+    image: ghcr.io/openslides/openslides/openslides-projector:latest
+    depends_on:
+      - autoupdate
+      - backend
+      - postgres
     environment:
       << : *default-environment
     networks:

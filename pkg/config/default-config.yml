@@ -40,6 +40,9 @@ defaultEnvironment:
   SEARCH_PORT: 9050
   RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
 
+  PROJECTOR_HOST: projector
+  PROJECTOR_PORT: 9051
+
   VOTE_HOST: vote
   VOTE_PORT: 9013
 
