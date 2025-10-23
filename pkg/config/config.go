@@ -240,6 +240,7 @@ func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 		"auth",
 		"vote",
 		"search",
+		"projector",
 		"redis",
 		"media",
 		"icc",
