@@ -1,20 +1,43 @@
-SERVICE=manage
+override SERVICE=manage
+
+# Build images for different contexts
 
 build-prod:
-	docker build ./ --tag "openslides-$(SERVICE)" --build-arg CONTEXT="prod" --target "prod"
+	docker build ./ $(ARGS) --tag "openslides-$(SERVICE)" --build-arg CONTEXT="prod" --target "prod"
 
 build-dev:
-	docker build ./ --tag "openslides-$(SERVICE)-dev" --build-arg CONTEXT="dev" --target "dev"
+	docker build ./ $(ARGS) --tag "openslides-$(SERVICE)-dev" --build-arg CONTEXT="dev" --target "dev"
 
-build-test:
-	docker build ./ --tag "openslides-$(SERVICE)-tests" --build-arg CONTEXT="tests" --target "tests"
+build-tests:
+	docker build ./ $(ARGS) --tag "openslides-$(SERVICE)-tests" --build-arg CONTEXT="tests" --target "tests"
 
-all: openslides
+# Tests
 
 run-tests:
 	bash dev/run-tests.sh
 
-test:
+lint:
+	bash dev/run-lint.sh -l
+
+gofmt:
+	gofmt -l -s -w .
+
+########################## Deprecation List ##########################
+
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+
+deprecation-warning:
+	@echo "\033[1;33m DEPRECATION WARNING: This make command is deprecated and will be removed soon! \033[0m"
+
+deprecation-warning-alternative: | deprecation-warning
+	@echo "\033[1;33m Please use the following command instead: $(ALTERNATIVE) \033[0m"
+
+run-dev run-dev-attach run-dev-attached run-dev-standalone run-bash run-dev-interactive stop-dev:
+	@make deprecation-warning-alternative ALTERNATIVE="dev and derivative maketargets are now only available in main repository. (use 'make dev-help' in main repository for more information)"
+
+all: | deprecation-warning openslides
+
+test: | deprecation-warning
 	# Attention: This steps should be the same as in .github/workflows/test.yml.
 	test -z "$(shell gofmt -l .)"
 	go vet ./...
@@ -22,17 +45,15 @@ test:
 	golint -set_exit_status ./...
 	go test -timeout 10s -race ./...
 
-go-build:
+go-build: | deprecation-warning
 	go build ./cmd/openslides
 
-protoc:
+protoc: | deprecation-warning
 	protoc --go_out=. --go_opt=paths=source_relative \
 	--go-grpc_out=require_unimplemented_servers=false:. --go-grpc_opt=paths=source_relative \
 	proto/manage.proto
 
-mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-
-openslides:
+openslides: | deprecation-warning
 	docker build . --target builder --tag openslides-manage-builder
 	docker run --interactive --tty --volume $(dir $(mkfile_path)):/build/ --rm openslides-manage-builder sh -c " \
 		if [ $(shell whoami) != root ]; then \
