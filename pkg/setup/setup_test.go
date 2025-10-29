@@ -505,11 +505,11 @@ x-default-environment: &default-environment
   OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  PROJECTOR_HOST: projector
+  PROJECTOR_PORT: "9051"
   RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
   SEARCH_HOST: search
   SEARCH_PORT: "9050"
-  PROJECTOR_HOST: projector
-  PROJECTOR_PORT: "9051"
   SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin
   VOTE_DATABASE_HOST: postgres
   VOTE_DATABASE_NAME: openslides
@@ -528,7 +528,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
-	  - projector
+      - projector
       - auth
       - media
       - icc
