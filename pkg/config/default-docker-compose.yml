@@ -16,6 +16,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -56,6 +57,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -254,6 +256,28 @@ services:
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
+{{- with .Services.projector }}
+
+  projector:
+    image: {{ .ContainerRegistry }}/openslides-projector:{{ .Tag }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - autoupdate
+      - backend
+      - postgres
+    {{- end }}
+    environment:
+      << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
+  {{- end }}
 
   {{- with .Services.auth }}
 

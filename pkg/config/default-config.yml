@@ -36,6 +36,9 @@ defaultEnvironment:
   AUTH_HOST: auth
   AUTH_PORT: 9004
 
+  PROJECTOR_HOST: projector
+  PROJECTOR_PORT: 9051
+
   SEARCH_HOST: search
   SEARCH_PORT: 9050
   RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
