@@ -666,6 +666,7 @@ services:
       - auth_token_key
       - auth_cookie_key
       - internal_auth_password
+      - postgres_password
 
   vote:
     image: ghcr.io/openslides/openslides/openslides-vote:latest
