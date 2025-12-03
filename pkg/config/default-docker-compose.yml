@@ -263,7 +263,7 @@ services:
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - autoupdate
-      - backend
+      - backendAction
       - postgres
     {{- end }}
     environment:
