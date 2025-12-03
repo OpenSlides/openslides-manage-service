@@ -693,7 +693,7 @@ services:
     image: ghcr.io/openslides/openslides/openslides-projector:latest
     depends_on:
       - autoupdate
-      - backend
+      - backendAction
       - postgres
     environment:
       << : *default-environment
