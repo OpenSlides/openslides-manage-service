@@ -501,6 +501,8 @@ x-default-environment: &default-environment
   OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  PROJECTOR_HOST: projector
+  PROJECTOR_PORT: "9051"
   RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
   SEARCH_HOST: search
   SEARCH_PORT: "9050"
@@ -522,6 +524,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -547,6 +550,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -643,6 +647,22 @@ services:
     depends_on:
       - postgres
       - autoupdate
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
+  projector:
+    image: ghcr.io/openslides/openslides/openslides-projector:latest
+    depends_on:
+      - autoupdate
+      - backendAction
+      - postgres
     environment:
       << : *default-environment
     networks:
