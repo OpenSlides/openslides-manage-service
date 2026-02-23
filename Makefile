@@ -24,7 +24,7 @@ gofmt:
 
 openslides:
 	docker build . --target builder --tag openslides-manage-builder
-	docker run --interactive --tty --volume $(dir $(mkfile_path)):/build/ --rm openslides-manage-builder sh -c " \
+	docker run --volume $(dir $(mkfile_path)):/build/ --rm openslides-manage-builder sh -c " \
 		if [ $(shell whoami) != root ]; then \
 			addgroup -g $(shell id -g) build ; \
 			adduser -u $(shell id -u) -G build -D build ; \
