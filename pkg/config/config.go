@@ -233,8 +233,6 @@ func NewYmlConfig(configFiles [][]byte) (*YmlConfig, error) {
 		"backendAction",
 		"backendPresenter",
 		"backendManage",
-		"datastoreReader",
-		"datastoreWriter",
 		"postgres",
 		"autoupdate",
 		"auth",
