@@ -1,6 +1,6 @@
 ARG CONTEXT=prod
 
-FROM golang:1.24.4-alpine AS base
+FROM golang:1.26.0-alpine AS base
 
 ## Setup
 ARG CONTEXT
@@ -44,10 +44,10 @@ COPY dev/container-tests.sh ./dev/container-tests.sh
 
 RUN apk add --no-cache \
     build-base \
-    docker && \
-    go get -u github.com/ory/dockertest/v3 && \
-    go install golang.org/x/lint/golint@latest && \
-    chmod +x dev/container-tests.sh
+    docker
+RUN go get -u github.com/ory/dockertest/v3
+RUN go install golang.org/x/lint/golint@latest
+RUN chmod +x dev/container-tests.sh
 
 ## Command
 STOPSIGNAL SIGKILL
