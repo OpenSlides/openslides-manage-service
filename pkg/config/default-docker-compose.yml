@@ -16,6 +16,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -56,6 +57,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -76,7 +78,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreWriter
       - auth
       - media
       - vote
@@ -129,7 +130,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-backend:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreWriter
       - postgres
     {{- end }}
     environment:
@@ -145,45 +145,6 @@ services:
       - internal_auth_password
       - postgres_password
       - superadmin
-    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
-  {{- end }}
-
-
-  {{- with .Services.datastoreReader }}
-
-  datastoreReader:
-    image: {{ .ContainerRegistry }}/openslides-datastore-reader:{{ .Tag }}
-    {{- if checkFlag $.DisableDependsOn }}{{ else }}
-    depends_on:
-      - postgres
-    {{- end }}
-    environment:
-      << : *default-environment
-      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
-    networks:
-      - data
-    secrets:
-      - postgres_password
-    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
-  {{- end }}
-
-
-  {{- with .Services.datastoreWriter }}
-
-  datastoreWriter:
-    image: {{ .ContainerRegistry }}/openslides-datastore-writer:{{ .Tag }}
-    {{- if checkFlag $.DisableDependsOn }}{{ else }}
-    depends_on:
-      - postgres
-      - redis
-    {{- end }}
-    environment:
-      << : *default-environment
-      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
-    networks:
-      - data
-    secrets:
-      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
@@ -214,8 +175,8 @@ services:
     image: {{ .ContainerRegistry }}/openslides-autoupdate:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreReader
       - redis
+      - postgres
     {{- end }}
     environment:
       << : *default-environment
@@ -237,7 +198,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-search:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreReader
       - postgres
       - autoupdate
     {{- end }}
@@ -254,6 +214,28 @@ services:
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
+{{- with .Services.projector }}
+
+  projector:
+    image: {{ .ContainerRegistry }}/openslides-projector:{{ .Tag }}
+    {{- if checkFlag $.DisableDependsOn }}{{ else }}
+    depends_on:
+      - autoupdate
+      - backendAction
+      - postgres
+    {{- end }}
+    environment:
+      << : *default-environment
+      {{- with .Environment }}{{ marshalContent 6 . }}{{- end }}
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+    {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
+  {{- end }}
 
   {{- with .Services.auth }}
 
@@ -261,8 +243,8 @@ services:
     image: {{ .ContainerRegistry }}/openslides-auth:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreReader
       - redis
+      - postgres
     {{- end }}
     environment:
       << : *default-environment
@@ -274,6 +256,7 @@ services:
       - auth_token_key
       - auth_cookie_key
       - internal_auth_password
+      - postgres_password
     {{- with .AdditionalContent }}{{ marshalContent 4 . }}{{- end }}
   {{- end }}
 
@@ -283,10 +266,10 @@ services:
     image: {{ .ContainerRegistry }}/openslides-vote:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreReader
       - auth
       - autoupdate
       - redis
+      - postgres
     {{- end }}
     environment:
       << : *default-environment
@@ -343,7 +326,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-icc:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreReader
       - postgres
       - redis
     {{- end }}
@@ -367,7 +349,6 @@ services:
     image: {{ .ContainerRegistry }}/openslides-manage:{{ .Tag }}
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
-      - datastoreReader
       - backendManage
     {{- end }}
     environment:

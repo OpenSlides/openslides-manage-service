@@ -179,7 +179,6 @@ defaults:
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 	})
-
 }
 
 func TestSetupCommon(t *testing.T) {
@@ -347,7 +346,6 @@ disableDependsOn: true
 		}
 		testFileNotContains(t, testDir, myFileName, "depends_on")
 		testFileContains(t, testDir, myFileName, "cert_crt")
-
 	})
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory using custom config with custom env", func(t *testing.T) {
@@ -381,7 +379,6 @@ services:
 		}
 		testFileContains(t, testDir, myFileName, `KEY_SKRIVESLDIERUFJ: test_iyoe8bahGh`)
 	})
-
 }
 
 func testContentFile(t testing.TB, dir, name, expected string) {
@@ -482,10 +479,6 @@ x-default-environment: &default-environment
   DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
   DATABASE_PORT: "5432"
   DATABASE_USER: openslides
-  DATASTORE_READER_HOST: datastoreReader
-  DATASTORE_READER_PORT: "9010"
-  DATASTORE_WRITER_HOST: datastoreWriter
-  DATASTORE_WRITER_PORT: "9011"
   ICC_HOST: icc
   ICC_PORT: "9007"
   INTERNAL_AUTH_PASSWORD_FILE: /run/secrets/internal_auth_password
@@ -505,6 +498,8 @@ x-default-environment: &default-environment
   OPENSLIDES_LOGLEVEL: info
   PRESENTER_HOST: backendPresenter
   PRESENTER_PORT: "9003"
+  PROJECTOR_HOST: projector
+  PROJECTOR_PORT: "9051"
   RESTRICTER_URL: http://autoupdate:9012/internal/autoupdate
   SEARCH_HOST: search
   SEARCH_PORT: "9050"
@@ -526,6 +521,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -551,6 +547,7 @@ services:
       - backendPresenter
       - autoupdate
       - search
+      - projector
       - auth
       - media
       - icc
@@ -563,7 +560,6 @@ services:
   backendAction:
     image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
-      - datastoreWriter
       - auth
       - media
       - vote
@@ -600,7 +596,6 @@ services:
   backendManage:
     image: ghcr.io/openslides/openslides/openslides-backend:latest
     depends_on:
-      - datastoreWriter
       - postgres
     environment:
       << : *default-environment
@@ -615,30 +610,6 @@ services:
       - internal_auth_password
       - postgres_password
       - superadmin
-
-  datastoreReader:
-    image: ghcr.io/openslides/openslides/openslides-datastore-reader:latest
-    depends_on:
-      - postgres
-    environment:
-      << : *default-environment
-      NUM_WORKERS: "8"
-    networks:
-      - data
-    secrets:
-      - postgres_password
-
-  datastoreWriter:
-    image: ghcr.io/openslides/openslides/openslides-datastore-writer:latest
-    depends_on:
-      - postgres
-      - redis
-    environment:
-      << : *default-environment
-    networks:
-      - data
-    secrets:
-      - postgres_password
 
   postgres:
     image: postgres:15
@@ -657,8 +628,8 @@ services:
   autoupdate:
     image: ghcr.io/openslides/openslides/openslides-autoupdate:latest
     depends_on:
-      - datastoreReader
       - redis
+      - postgres
     environment:
       << : *default-environment
     networks:
@@ -672,9 +643,24 @@ services:
   search:
     image: ghcr.io/openslides/openslides/openslides-search:latest
     depends_on:
-      - datastoreReader
       - postgres
       - autoupdate
+    environment:
+      << : *default-environment
+    networks:
+      - frontend
+      - data
+    secrets:
+      - auth_token_key
+      - auth_cookie_key
+      - postgres_password
+
+  projector:
+    image: ghcr.io/openslides/openslides/openslides-projector:latest
+    depends_on:
+      - autoupdate
+      - backendAction
+      - postgres
     environment:
       << : *default-environment
     networks:
@@ -688,8 +674,8 @@ services:
   auth:
     image: ghcr.io/openslides/openslides/openslides-auth:latest
     depends_on:
-      - datastoreReader
       - redis
+      - postgres
     environment:
       << : *default-environment
     networks:
@@ -699,14 +685,15 @@ services:
       - auth_token_key
       - auth_cookie_key
       - internal_auth_password
+      - postgres_password
 
   vote:
     image: ghcr.io/openslides/openslides/openslides-vote:latest
     depends_on:
-      - datastoreReader
       - auth
       - autoupdate
       - redis
+      - postgres
     environment:
       << : *default-environment
     networks:
@@ -742,7 +729,6 @@ services:
   icc:
     image: ghcr.io/openslides/openslides/openslides-icc:latest
     depends_on:
-      - datastoreReader
       - postgres
       - redis
     environment:
@@ -758,7 +744,6 @@ services:
   manage:
     image: ghcr.io/openslides/openslides/openslides-manage:latest
     depends_on:
-      - datastoreReader
       - backendManage
     environment:
       << : *default-environment
