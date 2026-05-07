@@ -176,6 +176,7 @@ services:
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - redis
+      - postgres
     {{- end }}
     environment:
       << : *default-environment
@@ -243,6 +244,7 @@ services:
     {{- if checkFlag $.DisableDependsOn }}{{ else }}
     depends_on:
       - redis
+      - postgres
     {{- end }}
     environment:
       << : *default-environment
@@ -267,6 +269,7 @@ services:
       - auth
       - autoupdate
       - redis
+      - postgres
     {{- end }}
     environment:
       << : *default-environment

@@ -179,7 +179,6 @@ defaults:
 		testPasswordFile(t, secDir, "postgres_password")
 		testContentFile(t, secDir, setup.SuperadminFileName, setup.DefaultSuperadminPassword)
 	})
-
 }
 
 func TestSetupCommon(t *testing.T) {
@@ -347,7 +346,6 @@ disableDependsOn: true
 		}
 		testFileNotContains(t, testDir, myFileName, "depends_on")
 		testFileContains(t, testDir, myFileName, "cert_crt")
-
 	})
 
 	t.Run("running setup.Setup() and create all stuff in tmp directory using custom config with custom env", func(t *testing.T) {
@@ -381,7 +379,6 @@ services:
 		}
 		testFileContains(t, testDir, myFileName, `KEY_SKRIVESLDIERUFJ: test_iyoe8bahGh`)
 	})
-
 }
 
 func testContentFile(t testing.TB, dir, name, expected string) {
@@ -632,6 +629,7 @@ services:
     image: ghcr.io/openslides/openslides/openslides-autoupdate:latest
     depends_on:
       - redis
+      - postgres
     environment:
       << : *default-environment
     networks:
@@ -677,6 +675,7 @@ services:
     image: ghcr.io/openslides/openslides/openslides-auth:latest
     depends_on:
       - redis
+      - postgres
     environment:
       << : *default-environment
     networks:
@@ -694,6 +693,7 @@ services:
       - auth
       - autoupdate
       - redis
+      - postgres
     environment:
       << : *default-environment
     networks:
